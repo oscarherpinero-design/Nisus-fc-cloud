@@ -25,7 +25,6 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Ocultar elementos exclusivos de admin cuando estamos en modo solo lectura */
         body.read-only .admin-only { display: none !important; }
         
         .pitch-container {
@@ -40,6 +39,10 @@
         .penalty-area-top { position: absolute; top: 0; left: 50%; width: 140px; height: 70px; border: 2px solid white; border-top: none; transform: translateX(-50%); }
         .penalty-area-bottom { position: absolute; bottom: 0; left: 50%; width: 140px; height: 70px; border: 2px solid white; border-bottom: none; transform: translateX(-50%); }
         
+        .formation-slot {
+            position: absolute; width: 45px; height: 45px; border: 2px dashed rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none;
+        }
+
         .bench-container { min-height: 80px; background: #e5e7eb; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
         .player-token {
             width: 40px; height: 40px; border-radius: 50%; background: white; border: 2px solid #075985; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; position: absolute; cursor: grab; user-select: none; touch-action: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); transform: translate(-50%, -50%); transition: transform 0.1s; z-index: 10;
@@ -50,7 +53,6 @@
             position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; white-space: nowrap; pointer-events: none;
         }
         
-        /* Estilos para el selector de posiciones múltiples */
         select[multiple] { height: auto; min-height: 120px; }
         select[multiple] option { padding: 6px; border-radius: 4px; margin-bottom: 2px; }
         select[multiple] option:checked { background-color: #e0f2fe; color: #075985; font-weight: bold; }
@@ -62,7 +64,7 @@
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-6">
                 <button type="button" class="flex items-center gap-2 transition hover:text-brand-100" onclick="window.showSection('dashboard')">
-                    <img src="escudo.png" onerror="this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-8 h-8 rounded-full bg-white object-cover shadow-sm">
+                    <img src="escudo.png" onerror="this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-8 h-8 rounded-full bg-white object-cover shadow-sm" alt="Escudo">
                     <h1 class="text-xl font-bold tracking-tight">NISUS FC</h1>
                 </button>
                 
@@ -90,8 +92,10 @@
             </div>
         </div>
     </header>
+    
     <main class="max-w-5xl mx-auto px-4 py-6">
         
+        <!-- ================= DASHBOARD ================= -->
         <section id="dashboard" class="space-y-6">
             <div class="flex justify-between items-end">
                 <div>
@@ -100,7 +104,6 @@
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Tarjeta Próximo Partido -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden flex flex-col justify-between">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-bl-full -z-10"></div>
                     <div>
@@ -117,7 +120,6 @@
                         <i class="fas fa-clipboard-list mr-2"></i>Ver convocatoria y táctica
                     </button>
                 </div>
-                <!-- Tarjeta Últimos Resultados -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Últimos Resultados</h3>
                     <div id="latest-results" class="space-y-3">
@@ -165,19 +167,21 @@
             </div>
         </section>
 
+        <!-- ================= JUGADORES ================= -->
         <section id="players" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800" id="players-title">Nuestra Plantilla</h2>
-                    <p class="text-gray-500 text-sm mt-1">Gestiona los jugadores del equipo</p>
+                    <p class="text-gray-500 text-sm mt-1">Gestiona los jugadores y cuerpo técnico del equipo</p>
                 </div>
                 <button onclick="window.newPlayer()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-medium transition flex items-center gap-2">
-                    <i class="fas fa-user-plus"></i> Nuevo Jugador
+                    <i class="fas fa-user-plus"></i> Nuevo Miembro
                 </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="players-grid"></div>
         </section>
 
+        <!-- ================= PARTIDOS ================= -->
         <section id="matches" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -191,10 +195,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="matches-grid"></div>
         </section>
 
+        <!-- ================= FORMULARIO JUGADOR ================= -->
         <section id="playerForm" class="hidden">
             <div class="max-w-lg mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-800" id="form-title">Añadir Jugador</h2>
+                    <h2 class="text-xl font-bold text-gray-800" id="form-title">Añadir Miembro</h2>
                     <button onclick="window.showSection('players')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
                 </div>
                 
@@ -226,8 +231,7 @@
                             <input type="number" id="p-number" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none" placeholder="Ej. 10">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición (Selecciona varias)</label>
-                            <p class="text-[10px] text-gray-500 mb-1">Mantén presionado Ctrl (o Cmd) para elegir varias, o usa las casillas en móvil.</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición</label>
                             <select id="p-position" multiple class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white overflow-y-auto text-sm">
                                 <optgroup label="Portería">
                                     <option value="Portero">Portero</option>
@@ -253,6 +257,15 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <div class="pt-3 pb-1 border-t mt-4 border-b">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="p-is-staff" class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4">
+                            <span class="text-sm text-gray-800 font-bold">Es parte del Cuerpo Técnico (DT, Asistente)</span>
+                        </label>
+                        <p class="text-[11px] text-gray-500 ml-6 mt-1 leading-tight">Se agrupará como "Cuerpo Técnico", se ocultarán sus estadísticas de juego y aparecerá diferenciado en la pizarra táctica. (Sí podrá recibir amonestaciones).</p>
+                    </div>
+
                     <div class="pt-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Torneos Disponibles</label>
                         <div class="flex gap-6">
@@ -266,7 +279,7 @@
                             </label>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 mt-6 border-t">
+                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
                         <button type="button" onclick="window.showSection('players')" class="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
                         <button type="submit" id="btn-save-player" class="px-5 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-lg font-medium shadow transition">Guardar</button>
                     </div>
@@ -274,6 +287,7 @@
             </div>
         </section>
 
+        <!-- ================= FORMULARIO PARTIDO ================= -->
         <section id="matchForm" class="hidden">
             <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -318,7 +332,6 @@
                                 <option value="black">Todo Negro</option>
                                 <option value="white_blue">Blanca y Azul (Short Negro)</option>
                             </select>
-                            <p class="text-[10px] text-gray-500 mt-1">Portero: Amarillo y Negro</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
@@ -344,7 +357,6 @@
                         </div>
                     </div>
 
-                    <!-- TÁCTICA -->
                     <div class="border-t pt-4">
                         <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-clipboard-list mr-2 text-brand-600"></i>Convocatoria y Táctica</h3>
                         <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 h-32 overflow-y-auto">
@@ -357,10 +369,10 @@
                                 <span id="pitch-count-badge" class="px-2 py-1 bg-brand-100 text-brand-800 text-xs font-bold rounded">0 en cancha</span>
                             </div>
                             <div class="flex gap-2 mb-2">
-                                <select id="m-formation" class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none bg-white"></select>
-                                <button type="button" onclick="window.applyFormation()" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-900 transition shadow-sm">Aplicar</button>
+                                <select id="m-formation" onchange="window.drawTacticalBoard()" class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none bg-white"></select>
+                                <button type="button" onclick="window.applyFormation()" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-900 transition shadow-sm">Aplicar Automático</button>
                             </div>
-                            <p class="text-xs text-gray-500 italic mb-2">Arrastra los jugadores a la cancha. Límite respetado automáticamente.</p>
+                            <p class="text-xs text-gray-500 italic mb-2">Arrastra los jugadores a los slots disponibles. Si arrastras a uno ocupado, se intercambiarán automáticamente.</p>
                             
                             <div class="pitch-container" id="tactical-pitch">
                                 <div class="pitch-line-center"></div>
@@ -369,13 +381,12 @@
                                 <div class="penalty-area-bottom"></div>
                             </div>
                             <div>
-                                <p class="text-xs font-semibold text-gray-500 mb-1 uppercase mt-2">Banquillo (Arrastra hacia arriba)</p>
+                                <p class="text-xs font-semibold text-gray-500 mb-1 uppercase mt-2">Banquillo / Cuerpo Técnico (Arrastra hacia arriba)</p>
                                 <div class="bench-container" id="tactical-bench"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- EVENTOS -->
                     <div class="border-t pt-4">
                         <h3 class="font-bold text-gray-800 mb-2"><i class="fas fa-star mr-2 text-brand-600"></i>Eventos del Partido</h3>
                         <p class="text-xs text-gray-500 mb-4">Añade minuto (opcional), jugador y acción. (Goles y tarjetas sumarán al jugador al finalizar el partido).</p>
@@ -415,7 +426,7 @@
             </div>
         </section>
 
-        <!-- MODAL ESTADÍSTICAS RÁPIDAS -->
+        <!-- ================= MODALES ================= -->
         <div id="quickStatsModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
                 <div class="bg-brand-800 px-4 py-3 flex justify-between items-center text-white">
@@ -429,7 +440,7 @@
                         <button id="tab-qs-f7" onclick="window.switchQsTab('f7')" class="flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent">Fútbol 7</button>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
+                        <div id="qs-group-games">
                             <label class="block text-xs font-semibold text-gray-500 uppercase">Partidos</label>
                             <div class="flex items-center mt-1">
                                 <button onclick="window.adjStat('games', -1)" class="w-8 h-8 bg-gray-100 rounded-l border border-gray-300">-</button>
@@ -437,7 +448,7 @@
                                 <button onclick="window.adjStat('games', 1)" class="w-8 h-8 bg-gray-100 rounded-r border border-gray-300">+</button>
                             </div>
                         </div>
-                        <div>
+                        <div id="qs-group-goals">
                             <label class="block text-xs font-semibold text-gray-500 uppercase">Goles</label>
                             <div class="flex items-center mt-1">
                                 <button onclick="window.adjStat('goals', -1)" class="w-8 h-8 bg-gray-100 rounded-l border border-gray-300">-</button>
@@ -445,7 +456,7 @@
                                 <button onclick="window.adjStat('goals', 1)" class="w-8 h-8 bg-gray-100 rounded-r border border-gray-300">+</button>
                             </div>
                         </div>
-                        <div>
+                        <div id="qs-group-assists">
                             <label class="block text-xs font-semibold text-gray-500 uppercase">Asistencias</label>
                             <div class="flex items-center mt-1">
                                 <button onclick="window.adjStat('assists', -1)" class="w-8 h-8 bg-gray-100 rounded-l border border-gray-300">-</button>
@@ -453,7 +464,7 @@
                                 <button onclick="window.adjStat('assists', 1)" class="w-8 h-8 bg-gray-100 rounded-r border border-gray-300">+</button>
                             </div>
                         </div>
-                        <div>
+                        <div id="qs-group-yellows">
                             <label class="block text-xs font-semibold text-gray-500 uppercase">T. Amarillas</label>
                             <div class="flex items-center mt-1">
                                 <button onclick="window.adjStat('yellows', -1)" class="w-8 h-8 bg-gray-100 rounded-l border border-gray-300">-</button>
@@ -461,8 +472,7 @@
                                 <button onclick="window.adjStat('yellows', 1)" class="w-8 h-8 bg-gray-100 rounded-r border border-gray-300">+</button>
                             </div>
                         </div>
-                        <!-- Nueva sección de Rojas en Estadísticas Rápidas -->
-                        <div>
+                        <div id="qs-group-reds">
                             <label class="block text-xs font-semibold text-gray-500 uppercase">T. Rojas</label>
                             <div class="flex items-center mt-1">
                                 <button onclick="window.adjStat('reds', -1)" class="w-8 h-8 bg-gray-100 rounded-l border border-gray-300">-</button>
@@ -476,13 +486,11 @@
             </div>
         </div>
 
-        <!-- TOAST / NOTIFICACIONES -->
         <div id="toast" class="fixed top-20 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 translate-x-[150%] z-50 flex items-center gap-3">
             <i class="fas fa-info-circle text-xl"></i>
             <span id="toast-msg" class="font-medium text-sm">Mensaje</span>
         </div>
 
-        <!-- MODAL DE CONFIRMACIÓN -->
         <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div id="confirmModalContent" class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200">
                 <div class="p-6 text-center">
@@ -499,7 +507,6 @@
             </div>
         </div>
 
-        <!-- MODAL PIN ADMINISTRADOR -->
         <div id="pinModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center">
                 <div class="w-16 h-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4 text-2xl">
@@ -516,7 +523,6 @@
         </div>
     </main>
 
-    <!-- Barra inferior móvil -->
     <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 z-40 pb-safe">
         <button onclick="window.showSection('dashboard')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-dashboard">
             <i class="fas fa-chart-pie text-xl mb-1"></i><span class="text-[10px] font-medium">Inicio</span>
@@ -533,9 +539,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // =====================================================================
-        // CONFIGURACIÓN OFICIAL DE FIREBASE DE NISUS FC
-        // =====================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyCXssxxTsyNBrp6x08dCX9QAPts6mon_1U",
             authDomain: "nisus-fc.firebaseapp.com",
@@ -554,22 +557,27 @@
         window.matches = [];
         window.isReady = false;
 
-        // ==========================================
-        // CONFIGURACIÓN DE SEGURIDAD (PIN)
-        // ==========================================
         window.SECRET_PIN = "2024";
         window.isAdmin = localStorage.getItem('nisus_admin') === 'true';
 
+        // NUEVAS FORMACIONES AÑADIDAS AQUÍ
         const formations = {
             f11: {
                 "4-4-2": [{x:50,y:90}, {x:20,y:75}, {x:40,y:75}, {x:60,y:75}, {x:80,y:75}, {x:20,y:50}, {x:40,y:50}, {x:60,y:50}, {x:80,y:50}, {x:35,y:25}, {x:65,y:25}],
                 "4-3-3": [{x:50,y:90}, {x:20,y:75}, {x:40,y:75}, {x:60,y:75}, {x:80,y:75}, {x:30,y:55}, {x:50,y:55}, {x:70,y:55}, {x:20,y:25}, {x:50,y:25}, {x:80,y:25}],
+                "4-2-3-1": [{x:50,y:90}, {x:15,y:75}, {x:35,y:75}, {x:65,y:75}, {x:85,y:75}, {x:35,y:60}, {x:65,y:60}, {x:20,y:40}, {x:50,y:40}, {x:80,y:40}, {x:50,y:20}],
+                "4-5-1": [{x:50,y:90}, {x:15,y:75}, {x:35,y:75}, {x:65,y:75}, {x:85,y:75}, {x:15,y:50}, {x:35,y:50}, {x:50,y:50}, {x:65,y:50}, {x:85,y:50}, {x:50,y:25}],
                 "3-5-2": [{x:50,y:90}, {x:30,y:75}, {x:50,y:75}, {x:70,y:75}, {x:15,y:50}, {x:35,y:50}, {x:50,y:50}, {x:65,y:50}, {x:85,y:50}, {x:35,y:25}, {x:65,y:25}],
+                "3-4-3": [{x:50,y:90}, {x:30,y:75}, {x:50,y:75}, {x:70,y:75}, {x:15,y:50}, {x:35,y:50}, {x:65,y:50}, {x:85,y:50}, {x:25,y:25}, {x:50,y:25}, {x:75,y:25}],
+                "5-3-2": [{x:50,y:90}, {x:15,y:75}, {x:30,y:80}, {x:50,y:80}, {x:70,y:80}, {x:85,y:75}, {x:35,y:55}, {x:50,y:55}, {x:65,y:55}, {x:35,y:25}, {x:65,y:25}]
             },
             f7: {
                 "3-2-1": [{x:50,y:90}, {x:25,y:70}, {x:50,y:70}, {x:75,y:70}, {x:35,y:45}, {x:65,y:45}, {x:50,y:20}],
-                "2-3-1": [{x:50,y:90}, {x:35,y:70}, {x:65,y:70}, {x:20,y:45}, {x:50,y:45}, {x:80,y:45}, {x:50,y:20}],
                 "3-1-2": [{x:50,y:90}, {x:25,y:70}, {x:50,y:70}, {x:75,y:70}, {x:50,y:45}, {x:35,y:20}, {x:65,y:20}],
+                "2-3-1": [{x:50,y:90}, {x:35,y:70}, {x:65,y:70}, {x:20,y:45}, {x:50,y:45}, {x:80,y:45}, {x:50,y:20}],
+                "2-2-2": [{x:50,y:90}, {x:35,y:75}, {x:65,y:75}, {x:30,y:45}, {x:70,y:45}, {x:35,y:20}, {x:65,y:20}],
+                "1-3-2": [{x:50,y:90}, {x:50,y:75}, {x:20,y:50}, {x:50,y:50}, {x:80,y:50}, {x:35,y:25}, {x:65,y:25}],
+                "1-4-1": [{x:50,y:90}, {x:50,y:75}, {x:15,y:45}, {x:35,y:45}, {x:65,y:45}, {x:85,y:45}, {x:50,y:20}]
             }
         };
 
@@ -579,7 +587,6 @@
         }
 
         function setupRealtimeListeners() {
-            // Usuarios en línea
             const sessionId = crypto.randomUUID();
             const presenceRef = doc(db, 'sistema', 'presencia_' + sessionId);
             setInterval(() => {
@@ -663,16 +670,16 @@
             window.scrollTo(0,0);
         };
 
-        // Nuevas funciones para forzar la limpieza al crear nuevos
         window.newPlayer = function() {
             document.getElementById('player-form').reset();
             document.getElementById('p-id').value = '';
-            document.getElementById('form-title').textContent = 'Añadir Jugador';
+            document.getElementById('form-title').textContent = 'Añadir Miembro';
             document.getElementById('p-image-preview').classList.add('hidden');
             document.getElementById('p-image-placeholder').classList.remove('hidden');
             document.getElementById('p-image-base64').value = '';
             document.getElementById('p-avail-f11').checked = true;
             document.getElementById('p-avail-f7').checked = true;
+            document.getElementById('p-is-staff').checked = false; 
             
             const selectPos = document.getElementById('p-position');
             for(let i = 0; i < selectPos.options.length; i++) selectPos.options[i].selected = false;
@@ -747,6 +754,11 @@
 
         window.getAvatarHtml = function(player, sizeClasses = "w-12 h-12 text-lg") {
             if (player.image) return `<img src="${player.image}" class="${sizeClasses} rounded-full object-cover border-2 border-white shadow-sm" alt="${player.name}">`;
+            
+            if (player.isStaff) {
+                return `<div class="${sizeClasses} rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center border-2 border-white shadow-sm"><i class="fas fa-user-tie"></i></div>`;
+            }
+            
             const initial = player.name.charAt(0).toUpperCase();
             return `<div class="${sizeClasses} rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center border-2 border-white shadow-sm">${initial}</div>`;
         };
@@ -813,18 +825,19 @@
                 image: document.getElementById('p-image-base64').value,
                 availableF11: document.getElementById('p-avail-f11').checked,
                 availableF7: document.getElementById('p-avail-f7').checked,
+                isStaff: document.getElementById('p-is-staff').checked,
             };
             
             if (!id) {
                 pData.stats = { f11: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0 }, f7: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0 } };
             } else {
                 const existing = window.players.find(p => p.id === id);
-                pData.stats = existing ? existing.stats : { f11: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0 }, f7: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0 } };
+                pData.stats = existing && existing.stats ? existing.stats : { f11: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0 }, f7: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0 } };
             }
             
             try {
                 await setDoc(doc(db, window.playersPath, docId), pData);
-                window.showToast(id ? 'Jugador actualizado' : 'Jugador creado exitosamente');
+                window.showToast(id ? 'Registro actualizado' : 'Registro creado exitosamente');
                 window.showSection('players');
             } catch (err) {
                 console.error(err);
@@ -844,6 +857,7 @@
             document.getElementById('p-image-base64').value = player.image || '';
             document.getElementById('p-avail-f11').checked = player.availableF11;
             document.getElementById('p-avail-f7').checked = player.availableF7;
+            document.getElementById('p-is-staff').checked = player.isStaff || false;
             
             const selectPos = document.getElementById('p-position');
             const pPositions = player.positions || (player.position ? [player.position] : []);
@@ -856,7 +870,7 @@
             if (player.image) { preview.src = player.image; preview.classList.remove('hidden'); placeholder.classList.add('hidden'); }
             else { preview.classList.add('hidden'); placeholder.classList.remove('hidden'); }
             
-            document.getElementById('form-title').textContent = 'Editar Jugador';
+            document.getElementById('form-title').textContent = 'Editar Miembro';
             window.showSection('playerForm');
         };
 
@@ -879,10 +893,10 @@
         
         window.deletePlayer = function(id) {
             if(!window.isReady) return;
-            window.showConfirm('¿Seguro que deseas eliminar este jugador? Esta acción no se puede deshacer.', async () => {
+            window.showConfirm('¿Seguro que deseas eliminar este registro? Esta acción no se puede deshacer.', async () => {
                 try {
                     await deleteDoc(doc(db, window.playersPath, id));
-                    window.showToast('Jugador eliminado');
+                    window.showToast('Registro eliminado');
                 } catch(e) { console.error(e); window.showToast('Error al eliminar', true); }
             });
         };
@@ -904,7 +918,9 @@
             if(match.lineup) {
                 match.lineup.forEach(l => {
                     const p = getPlayerToUpdate(l.playerId);
-                    if(p && p.stats && p.stats[t]) p.stats[t].games = Math.max(0, (p.stats[t].games || 0) + factor);
+                    if(p && p.stats && p.stats[t] && !p.isStaff) { // Do not count games for staff
+                        p.stats[t].games = Math.max(0, (p.stats[t].games || 0) + factor);
+                    }
                 });
             }
             
@@ -913,6 +929,7 @@
                     if (ev.type === 'sub') return; 
                     const p = getPlayerToUpdate(ev.playerId);
                     if(p && p.stats && p.stats[t]) {
+                        if (p.isStaff && (ev.type === 'goals' || ev.type === 'assists')) return; 
                         p.stats[t][ev.type] = Math.max(0, (p.stats[t][ev.type] || 0) + factor);
                     }
                 });
@@ -1042,7 +1059,11 @@
             });
             let count = 0;
             window.currentLineup.forEach(p => {
-                if (p.x !== null && p.y !== null) { count++; if(count > max) { p.x = null; p.y = null; } }
+                const isStaff = window.players.find(x => x.id === p.playerId)?.isStaff;
+                if (!isStaff && p.x !== null && p.y !== null) { 
+                    count++; 
+                    if(count > max) { p.x = null; p.y = null; } 
+                }
             });
             window.renderCallupList();
             window.drawTacticalBoard();
@@ -1058,9 +1079,9 @@
             select.innerHTML = html;
         };
 
-        // PESO POSICIONAL PARA ORDEN INTELIGENTE
         window.getPlayerRoleWeight = function(player) {
             if (!player) return 99;
+            if (player.isStaff) return 100;
             const positions = Array.isArray(player.positions) ? player.positions : (player.position ? [player.position] : []);
             const str = positions.join(' ').toLowerCase();
             if (str.includes('portero')) return 1;
@@ -1073,7 +1094,10 @@
         window.applyFormation = function() {
             const tournament = document.getElementById('m-tournament').value;
             const formationKey = document.getElementById('m-formation').value;
-            if(!formationKey) return; 
+            if(!formationKey) {
+                window.drawTacticalBoard(); 
+                return; 
+            }
             const coords = formations[tournament][formationKey];
             const maxPlayers = tournament === 'f11' ? 11 : 7;
             
@@ -1087,11 +1111,15 @@
 
             let assigned = 0;
             for(let i = 0; i < window.currentLineup.length; i++) {
-                if(assigned < maxPlayers && coords[assigned]) {
-                    window.currentLineup[i].x = coords[assigned].x; window.currentLineup[i].y = coords[assigned].y; assigned++;
+                const playerObj = window.players.find(x => x.id === window.currentLineup[i].playerId);
+                if(playerObj && !playerObj.isStaff && assigned < maxPlayers && coords[assigned]) {
+                    window.currentLineup[i].x = coords[assigned].x; 
+                    window.currentLineup[i].y = coords[assigned].y; 
+                    assigned++;
                 }
             }
-            window.drawTacticalBoard(); window.showToast(`Formación ${formationKey} aplicada`);
+            window.drawTacticalBoard(); 
+            window.showToast(`Formación ${formationKey} aplicada`);
         };
 
         window.renderCallupList = function() {
@@ -1105,10 +1133,13 @@
                 if(tour === 'f7' && !p.availableF7) return;
                 
                 const isCalled = window.currentLineup.some(l => l.playerId === p.id);
+                const staffIcon = p.isStaff ? '<i class="fas fa-user-tie text-purple-600 mr-1" title="Cuerpo Técnico"></i> ' : '';
+                const numStr = (!p.isStaff && p.number) ? p.number + '-' : '';
+                
                 container.innerHTML += `
                     <div class="flex items-center gap-2">
                         <input type="checkbox" id="cb-${p.id}" value="${p.id}" ${isCalled ? 'checked' : ''} onchange="window.handleCallupChange('${p.id}', this.checked)" class="rounded text-brand-600 focus:ring-brand-500 cursor-pointer">
-                        <label for="cb-${p.id}" class="cursor-pointer truncate" title="${p.name}">${p.number ? p.number+'-' : ''}${p.name}</label>
+                        <label for="cb-${p.id}" class="cursor-pointer truncate text-gray-700" title="${p.name}">${staffIcon}${numStr}${p.name}</label>
                     </div>`;
             });
             window.updateEventPlayerSelect();
@@ -1130,23 +1161,46 @@
             if(!pitch || !bench) return;
             
             document.querySelectorAll('.player-token').forEach(t => t.remove());
+            document.querySelectorAll('.formation-slot').forEach(t => t.remove());
+            
             let onPitchCount = 0;
-            const maxPlayers = document.getElementById('m-tournament').value === 'f11' ? 11 : 7;
+            const tournament = document.getElementById('m-tournament').value;
+            const maxPlayers = tournament === 'f11' ? 11 : 7;
+            const formationKey = document.getElementById('m-formation').value;
+            
+            if (formationKey && formations[tournament][formationKey]) {
+                const coords = formations[tournament][formationKey];
+                coords.forEach(c => {
+                    const slot = document.createElement('div');
+                    slot.className = "formation-slot";
+                    slot.style.left = c.x + '%';
+                    slot.style.top = c.y + '%';
+                    pitch.appendChild(slot);
+                });
+            }
             
             window.currentLineup.forEach(l => {
                 const p = window.players.find(x => x.id === l.playerId);
                 if(!p) return;
                 const token = document.createElement('div');
-                token.className = "player-token"; token.dataset.id = l.playerId;
-                if (p.image) token.innerHTML = `<img src="${p.image}" alt=""><span class="name-label">${p.name.split(' ')[0]}</span>`;
-                else token.innerHTML = `${p.number || p.name.charAt(0)}<span class="name-label">${p.name.split(' ')[0]}</span>`;
+                token.className = "player-token"; 
+                token.dataset.id = l.playerId;
+                
+                if (p.isStaff) {
+                    token.style.borderColor = '#9333ea'; 
+                    token.innerHTML = (p.image ? `<img src="${p.image}" alt="">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f3e8ff; border-radius:50%;"><i class="fas fa-user-tie text-purple-600"></i></div>`) + `<span class="name-label" style="background: rgba(107, 33, 168, 0.9);">${p.name.split(' ')[0]}</span>`;
+                } else {
+                    if (p.image) token.innerHTML = `<img src="${p.image}" alt=""><span class="name-label">${p.name.split(' ')[0]}</span>`;
+                    else token.innerHTML = `${p.number || p.name.charAt(0)}<span class="name-label">${p.name.split(' ')[0]}</span>`;
+                }
                 
                 token.onmousedown = window.dragStart;
                 token.addEventListener('touchstart', window.dragStart, {passive: false});
                 
                 if (l.x !== null && l.y !== null) {
                     token.style.left = l.x + '%'; token.style.top = l.y + '%';
-                    pitch.appendChild(token); onPitchCount++;
+                    pitch.appendChild(token); 
+                    if(!p.isStaff) onPitchCount++;
                 } else {
                     token.style.position = 'relative'; token.style.transform = 'none'; token.style.left = 'auto'; token.style.top = 'auto';
                     bench.appendChild(token);
@@ -1172,6 +1226,7 @@
                 pitch.appendChild(window.draggedElement);
             }
         };
+        
         window.dragMove = function(e) {
             if (!window.draggedElement) return;
             if(e.type === 'touchmove' && e.cancelable) e.preventDefault(); 
@@ -1183,31 +1238,71 @@
             let y = ((clientY - rect.top) / rect.height) * 100;
             window.draggedElement.style.left = x + '%'; window.draggedElement.style.top = y + '%';
         };
+        
         window.dragEnd = function(e) {
             if (!window.draggedElement) return;
             const pitch = document.getElementById('tactical-pitch');
             const rect = pitch.getBoundingClientRect();
             let clientY = e.type.includes('touch') ? e.changedTouches[0].clientY : e.clientY;
+            let clientX = e.type.includes('touch') ? e.changedTouches[0].clientX : e.clientX;
             
             const playerId = window.draggedElement.dataset.id;
             const lineupIndex = window.currentLineup.findIndex(l => l.playerId === playerId);
-            const maxPlayers = document.getElementById('m-tournament').value === 'f11' ? 11 : 7;
+            const tournament = document.getElementById('m-tournament').value;
+            const maxPlayers = tournament === 'f11' ? 11 : 7;
+            const formationKey = document.getElementById('m-formation').value;
+            
+            const playerObj = window.players.find(x => x.id === playerId);
+            const isStaff = playerObj && playerObj.isStaff;
             
             if (clientY > rect.bottom + 10) {
                 if (lineupIndex >= 0) { window.currentLineup[lineupIndex].x = null; window.currentLineup[lineupIndex].y = null; }
             } else {
+                let x = ((clientX - rect.left) / rect.width) * 100;
+                let y = ((clientY - rect.top) / rect.height) * 100;
+                
                 const currentOnPitch = window.currentLineup.filter(p => p.x !== null && p.y !== null && p.playerId !== playerId).length;
-                if (currentOnPitch >= maxPlayers) {
-                    if (lineupIndex >= 0) { window.currentLineup[lineupIndex].x = null; window.currentLineup[lineupIndex].y = null; }
+                
+                if (!isStaff && currentOnPitch >= maxPlayers && window.currentLineup[lineupIndex].x === null) {
                     window.showToast(`Límite de ${maxPlayers} superado, devuelto al banco`, true);
                 } else {
                     if (lineupIndex >= 0) {
-                        window.currentLineup[lineupIndex].x = parseFloat(window.draggedElement.style.left);
-                        window.currentLineup[lineupIndex].y = parseFloat(window.draggedElement.style.top);
+                        const originalX = window.currentLineup[lineupIndex].x;
+                        const originalY = window.currentLineup[lineupIndex].y;
+                        
+                        if (formationKey && formations[tournament][formationKey]) {
+                            const coords = formations[tournament][formationKey];
+                            let nearest = coords[0];
+                            let minDist = Infinity;
+                            
+                            coords.forEach(c => {
+                                const dist = Math.sqrt(Math.pow(x - c.x, 2) + Math.pow(y - c.y, 2));
+                                if (dist < minDist) { minDist = dist; nearest = c; }
+                            });
+                            
+                            const occupantIndex = window.currentLineup.findIndex(l => l.x === nearest.x && l.y === nearest.y && l.playerId !== playerId);
+                            
+                            if (occupantIndex >= 0) {
+                                if (originalX === null) {
+                                    window.currentLineup[occupantIndex].x = null;
+                                    window.currentLineup[occupantIndex].y = null;
+                                } else {
+                                    window.currentLineup[occupantIndex].x = originalX;
+                                    window.currentLineup[occupantIndex].y = originalY;
+                                }
+                            }
+                            
+                            window.currentLineup[lineupIndex].x = nearest.x;
+                            window.currentLineup[lineupIndex].y = nearest.y;
+                        } else {
+                            window.currentLineup[lineupIndex].x = parseFloat(x);
+                            window.currentLineup[lineupIndex].y = parseFloat(y);
+                        }
                     }
                 }
             }
-            window.draggedElement = null; window.drawTacticalBoard();
+            window.draggedElement = null; 
+            window.drawTacticalBoard();
         };
 
         window.toggleSubField = function() {
@@ -1226,7 +1321,11 @@
             let htmlOut = '<option value="">Sale...</option>';
             window.currentLineup.forEach(l => {
                 const p = window.players.find(x => x.id === l.playerId);
-                if(p) { htmlIn += `<option value="${p.id}">${p.name}</option>`; htmlOut += `<option value="${p.id}">${p.name}</option>`; }
+                if(p) { 
+                    const prefix = p.isStaff ? '(DT) ' : '';
+                    htmlIn += `<option value="${p.id}">${prefix}${p.name}</option>`; 
+                    if(!p.isStaff) htmlOut += `<option value="${p.id}">${p.name}</option>`; 
+                }
             });
             selectIn.innerHTML = htmlIn; selectOut.innerHTML = htmlOut;
         };
@@ -1239,6 +1338,12 @@
             const playerOutId = document.getElementById('m-event-player-out').value;
             
             if(!playerId) return window.showToast('Selecciona el jugador', true);
+            
+            const p = window.players.find(x => x.id === playerId);
+            if(p && p.isStaff && (type === 'goals' || type === 'assists' || type === 'sub')) {
+                return window.showToast('El cuerpo técnico solo puede recibir tarjetas', true);
+            }
+
             if(type === 'sub' && !playerOutId) return window.showToast('Selecciona el jugador que sale', true);
             if(type === 'sub' && playerId === playerOutId) return window.showToast('No puede entrar y salir el mismo', true);
             
@@ -1283,6 +1388,7 @@
 
         window.getPlayerStat = function(player, statKey) {
             if(!player.stats) return 0;
+            if (player.isStaff && (statKey === 'games' || statKey === 'goals' || statKey === 'assists')) return 0;
             if(window.currentFilter === 'all') return (player.stats.f11[statKey] || 0) + (player.stats.f7[statKey] || 0);
             return player.stats[window.currentFilter][statKey] || 0;
         };
@@ -1296,7 +1402,13 @@
             if (window.currentFilter === 'f11') filteredPlayers = window.players.filter(p => p.availableF11);
             else if (window.currentFilter === 'f7') filteredPlayers = window.players.filter(p => p.availableF7);
             
-            if(filteredPlayers.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-100">No hay jugadores para esta vista</div>'; return; }
+            filteredPlayers.sort((a,b) => {
+                if (a.isStaff && !b.isStaff) return -1;
+                if (!a.isStaff && b.isStaff) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            
+            if(filteredPlayers.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-100">No hay registros para esta vista</div>'; return; }
             
             filteredPlayers.forEach(p => {
                 const games = window.getPlayerStat(p, 'games');
@@ -1309,8 +1421,35 @@
                 if(p.availableF11) badges += '<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">F11</span> ';
                 if(p.availableF7) badges += '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded">F7</span>';
                 
-                const positions = Array.isArray(p.positions) ? p.positions : (p.position ? [p.position] : []);
-                let posBadges = positions.map(pos => `<span class="bg-brand-50 text-brand-700 px-2 py-1 rounded border border-brand-100 whitespace-nowrap">${pos}</span>`).join('');
+                let posBadges = '';
+                let statsHtml = '';
+                let quickStatsBtn = '';
+
+                if (p.isStaff) {
+                    posBadges = `<span class="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full border border-purple-200 font-bold text-xs"><i class="fas fa-user-tie mr-1"></i>Cuerpo Técnico</span>`;
+                    statsHtml = `
+                    <div class="flex justify-between items-center bg-purple-50 p-2 rounded-lg mb-4 border border-purple-100">
+                        <div class="text-left flex-1"><p class="text-xs text-purple-700 font-bold ml-2">Staff Técnico</p></div>
+                        <div class="flex gap-4 pr-4">
+                            <div title="Tarjetas Amarillas" class="text-center"><p class="text-[10px] text-gray-500 uppercase font-bold">🟨</p><p class="font-bold text-yellow-600">${yellows}</p></div>
+                            <div title="Tarjetas Rojas" class="text-center"><p class="text-[10px] text-gray-500 uppercase font-bold">🟥</p><p class="font-bold text-red-600">${reds}</p></div>
+                        </div>
+                    </div>`;
+                    quickStatsBtn = `<button onclick="window.openQuickStats('${p.id}')" class="admin-only mt-auto w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">Ajustar Tarjetas</button>`;
+                } else {
+                    const positions = Array.isArray(p.positions) ? p.positions : (p.position ? [p.position] : []);
+                    posBadges = `<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold">#${p.number || '-'}</span>` + positions.map(pos => `<span class="bg-brand-50 text-brand-700 px-2 py-1 rounded border border-brand-100 whitespace-nowrap">${pos}</span>`).join('');
+                    
+                    statsHtml = `
+                    <div class="grid grid-cols-5 gap-1 text-center bg-gray-50 p-2 rounded-lg mb-4">
+                        <div title="Partidos Jugados"><p class="text-[10px] text-gray-500 uppercase font-bold">PJ</p><p class="font-bold text-gray-800">${games}</p></div>
+                        <div title="Goles"><p class="text-[10px] text-gray-500 uppercase font-bold">G</p><p class="font-bold text-green-600">${goals}</p></div>
+                        <div title="Asistencias"><p class="text-[10px] text-gray-500 uppercase font-bold">A</p><p class="font-bold text-blue-600">${assists}</p></div>
+                        <div title="Tarjetas Amarillas"><p class="text-[10px] text-gray-500 uppercase font-bold">🟨</p><p class="font-bold text-yellow-600">${yellows}</p></div>
+                        <div title="Tarjetas Rojas"><p class="text-[10px] text-gray-500 uppercase font-bold">🟥</p><p class="font-bold text-red-600">${reds}</p></div>
+                    </div>`;
+                    quickStatsBtn = `<button onclick="window.openQuickStats('${p.id}')" class="admin-only mt-auto w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">Actualizar Manualmente</button>`;
+                }
                 
                 grid.innerHTML += `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden group">
@@ -1324,20 +1463,12 @@
                                 <h3 class="font-bold text-gray-800 text-lg truncate">${p.name}</h3>
                                 <div class="flex gap-2 text-[10px] font-bold mt-1">${badges}</div>
                                 <div class="flex flex-wrap gap-1 text-xs font-medium mt-2 items-center">
-                                    <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded">#${p.number || '-'}</span>
                                     ${posBadges}
                                 </div>
                             </div>
                         </div>
-                        <!-- Tarjetas 5 Columnas -->
-                        <div class="grid grid-cols-5 gap-1 text-center bg-gray-50 p-2 rounded-lg mb-4">
-                            <div title="Partidos Jugados"><p class="text-[10px] text-gray-500 uppercase font-bold">PJ</p><p class="font-bold text-gray-800">${games}</p></div>
-                            <div title="Goles"><p class="text-[10px] text-gray-500 uppercase font-bold">G</p><p class="font-bold text-green-600">${goals}</p></div>
-                            <div title="Asistencias"><p class="text-[10px] text-gray-500 uppercase font-bold">A</p><p class="font-bold text-blue-600">${assists}</p></div>
-                            <div title="Tarjetas Amarillas"><p class="text-[10px] text-gray-500 uppercase font-bold">🟨</p><p class="font-bold text-yellow-600">${yellows}</p></div>
-                            <div title="Tarjetas Rojas"><p class="text-[10px] text-gray-500 uppercase font-bold">🟥</p><p class="font-bold text-red-600">${reds}</p></div>
-                        </div>
-                        <button onclick="window.openQuickStats('${p.id}')" class="admin-only mt-auto w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">Actualizar Manualmente</button>
+                        ${statsHtml}
+                        ${quickStatsBtn}
                     </div>`;
             });
         };
@@ -1459,7 +1590,9 @@
             if(window.currentFilter === 'f11') currentPlayers = window.players.filter(p => p.availableF11);
             if(window.currentFilter === 'f7') currentPlayers = window.players.filter(p => p.availableF7);
             
-            currentPlayers.forEach(p => { totalGoals += window.getPlayerStat(p, 'goals'); totalAssists += window.getPlayerStat(p, 'assists'); });
+            const rankedPlayers = currentPlayers.filter(p => !p.isStaff);
+            
+            rankedPlayers.forEach(p => { totalGoals += window.getPlayerStat(p, 'goals'); totalAssists += window.getPlayerStat(p, 'assists'); });
             
             if(document.getElementById('stat-total-goals')) document.getElementById('stat-total-goals').textContent = totalGoals;
             if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = totalAssists;
@@ -1481,18 +1614,23 @@
                 if(el.innerHTML === '') el.innerHTML = '<tr><td colspan="3" class="px-5 py-4 text-center text-sm text-gray-500">Sin registros</td></tr>';
             };
             
-            renderList([...currentPlayers].sort((a,b) => window.getPlayerStat(b, 'goals') - window.getPlayerStat(a, 'goals')).slice(0, 5), 'goals', 'top-scorers-list');
-            renderList([...currentPlayers].sort((a,b) => window.getPlayerStat(b, 'assists') - window.getPlayerStat(a, 'assists')).slice(0, 5), 'assists', 'top-assists-list');
+            renderList([...rankedPlayers].sort((a,b) => window.getPlayerStat(b, 'goals') - window.getPlayerStat(a, 'goals')).slice(0, 5), 'goals', 'top-scorers-list');
+            renderList([...rankedPlayers].sort((a,b) => window.getPlayerStat(b, 'assists') - window.getPlayerStat(a, 'assists')).slice(0, 5), 'assists', 'top-assists-list');
         };
 
         window.openQuickStats = function(id) {
             const player = window.players.find(p => p.id === id);
-            if(!player) return;
+            if(!player) return; 
+            
             document.getElementById('qs-id').value = id;
             document.getElementById('qs-name').textContent = player.name;
             
             document.getElementById('tab-qs-f11').style.display = player.availableF11 ? 'block' : 'none';
             document.getElementById('tab-qs-f7').style.display = player.availableF7 ? 'block' : 'none';
+            
+            document.getElementById('qs-group-games').style.display = player.isStaff ? 'none' : 'block';
+            document.getElementById('qs-group-goals').style.display = player.isStaff ? 'none' : 'block';
+            document.getElementById('qs-group-assists').style.display = player.isStaff ? 'none' : 'block';
             
             let defaultTab = window.currentFilter === 'all' ? (player.availableF11 ? 'f11' : 'f7') : window.currentFilter;
             if(!player.availableF11 && defaultTab === 'f11') defaultTab = 'f7';
