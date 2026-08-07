@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Librería para exportar imágenes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
@@ -27,33 +28,64 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        /* Modo Lectura UI */
         body.read-only .admin-only { display: none !important; }
+        body:not(.read-only) .admin-warning { display: none !important; }
         
+        body.read-only .read-only-disable { 
+            pointer-events: none !important; 
+            background-color: transparent !important; 
+            border-color: transparent !important; 
+            box-shadow: none !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            font-weight: 700 !important;
+            color: #1f2937 !important;
+            padding-left: 0 !important;
+            resize: none !important;
+        }
+        body.read-only select.read-only-disable { background-image: none !important; }
+
+        /* Pizarra Táctica */
         .pitch-container {
             width: 100%; max-width: 320px; height: 480px; margin: 0 auto;
-            background-color: #4ade80; border: 2px solid #fff; position: relative;
-            border-radius: 8px; overflow: hidden;
+            background-color: #4ade80; position: relative; border-radius: 8px; overflow: hidden;
             background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 48px, transparent 48px, transparent 96px);
-            touch-action: none; 
+            touch-action: none; border: 2px solid #22c55e;
         }
-        .pitch-line-center { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: white; transform: translateY(-50%); }
-        .pitch-circle-center { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); }
-        .penalty-area-top { position: absolute; top: 0; left: 50%; width: 140px; height: 70px; border: 2px solid white; border-top: none; transform: translateX(-50%); }
-        .penalty-area-bottom { position: absolute; bottom: 0; left: 50%; width: 140px; height: 70px; border: 2px solid white; border-bottom: none; transform: translateX(-50%); }
+        .pitch-outline { position: absolute; top: 12px; bottom: 12px; left: 12px; right: 12px; border: 2px solid white; pointer-events: none; }
+        .pitch-line-center { position: absolute; top: 50%; left: 12px; right: 12px; height: 2px; background: white; transform: translateY(-50%); pointer-events: none; }
+        .pitch-circle-center { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        .center-spot { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: white; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        .penalty-area-top { position: absolute; top: 12px; left: 50%; width: 140px; height: 70px; border: 2px solid white; border-top: none; transform: translateX(-50%); pointer-events: none; }
+        .penalty-area-bottom { position: absolute; bottom: 12px; left: 50%; width: 140px; height: 70px; border: 2px solid white; border-bottom: none; transform: translateX(-50%); pointer-events: none; }
+        .goal-area-top { position: absolute; top: 12px; left: 50%; width: 60px; height: 30px; border: 2px solid white; border-top: none; transform: translateX(-50%); pointer-events: none; }
+        .goal-area-bottom { position: absolute; bottom: 12px; left: 50%; width: 60px; height: 30px; border: 2px solid white; border-bottom: none; transform: translateX(-50%); pointer-events: none; }
+        .goal-top { position: absolute; top: 2px; left: 50%; width: 48px; height: 10px; border: 2px solid white; border-bottom: none; transform: translateX(-50%); background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.4) 2px, rgba(255,255,255,0.4) 4px); pointer-events: none; }
+        .goal-bottom { position: absolute; bottom: 2px; left: 50%; width: 48px; height: 10px; border: 2px solid white; border-top: none; transform: translateX(-50%); background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.4) 2px, rgba(255,255,255,0.4) 4px); pointer-events: none; }
+        .penalty-spot-top { position: absolute; top: 60px; left: 50%; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translateX(-50%); pointer-events: none; }
+        .penalty-spot-bottom { position: absolute; bottom: 60px; left: 50%; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translateX(-50%); pointer-events: none; }
+        .corner-tl { position: absolute; top: 12px; left: 12px; width: 12px; height: 12px; border: 2px solid white; border-radius: 0 0 100% 0; border-top: none; border-left: none; pointer-events: none; }
+        .corner-tr { position: absolute; top: 12px; right: 12px; width: 12px; height: 12px; border: 2px solid white; border-radius: 0 0 0 100%; border-top: none; border-right: none; pointer-events: none; }
+        .corner-bl { position: absolute; bottom: 12px; left: 12px; width: 12px; height: 12px; border: 2px solid white; border-radius: 0 100% 0 0; border-bottom: none; border-left: none; pointer-events: none; }
+        .corner-br { position: absolute; bottom: 12px; right: 12px; width: 12px; height: 12px; border: 2px solid white; border-radius: 100% 0 0 0; border-bottom: none; border-right: none; pointer-events: none; }
         
         .formation-slot {
             position: absolute; width: 45px; height: 45px; border: 2px dashed rgba(255,255,255,0.7); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none;
             display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.8);
         }
 
-        .bench-container { min-height: 80px; background: #e5e7eb; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .bench-container { background: #e5e7eb; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        
+        /* Tokens de Jugadores */
         .player-token {
             width: 40px; height: 40px; border-radius: 50%; background: white; border: 2px solid #075985; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; position: absolute; cursor: grab; user-select: none; touch-action: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); transform: translate(-50%, -50%); transition: transform 0.1s; z-index: 10;
         }
         .player-token:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.1); z-index: 50; }
         .player-token img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .player-token .name-label {
-            position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; white-space: nowrap; pointer-events: none; z-index: 20;
+            position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; white-space: nowrap; pointer-events: none; z-index: 20;
         }
         .captain-armband {
             position: absolute; top: -6px; right: -6px; background-color: #fbbf24; color: black; font-size: 9px; font-weight: 900; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; z-index: 30;
@@ -94,7 +126,7 @@
                 <nav class="hidden md:flex gap-1">
                     <button onclick="window.showSection('dashboard')" id="nav-desktop-dashboard" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-chart-pie"></i> Inicio</button>
                     <button onclick="window.showSection('players')" id="nav-desktop-players" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-users"></i> Plantilla</button>
-                    <button onclick="window.showSection('attendance')" id="nav-desktop-attendance" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-clipboard-check"></i> Asistencia</button>
+                    <button onclick="window.showSection('attendance')" id="nav-desktop-attendance" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-clipboard-check"></i> Entrenamientos</button>
                     <button onclick="window.showSection('matches')" id="nav-desktop-matches" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Partidos</button>
                 </nav>
             </div>
@@ -107,7 +139,10 @@
                     <span id="online-count" class="text-sm font-bold text-green-400">1</span>
                 </div>
                 
-                <button onclick="window.toggleAdmin()" id="btn-admin" class="px-3 py-1 rounded-md text-gray-400 hover:text-white transition" title="Modo Administrador"><i class="fas fa-lock"></i></button>
+                <button onclick="window.toggleAdmin()" id="btn-admin" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-600 hover:bg-gray-300 transition flex items-center gap-2 border border-gray-300" title="Cambiar Modo">
+                    <i class="fas fa-lock"></i> <span class="text-xs font-bold hidden sm:block">Solo Lectura</span>
+                </button>
+                
                 <div class="w-px h-4 bg-brand-800 mx-1"></div>
                 <button onclick="window.setFilter('all')" id="btn-filter-all" class="px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition hidden sm:inline-block">GRL</button>
                 <button onclick="window.setFilter('f11')" id="btn-filter-f11" class="px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium">F11</button>
@@ -123,7 +158,7 @@
     
     <main class="max-w-5xl mx-auto px-4 py-6">
         
-        <!-- DASHBOARD -->
+        <!-- ================= DASHBOARD ================= -->
         <section id="dashboard" class="space-y-6">
             <div class="flex justify-between items-end">
                 <div>
@@ -195,11 +230,11 @@
             </div>
         </section>
 
-        <!-- ASISTENCIA -->
+        <!-- ================= ENTRENAMIENTOS ================= -->
         <section id="attendance" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Control de Asistencia</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Control de Entrenamientos</h2>
                     <p class="text-gray-500 text-sm mt-1">Entrenamientos programados e historial</p>
                 </div>
                 <button onclick="window.newAttendance()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-medium transition flex items-center gap-2">
@@ -207,20 +242,18 @@
                 </button>
             </div>
             
-            <!-- PRÓXIMOS ENTRENAMIENTOS -->
             <div>
                 <h3 class="font-bold text-gray-700 flex items-center gap-2 mb-3 border-b pb-2"><i class="far fa-calendar-alt text-yellow-500"></i> Programados</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="attendance-grid-upcoming"></div>
             </div>
             
-            <!-- HISTORIAL -->
             <div class="mt-8">
                 <h3 class="font-bold text-gray-700 flex items-center gap-2 mb-3 border-b pb-2"><i class="fas fa-history text-brand-500"></i> Realizados</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="attendance-grid-past"></div>
             </div>
         </section>
 
-        <!-- JUGADORES (PLANTILLA) -->
+        <!-- ================= JUGADORES (PLANTILLA) ================= -->
         <section id="players" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -234,7 +267,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="players-grid"></div>
         </section>
 
-        <!-- PARTIDOS -->
+        <!-- ================= PARTIDOS ================= -->
         <section id="matches" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -248,11 +281,20 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="matches-grid"></div>
         </section>
 
-        <!-- FORMULARIO ASISTENCIA -->
+        <!-- ================= FORMULARIO ENTRENAMIENTO ================= -->
         <section id="attendanceForm" class="hidden">
-            <div class="max-w-md mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="max-w-md mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6 relative">
+                
+                <div class="admin-warning hidden bg-blue-50 text-blue-800 border border-blue-200 p-3 rounded-lg mb-6 text-sm font-medium flex items-center gap-3">
+                    <i class="fas fa-info-circle text-2xl"></i>
+                    <div>
+                        <p class="font-bold">Modo Visualización</p>
+                        <p class="text-xs">Estás viendo los detalles. Para modificar, desbloquea la edición arriba.</p>
+                    </div>
+                </div>
+
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-800" id="attendance-form-title">Registro de Asistencia</h2>
+                    <h2 class="text-xl font-bold text-gray-800" id="attendance-form-title">Registro de Entrenamiento</h2>
                     <button onclick="window.showSection('attendance')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
                 </div>
                 
@@ -262,34 +304,34 @@
                     <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha del Entrenamiento *</label>
-                            <input type="date" id="a-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none">
+                            <input type="date" id="a-date" required class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación / Maps</label>
-                            <input type="text" id="a-location" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Enlace de Maps o nombre del lugar">
+                            <input type="text" id="a-location" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Enlace de Maps o nombre del lugar">
+                            <a id="a-location-link" target="_blank" class="hidden mt-2 inline-block text-blue-600 font-bold hover:underline text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Abrir ubicación en Maps</a>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Jugadores que asistieron:</label>
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-64 overflow-y-auto space-y-1" id="a-players-list">
-                        </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-64 overflow-y-auto space-y-1" id="a-players-list"></div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Notas (Opcional)</label>
-                        <textarea id="a-notes" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Ej: Entrenamiento físico, llovió mucho..."></textarea>
+                        <textarea id="a-notes" rows="2" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Ej: Entrenamiento físico..."></textarea>
                     </div>
                     
                     <div class="flex justify-end gap-3 pt-4 border-t">
-                        <button type="button" onclick="window.showSection('attendance')" class="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
-                        <button type="submit" id="btn-save-attendance" class="px-5 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-lg font-medium shadow transition">Guardar</button>
+                        <button type="button" onclick="window.showSection('attendance')" class="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cerrar</button>
+                        <button type="submit" id="btn-save-attendance" class="admin-only px-5 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-lg font-medium shadow transition">Guardar</button>
                     </div>
                 </form>
             </div>
         </section>
 
-        <!-- FORMULARIO JUGADOR -->
+        <!-- ================= FORMULARIO JUGADOR ================= -->
         <section id="playerForm" class="hidden">
             <div class="max-w-lg mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -299,7 +341,6 @@
                 
                 <form id="player-form" onsubmit="window.savePlayer(event)" class="space-y-4">
                     <input type="hidden" id="p-id">
-                    
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden relative group">
                             <img id="p-image-preview" src="" class="w-full h-full object-cover hidden" alt="Preview">
@@ -421,9 +462,18 @@
             </div>
         </section>
 
-        <!-- FORMULARIO PARTIDO -->
+        <!-- ================= FORMULARIO PARTIDO ================= -->
         <section id="matchForm" class="hidden">
-            <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6 relative">
+                
+                <div class="admin-warning hidden bg-blue-50 text-blue-800 border border-blue-200 p-3 rounded-lg mb-6 text-sm font-medium flex items-center gap-3">
+                    <i class="fas fa-info-circle text-2xl"></i>
+                    <div>
+                        <p class="font-bold">Modo Visualización</p>
+                        <p class="text-xs">Estás viendo los detalles del partido. Para modificar datos, desbloquea la edición arriba.</p>
+                    </div>
+                </div>
+
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-gray-800" id="match-form-title">Registrar Partido</h2>
                     <button onclick="window.showSection('matches')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
@@ -435,45 +485,96 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Rival *</label>
-                            <input type="text" id="m-opponent" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none" placeholder="Ej. Real Madrid">
+                            <input type="text" id="m-opponent" required class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none" placeholder="Ej. Real Madrid">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
-                            <input type="date" id="m-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none">
+                            <input type="date" id="m-date" required class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none">
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación / Maps</label>
-                            <input type="text" id="m-location" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Enlace de Google Maps o nombre de la cancha">
+                            <input type="text" id="m-location" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Enlace de Google Maps o nombre de la cancha">
+                            <a id="m-location-link" target="_blank" class="hidden mt-2 inline-block text-blue-600 font-bold hover:underline text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Abrir ubicación en Maps</a>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2">
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Torneo *</label>
-                            <select id="m-tournament" onchange="window.handleTournamentChange()" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white">
+                            <select id="m-tournament" onchange="window.handleTournamentChange()" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white">
                                 <option value="f11">Fútbol 11</option>
                                 <option value="f7">Fútbol 7</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Temporada</label>
-                            <input type="text" id="m-season" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Ej. 2024">
+                            <input type="text" id="m-season" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Ej. 2024">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jornada/Fase</label>
-                            <input type="text" id="m-matchday" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Ej. J4 o Final">
+                            <input type="text" id="m-matchday" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Ej. J4 o Final">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Indumentaria</label>
-                            <select id="m-kit" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm">
-                                <option value="black">Todo Negro</option>
-                                <option value="white_blue">Blanca y Azul (Short Negro)</option>
-                            </select>
+
+                    <div class="md:col-span-2 border-t pt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Indumentarias del Partido</label>
+                        <div class="flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            
+                            <div class="flex-1 min-w-[150px] w-full">
+                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2 text-center">Nisus FC</p>
+                                <div class="flex justify-center gap-3">
+                                    <label class="cursor-pointer text-center group">
+                                        <input type="radio" name="m-kit-radio" value="black" class="read-only-disable peer hidden" checked onchange="window.updateKitPreview()">
+                                        <div class="w-12 h-14 p-1 border-2 border-transparent peer-checked:border-brand-500 peer-checked:bg-white rounded-lg transition opacity-60 peer-checked:opacity-100 group-hover:opacity-100 mx-auto" id="svg-selector-black"></div>
+                                        <span class="text-[9px] font-bold text-gray-600 mt-1 block">NEGRO</span>
+                                    </label>
+                                    <label class="cursor-pointer text-center group">
+                                        <input type="radio" name="m-kit-radio" value="white_blue" class="read-only-disable peer hidden" onchange="window.updateKitPreview()">
+                                        <div class="w-12 h-14 p-1 border-2 border-transparent peer-checked:border-brand-500 peer-checked:bg-white rounded-lg transition opacity-60 peer-checked:opacity-100 group-hover:opacity-100 mx-auto" id="svg-selector-wb"></div>
+                                        <span class="text-[9px] font-bold text-gray-600 mt-1 block">B/A</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="text-xl font-black text-gray-300">VS</div>
+                            
+                            <div class="flex-1 min-w-[150px] text-center w-full">
+                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Color del Rival</p>
+                                <div class="flex flex-col items-center justify-center">
+                                    <input type="color" id="m-opponent-kit" value="#ef4444" class="read-only-disable w-16 h-10 rounded cursor-pointer border border-gray-300" onchange="window.updateKitPreview()">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                            <select id="m-status" onchange="window.toggleScoreFields()" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm">
+
+                        <div class="bg-[#1a202c] rounded-lg p-4 mt-4 flex justify-between items-center shadow-inner overflow-hidden border border-gray-800">
+                            <div class="flex gap-4 items-center">
+                                <div class="text-center">
+                                    <div id="preview-nisus-player" class="w-12 h-16 mx-auto drop-shadow-md"></div>
+                                    <p class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">JUGADORES</p>
+                                </div>
+                                <div class="text-center">
+                                    <div id="preview-nisus-gk" class="w-12 h-16 mx-auto drop-shadow-md"></div>
+                                    <p class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">ARQUERO</p>
+                                </div>
+                            </div>
+                            <div class="text-gray-600 font-bold text-lg px-2">VS</div>
+                            <div class="flex gap-4 items-center">
+                                <div class="text-center">
+                                    <div id="preview-opp-player" class="w-12 h-16 mx-auto drop-shadow-md"></div>
+                                    <p class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">JUGADORES</p>
+                                </div>
+                                <div class="text-center">
+                                    <div id="preview-opp-gk" class="w-12 h-16 mx-auto drop-shadow-md"></div>
+                                    <p class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">ARQUERO</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Partido</label>
+                            <select id="m-status" onchange="window.toggleScoreFields()" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm font-bold">
                                 <option value="pending">Por Jugar</option>
                                 <option value="finished">Finalizado</option>
                             </select>
@@ -485,18 +586,18 @@
                         <div class="flex items-center justify-center gap-6 mb-4">
                             <div class="text-center">
                                 <label class="block text-sm font-bold text-brand-800 mb-1">NISUS FC</label>
-                                <input type="number" id="m-goals-us" min="0" class="w-20 text-center text-xl font-bold px-3 py-2 border border-gray-300 rounded-lg outline-none">
+                                <input type="number" id="m-goals-us" min="0" class="read-only-disable w-20 text-center text-xl font-bold px-3 py-2 border border-gray-300 rounded-lg outline-none">
                             </div>
                             <span class="text-2xl font-bold text-gray-400">-</span>
                             <div class="text-center">
                                 <label class="block text-sm font-bold text-gray-700 mb-1" id="label-opponent">Rival</label>
-                                <input type="number" id="m-goals-them" min="0" class="w-20 text-center text-xl font-bold px-3 py-2 border border-gray-300 rounded-lg outline-none">
+                                <input type="number" id="m-goals-them" min="0" class="read-only-disable w-20 text-center text-xl font-bold px-3 py-2 border border-gray-300 rounded-lg outline-none">
                             </div>
                         </div>
                         
                         <div class="pt-4 border-t border-gray-200">
                             <label class="block text-xs font-bold text-yellow-600 uppercase mb-1 text-center"><i class="fas fa-star mr-1"></i> MVP (Mejor Jugador)</label>
-                            <select id="m-mvp" class="w-full max-w-xs mx-auto block px-3 py-2 border border-yellow-300 bg-yellow-50 rounded-lg text-sm outline-none">
+                            <select id="m-mvp" class="read-only-disable w-full max-w-xs mx-auto block px-3 py-2 border border-yellow-300 bg-yellow-50 rounded-lg text-sm outline-none">
                                 <option value="">Ninguno seleccionado</option>
                             </select>
                         </div>
@@ -504,14 +605,15 @@
 
                     <div class="border-t pt-4">
                         <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-clipboard-list mr-2 text-brand-600"></i>Convocatoria y Táctica</h3>
-                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 h-32 overflow-y-auto">
-                            <p class="text-xs font-semibold text-gray-500 mb-2 uppercase">Selecciona los convocados (Atento a las bajas 🚑🟥):</p>
+                        
+                        <div class="admin-only bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 h-32 overflow-y-auto">
+                            <p class="text-xs font-semibold text-gray-500 mb-2 uppercase">Selecciona los convocados:</p>
                             <div id="m-callup-list" class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm"></div>
                         </div>
                         
                         <div class="flex items-center gap-3 mb-4 bg-yellow-50/50 p-2 rounded-lg border border-yellow-100">
                             <label class="text-xs font-bold text-yellow-700 uppercase whitespace-nowrap"><i class="fas fa-copyright mr-1"></i> Capitán:</label>
-                            <select id="m-captain" onchange="window.drawTacticalBoard()" class="flex-1 px-3 py-1.5 border border-yellow-300 bg-white rounded-md text-sm outline-none font-medium">
+                            <select id="m-captain" onchange="window.drawTacticalBoard()" class="read-only-disable flex-1 px-3 py-1.5 border border-yellow-300 bg-transparent rounded-md text-sm outline-none font-medium">
                                 <option value="">Ninguno seleccionado</option>
                             </select>
                         </div>
@@ -522,45 +624,61 @@
                                 <span id="pitch-count-badge" class="px-2 py-1 bg-brand-100 text-brand-800 text-xs font-bold rounded">0 en cancha</span>
                             </div>
                             <div class="flex gap-2 mb-2">
-                                <select id="m-formation" onchange="window.drawTacticalBoard()" class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none bg-white"></select>
-                                <button type="button" onclick="window.applyFormation()" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-900 transition shadow-sm">Aplicar Automático</button>
+                                <select id="m-formation" onchange="window.drawTacticalBoard()" class="read-only-disable flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none bg-white"></select>
+                                <button type="button" onclick="window.applyFormation()" class="admin-only bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-900 transition shadow-sm">Aplicar Automático</button>
                             </div>
-                            <p class="text-xs text-gray-500 italic mb-2">Las posiciones están bloqueadas según el perfil del jugador. Si necesitas mover a un jugador a una posición no natural, elige "Formación Libre".</p>
                             
-                            <div class="pitch-container" id="tactical-pitch">
+                            <div class="pitch-container mt-6 mb-4" id="tactical-pitch">
+                                <div class="pitch-outline"></div>
                                 <div class="pitch-line-center"></div>
                                 <div class="pitch-circle-center"></div>
+                                <div class="center-spot"></div>
+                                <div class="goal-top"></div>
+                                <div class="goal-area-top"></div>
                                 <div class="penalty-area-top"></div>
+                                <div class="penalty-spot-top"></div>
+                                <div class="corner-tl"></div>
+                                <div class="corner-tr"></div>
+                                <div class="goal-bottom"></div>
+                                <div class="goal-area-bottom"></div>
                                 <div class="penalty-area-bottom"></div>
+                                <div class="penalty-spot-bottom"></div>
+                                <div class="corner-bl"></div>
+                                <div class="corner-br"></div>
                             </div>
                             
                             <button type="button" onclick="window.exportPitchImage()" class="w-full mt-2 border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-2">
-                                <i class="fas fa-camera"></i> Descargar Pizarra para WhatsApp
+                                <i class="fas fa-camera"></i> Descargar Pizarra
                             </button>
 
-                            <div>
-                                <p class="text-xs font-semibold text-gray-500 mb-1 uppercase mt-2">Banquillo / Cuerpo Técnico (Arrastra hacia arriba)</p>
-                                <div class="bench-container" id="tactical-bench"></div>
+                            <div class="flex flex-col sm:flex-row gap-4 mt-4 mb-2">
+                                <div class="w-full sm:w-1/3 flex flex-col">
+                                    <p class="text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-widest text-center">Área Técnica</p>
+                                    <div class="bench-container bg-purple-50 border border-purple-100 justify-center flex-1 min-h-[70px]" id="tactical-staff"></div>
+                                </div>
+                                <div class="w-full sm:w-2/3 flex flex-col">
+                                    <p class="text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-widest text-center">Banquillo</p>
+                                    <div class="bench-container justify-center flex-1 min-h-[70px]" id="tactical-bench"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="border-t pt-4">
-                        <h3 class="font-bold text-gray-800 mb-2"><i class="fas fa-star mr-2 text-brand-600"></i>Eventos del Partido</h3>
-                        <p class="text-xs text-gray-500 mb-4">Añade minuto (opcional), jugador y acción. (Goles y tarjetas sumarán al jugador al finalizar el partido).</p>
+                    <div class="border-t pt-4 admin-only">
+                        <h3 class="font-bold text-gray-800 mb-2"><i class="fas fa-plus-circle mr-2 text-brand-600"></i>Añadir Evento</h3>
+                        <p class="text-xs text-gray-500 mb-4">Añade minuto (opcional), jugador y acción.</p>
                         
                         <div class="flex flex-col sm:flex-row gap-2 mb-4">
                             <input type="number" id="m-event-minute" placeholder="Min" min="1" max="150" class="w-full sm:w-16 px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white text-center">
-                            
                             <select id="m-event-player" class="flex-1 px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white">
                                 <option value="">Jugador / Entra...</option>
                             </select>
-                            
                             <select id="m-event-type" onchange="window.toggleSubField()" class="w-full sm:w-36 px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white">
                                 <option value="goals">Gol ⚽</option>
                                 <option value="penalty">Gol de Penal 🎯</option>
                                 <option value="freekick">Tiro Libre 👟</option>
                                 <option value="assists">Asistencia 👟</option>
+                                <option value="penalty_saved">Penal Atajado 🧤</option>
                                 <option value="yellows">Amarilla 🟨</option>
                                 <option value="reds">Roja 🟥</option>
                                 <option value="sub">Cambio 🔄</option>
@@ -570,23 +688,27 @@
                             </select>
                             <button type="button" onclick="window.addMatchEvent()" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900 transition shadow-sm font-medium">Añadir</button>
                         </div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <h3 class="font-bold text-gray-800 mb-2"><i class="fas fa-list-ul mr-2 text-brand-600"></i>Eventos del Partido</h3>
                         <div id="m-events-list" class="space-y-2"></div>
                     </div>
                     
                     <div class="border-t pt-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales</label>
-                        <textarea id="m-notes" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Observaciones generales..."></textarea>
+                        <textarea id="m-notes" rows="2" class="read-only-disable w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Observaciones generales..."></textarea>
                     </div>
 
                     <div class="flex justify-end gap-3 pt-6 mt-6 border-t">
-                        <button type="button" onclick="window.showSection('matches')" class="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
-                        <button type="submit" id="btn-save-match" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg font-medium shadow transition">Guardar Partido</button>
+                        <button type="button" onclick="window.showSection('matches')" class="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cerrar</button>
+                        <button type="submit" id="btn-save-match" class="admin-only px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg font-medium shadow transition">Guardar Partido</button>
                     </div>
                 </form>
             </div>
         </section>
 
-        <!-- MODALES -->
+        <!-- ================= MODALES ================= -->
         <div id="quickStatsModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
                 <div class="bg-brand-800 px-4 py-3 flex justify-between items-center text-white">
@@ -732,16 +854,32 @@
             <i class="fas fa-users text-xl mb-1"></i><span class="text-[10px] font-medium">Plantilla</span>
         </button>
         <button onclick="window.showSection('attendance')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-mobile-attendance">
-            <i class="fas fa-clipboard-check text-xl mb-1"></i><span class="text-[10px] font-medium">Asist.</span>
+            <i class="fas fa-clipboard-check text-xl mb-1"></i><span class="text-[10px] font-medium">Entrenamientos</span>
         </button>
         <button onclick="window.showSection('matches')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-mobile-matches">
             <i class="fas fa-calendar-alt text-xl mb-1"></i><span class="text-[10px] font-medium">Partidos</span>
         </button>
     </nav>
 
+    <script>
+        const showLoadingToast = () => {
+            const toast = document.getElementById('toast');
+            if(toast) {
+                document.getElementById('toast-msg').textContent = 'Conectando con el servidor...';
+                toast.className = 'fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 bg-gray-800 text-white';
+                setTimeout(() => toast.classList.remove('translate-x-[150%]'), 10);
+                setTimeout(() => toast.classList.add('translate-x-[150%]'), 2000);
+            }
+        };
+        window.showSection = showLoadingToast;
+        window.setFilter = showLoadingToast;
+        window.setSeasonFilter = showLoadingToast;
+        window.toggleAdmin = showLoadingToast;
+    </script>
+
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCXssxxTsyNBrp6x08dCX9QAPts6mon_1U",
@@ -752,12 +890,14 @@
             appId: "1:1095183265565:web:019161bbd603bba7ccfbf4"
         };
         
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db; 
+
         window.playersPath = `jugadores`;
         window.matchesPath = `partidos`;
         window.trainingsPath = `entrenamientos`;
         
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         window.players = [];
         window.matches = [];
         window.trainings = [];
@@ -766,12 +906,17 @@
         window.SECRET_PIN = "2024";
         window.isAdmin = localStorage.getItem('nisus_admin') === 'true';
         window.currentSeason = 'all'; 
+        window.currentFilter = 'all';
+        window.currentQsTab = 'f11';
+        window.currentLineup = [];
+        window.currentEvents = [];
+        window.currentAttendees = [];
+        window.draggedElement = null;
+        window.pendingConfirmAction = null;
 
         window.generateId = function() {
             if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                try {
-                    return crypto.randomUUID();
-                } catch(e) {}
+                try { return crypto.randomUUID(); } catch(e) {}
             }
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -782,6 +927,61 @@
         window.getAliasOrName = function(p) {
             if (!p) return '?';
             return p.name; 
+        };
+
+        window.getKitSVG = function(type, isGK = false, customColor = '#ef4444') {
+            const paths = {
+                shirt: "M15.3,2.3 C15,2.1 14.6,2 14.2,2 L9.8,2 C9.4,2 9,2.1 8.7,2.3 L4,5 L4,8 C4,8.6 4.4,9 5,9 L6,9 L6,21 C6,21.6 6.4,22 7,22 L17,22 C17.6,22 18,21.6 18,21 L18,9 L19,9 C19.6,9 20,8.6 20,8 L20,5 L15.3,2.3 Z",
+                shorts: "M 7 24 L 17 24 L 19 36 L 13 34 L 12 28 L 11 34 L 5 36 Z"
+            };
+            let defs = '';
+            let shirtFill = '';
+            let shortsFill = '';
+            let stroke = 'stroke="rgba(255,255,255,0.15)" stroke-width="0.5"';
+
+            if (type === 'black') {
+                if (isGK) { shirtFill = '#ef4444'; shortsFill = '#dc2626'; }
+                else { shirtFill = '#1f2937'; shortsFill = '#111827'; stroke = 'stroke="rgba(255,255,255,0.3)" stroke-width="0.5"'; }
+            } else if (type === 'white_blue') {
+                if (isGK) { shirtFill = '#eab308'; shortsFill = '#ca8a04'; } 
+                else {
+                    defs = `<pattern id="stripes" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(0)"><rect width="2" height="4" fill="#ffffff" /><rect x="2" width="2" height="4" fill="#0284c7" /></pattern>`;
+                    shirtFill = 'url(#stripes)'; shortsFill = '#111827';
+                    stroke = 'stroke="rgba(0,0,0,0.3)" stroke-width="0.5"';
+                }
+            } else if (type === 'opponent') {
+                if (isGK) { shirtFill = '#22c55e'; shortsFill = '#16a34a'; }
+                else { shirtFill = customColor; shortsFill = customColor; stroke = 'stroke="rgba(0,0,0,0.3)" stroke-width="0.5"'; }
+            }
+            return `
+            <svg viewBox="0 0 24 38" width="100%" height="100%" style="filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3));">
+                ${defs ? `<defs>${defs}</defs>` : ''}
+                <path d="${paths.shirt}" fill="${shirtFill}" ${stroke}/>
+                <path d="${paths.shorts}" fill="${shortsFill}" ${stroke}/>
+            </svg>`;
+        };
+
+        window.updateKitPreview = function() {
+            const nisusKit = document.querySelector('input[name="m-kit-radio"]:checked')?.value || 'black';
+            const oppColor = document.getElementById('m-opponent-kit')?.value || '#ef4444';
+            
+            const selBlack = document.getElementById('svg-selector-black');
+            if(selBlack) selBlack.innerHTML = window.getKitSVG('black', false);
+            
+            const selWb = document.getElementById('svg-selector-wb');
+            if(selWb) selWb.innerHTML = window.getKitSVG('white_blue', false);
+
+            const pNisusPlayer = document.getElementById('preview-nisus-player');
+            if(pNisusPlayer) pNisusPlayer.innerHTML = window.getKitSVG(nisusKit, false);
+            
+            const pNisusGk = document.getElementById('preview-nisus-gk');
+            if(pNisusGk) pNisusGk.innerHTML = window.getKitSVG(nisusKit, true);
+            
+            const pOppPlayer = document.getElementById('preview-opp-player');
+            if(pOppPlayer) pOppPlayer.innerHTML = window.getKitSVG('opponent', false, oppColor);
+            
+            const pOppGk = document.getElementById('preview-opp-gk');
+            if(pOppGk) pOppGk.innerHTML = window.getKitSVG('opponent', true, oppColor);
         };
 
         const posValid = {
@@ -802,166 +1002,134 @@
 
         const formations = {
             f11: {
-                "4-4-2": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:20, y:75, label: 'LI', valid: posValid.LI},
-                    {x:40, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:60, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:80, y:75, label: 'LD', valid: posValid.LD},
-                    {x:20, y:50, label: 'MI', valid: posValid.MI},
-                    {x:40, y:50, label: 'MC', valid: posValid.MC},
-                    {x:60, y:50, label: 'MC', valid: posValid.MC},
-                    {x:80, y:50, label: 'MD', valid: posValid.MD},
-                    {x:35, y:25, label: 'DC', valid: posValid.DC},
-                    {x:65, y:25, label: 'DC', valid: posValid.DC}
-                ],
-                "4-3-3": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:20, y:75, label: 'LI', valid: posValid.LI},
-                    {x:40, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:60, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:80, y:75, label: 'LD', valid: posValid.LD},
-                    {x:30, y:55, label: 'MC', valid: posValid.MC},
-                    {x:50, y:55, label: 'MCD', valid: posValid.MCD},
-                    {x:70, y:55, label: 'MC', valid: posValid.MC},
-                    {x:20, y:25, label: 'EI', valid: posValid.EI},
-                    {x:50, y:25, label: 'DC', valid: posValid.DC},
-                    {x:80, y:25, label: 'ED', valid: posValid.ED}
-                ],
-                "4-2-3-1": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:15, y:75, label: 'LI', valid: posValid.LI},
-                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:85, y:75, label: 'LD', valid: posValid.LD},
-                    {x:35, y:60, label: 'MCD', valid: posValid.MCD},
-                    {x:65, y:60, label: 'MCD', valid: posValid.MCD},
-                    {x:20, y:40, label: 'MI', valid: posValid.MI},
-                    {x:50, y:40, label: 'MCO', valid: posValid.MCO},
-                    {x:80, y:40, label: 'MD', valid: posValid.MD},
-                    {x:50, y:20, label: 'DC', valid: posValid.DC}
-                ],
-                "4-1-4-1": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:15, y:75, label: 'LI', valid: posValid.LI},
-                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:85, y:75, label: 'LD', valid: posValid.LD},
-                    {x:50, y:60, label: 'MCD', valid: posValid.MCD},
-                    {x:15, y:45, label: 'MI', valid: posValid.MI},
-                    {x:35, y:45, label: 'MC', valid: posValid.MC},
-                    {x:65, y:45, label: 'MC', valid: posValid.MC},
-                    {x:85, y:45, label: 'MD', valid: posValid.MD},
-                    {x:50, y:20, label: 'DC', valid: posValid.DC}
-                ],
-                "4-5-1": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:15, y:75, label: 'LI', valid: posValid.LI},
-                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:85, y:75, label: 'LD', valid: posValid.LD},
-                    {x:15, y:50, label: 'MI', valid: posValid.MI},
-                    {x:35, y:50, label: 'MC', valid: posValid.MC},
-                    {x:50, y:50, label: 'MCD', valid: posValid.MCD},
-                    {x:65, y:50, label: 'MC', valid: posValid.MC},
-                    {x:85, y:50, label: 'MD', valid: posValid.MD},
-                    {x:50, y:25, label: 'DC', valid: posValid.DC}
-                ],
-                "3-5-2": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:30, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:70, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:15, y:50, label: 'CAR', valid: posValid.CAR},
-                    {x:35, y:50, label: 'MC', valid: posValid.MC},
-                    {x:50, y:50, label: 'MCD', valid: posValid.MCD},
-                    {x:65, y:50, label: 'MC', valid: posValid.MC},
-                    {x:85, y:50, label: 'CAR', valid: posValid.CAR},
-                    {x:35, y:25, label: 'DC', valid: posValid.DC},
-                    {x:65, y:25, label: 'DC', valid: posValid.DC}
-                ],
-                "3-4-3": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:30, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:70, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:15, y:50, label: 'MI', valid: posValid.MI},
-                    {x:35, y:50, label: 'MC', valid: posValid.MC},
-                    {x:65, y:50, label: 'MC', valid: posValid.MC},
-                    {x:85, y:50, label: 'MD', valid: posValid.MD},
-                    {x:25, y:25, label: 'EI', valid: posValid.EI},
-                    {x:50, y:25, label: 'DC', valid: posValid.DC},
-                    {x:75, y:25, label: 'ED', valid: posValid.ED}
-                ],
-                "5-3-2": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:15, y:75, label: 'CAR', valid: posValid.CAR},
-                    {x:30, y:80, label: 'DFC', valid: posValid.DFC},
-                    {x:50, y:80, label: 'DFC', valid: posValid.DFC},
-                    {x:70, y:80, label: 'DFC', valid: posValid.DFC},
-                    {x:85, y:75, label: 'CAR', valid: posValid.CAR},
-                    {x:35, y:55, label: 'MC', valid: posValid.MC},
-                    {x:50, y:55, label: 'MCD', valid: posValid.MCD},
-                    {x:65, y:55, label: 'MC', valid: posValid.MC},
-                    {x:35, y:25, label: 'DC', valid: posValid.DC},
-                    {x:65, y:25, label: 'DC', valid: posValid.DC}
-                ]
+                "4-4-2": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:20, y:75, label: 'LI', valid: posValid.LI}, {x:40, y:75, label: 'DFC', valid: posValid.DFC}, {x:60, y:75, label: 'DFC', valid: posValid.DFC}, {x:80, y:75, label: 'LD', valid: posValid.LD}, {x:20, y:50, label: 'MI', valid: posValid.MI}, {x:40, y:50, label: 'MC', valid: posValid.MC}, {x:60, y:50, label: 'MC', valid: posValid.MC}, {x:80, y:50, label: 'MD', valid: posValid.MD}, {x:35, y:25, label: 'DC', valid: posValid.DC}, {x:65, y:25, label: 'DC', valid: posValid.DC} ],
+                "4-3-3": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:20, y:75, label: 'LI', valid: posValid.LI}, {x:40, y:75, label: 'DFC', valid: posValid.DFC}, {x:60, y:75, label: 'DFC', valid: posValid.DFC}, {x:80, y:75, label: 'LD', valid: posValid.LD}, {x:30, y:55, label: 'MC', valid: posValid.MC}, {x:50, y:55, label: 'MCD', valid: posValid.MCD}, {x:70, y:55, label: 'MC', valid: posValid.MC}, {x:20, y:25, label: 'EI', valid: posValid.EI}, {x:50, y:25, label: 'DC', valid: posValid.DC}, {x:80, y:25, label: 'ED', valid: posValid.ED} ],
+                "4-2-3-1": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:15, y:75, label: 'LI', valid: posValid.LI}, {x:35, y:75, label: 'DFC', valid: posValid.DFC}, {x:65, y:75, label: 'DFC', valid: posValid.DFC}, {x:85, y:75, label: 'LD', valid: posValid.LD}, {x:35, y:60, label: 'MCD', valid: posValid.MCD}, {x:65, y:60, label: 'MCD', valid: posValid.MCD}, {x:20, y:40, label: 'MI', valid: posValid.MI}, {x:50, y:40, label: 'MCO', valid: posValid.MCO}, {x:80, y:40, label: 'MD', valid: posValid.MD}, {x:50, y:20, label: 'DC', valid: posValid.DC} ],
+                "4-1-4-1": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:15, y:75, label: 'LI', valid: posValid.LI}, {x:35, y:75, label: 'DFC', valid: posValid.DFC}, {x:65, y:75, label: 'DFC', valid: posValid.DFC}, {x:85, y:75, label: 'LD', valid: posValid.LD}, {x:50, y:60, label: 'MCD', valid: posValid.MCD}, {x:15, y:45, label: 'MI', valid: posValid.MI}, {x:35, y:45, label: 'MC', valid: posValid.MC}, {x:65, y:45, label: 'MC', valid: posValid.MC}, {x:85, y:45, label: 'MD', valid: posValid.MD}, {x:50, y:20, label: 'DC', valid: posValid.DC} ],
+                "4-5-1": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:15, y:75, label: 'LI', valid: posValid.LI}, {x:35, y:75, label: 'DFC', valid: posValid.DFC}, {x:65, y:75, label: 'DFC', valid: posValid.DFC}, {x:85, y:75, label: 'LD', valid: posValid.LD}, {x:15, y:50, label: 'MI', valid: posValid.MI}, {x:35, y:50, label: 'MC', valid: posValid.MC}, {x:50, y:50, label: 'MCD', valid: posValid.MCD}, {x:65, y:50, label: 'MC', valid: posValid.MC}, {x:85, y:50, label: 'MD', valid: posValid.MD}, {x:50, y:25, label: 'DC', valid: posValid.DC} ],
+                "3-5-2": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:30, y:75, label: 'DFC', valid: posValid.DFC}, {x:50, y:75, label: 'DFC', valid: posValid.DFC}, {x:70, y:75, label: 'DFC', valid: posValid.DFC}, {x:15, y:50, label: 'CAR', valid: posValid.CAR}, {x:35, y:50, label: 'MC', valid: posValid.MC}, {x:50, y:50, label: 'MCD', valid: posValid.MCD}, {x:65, y:50, label: 'MC', valid: posValid.MC}, {x:85, y:50, label: 'CAR', valid: posValid.CAR}, {x:35, y:25, label: 'DC', valid: posValid.DC}, {x:65, y:25, label: 'DC', valid: posValid.DC} ],
+                "3-4-3": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:30, y:75, label: 'DFC', valid: posValid.DFC}, {x:50, y:75, label: 'DFC', valid: posValid.DFC}, {x:70, y:75, label: 'DFC', valid: posValid.DFC}, {x:15, y:50, label: 'MI', valid: posValid.MI}, {x:35, y:50, label: 'MC', valid: posValid.MC}, {x:65, y:50, label: 'MC', valid: posValid.MC}, {x:85, y:50, label: 'MD', valid: posValid.MD}, {x:25, y:25, label: 'EI', valid: posValid.EI}, {x:50, y:25, label: 'DC', valid: posValid.DC}, {x:75, y:25, label: 'ED', valid: posValid.ED} ],
+                "5-3-2": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:15, y:75, label: 'CAR', valid: posValid.CAR}, {x:30, y:80, label: 'DFC', valid: posValid.DFC}, {x:50, y:80, label: 'DFC', valid: posValid.DFC}, {x:70, y:80, label: 'DFC', valid: posValid.DFC}, {x:85, y:75, label: 'CAR', valid: posValid.CAR}, {x:35, y:55, label: 'MC', valid: posValid.MC}, {x:50, y:55, label: 'MCD', valid: posValid.MCD}, {x:65, y:55, label: 'MC', valid: posValid.MC}, {x:35, y:25, label: 'DC', valid: posValid.DC}, {x:65, y:25, label: 'DC', valid: posValid.DC} ]
             },
             f7: {
-                "3-2-1": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:25, y:70, label: 'LI', valid: posValid.LI},
-                    {x:50, y:70, label: 'DFC', valid: posValid.DFC},
-                    {x:75, y:70, label: 'LD', valid: posValid.LD},
-                    {x:35, y:45, label: 'MC', valid: posValid.MC},
-                    {x:65, y:45, label: 'MC', valid: posValid.MC},
-                    {x:50, y:20, label: 'DC', valid: posValid.DC}
-                ],
-                "3-1-2": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:25, y:70, label: 'LI', valid: posValid.LI},
-                    {x:50, y:70, label: 'DFC', valid: posValid.DFC},
-                    {x:75, y:70, label: 'LD', valid: posValid.LD},
-                    {x:50, y:45, label: 'MCD', valid: posValid.MCD},
-                    {x:35, y:20, label: 'DC', valid: posValid.DC},
-                    {x:65, y:20, label: 'DC', valid: posValid.DC}
-                ],
-                "2-3-1": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:35, y:70, label: 'DFC', valid: posValid.DFC},
-                    {x:65, y:70, label: 'DFC', valid: posValid.DFC},
-                    {x:20, y:45, label: 'MI', valid: posValid.MI},
-                    {x:50, y:45, label: 'MC', valid: posValid.MC},
-                    {x:80, y:45, label: 'MD', valid: posValid.MD},
-                    {x:50, y:20, label: 'DC', valid: posValid.DC}
-                ],
-                "2-2-2": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:30, y:45, label: 'MC', valid: posValid.MC},
-                    {x:70, y:45, label: 'MC', valid: posValid.MC},
-                    {x:35, y:20, label: 'DC', valid: posValid.DC},
-                    {x:65, y:20, label: 'DC', valid: posValid.DC}
-                ],
-                "1-3-2": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:20, y:50, label: 'MI', valid: posValid.MI},
-                    {x:50, y:50, label: 'MC', valid: posValid.MC},
-                    {x:80, y:50, label: 'MD', valid: posValid.MD},
-                    {x:35, y:25, label: 'DC', valid: posValid.DC},
-                    {x:65, y:25, label: 'DC', valid: posValid.DC}
-                ],
-                "1-4-1": [
-                    {x:50, y:90, label: 'POR', valid: posValid.POR},
-                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
-                    {x:15, y:45, label: 'MI', valid: posValid.MI},
-                    {x:35, y:45, label: 'MC', valid: posValid.MC},
-                    {x:65, y:45, label: 'MC', valid: posValid.MC},
-                    {x:85, y:45, label: 'MD', valid: posValid.MD},
-                    {x:50, y:20, label: 'DC', valid: posValid.DC}
-                ]
+                "3-2-1": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:25, y:70, label: 'LI', valid: posValid.LI}, {x:50, y:70, label: 'DFC', valid: posValid.DFC}, {x:75, y:70, label: 'LD', valid: posValid.LD}, {x:35, y:45, label: 'MC', valid: posValid.MC}, {x:65, y:45, label: 'MC', valid: posValid.MC}, {x:50, y:20, label: 'DC', valid: posValid.DC} ],
+                "3-1-2": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:25, y:70, label: 'LI', valid: posValid.LI}, {x:50, y:70, label: 'DFC', valid: posValid.DFC}, {x:75, y:70, label: 'LD', valid: posValid.LD}, {x:50, y:45, label: 'MCD', valid: posValid.MCD}, {x:35, y:20, label: 'DC', valid: posValid.DC}, {x:65, y:20, label: 'DC', valid: posValid.DC} ],
+                "2-3-1": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:35, y:70, label: 'DFC', valid: posValid.DFC}, {x:65, y:70, label: 'DFC', valid: posValid.DFC}, {x:20, y:45, label: 'MI', valid: posValid.MI}, {x:50, y:45, label: 'MC', valid: posValid.MC}, {x:80, y:45, label: 'MD', valid: posValid.MD}, {x:50, y:20, label: 'DC', valid: posValid.DC} ],
+                "2-2-2": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:35, y:75, label: 'DFC', valid: posValid.DFC}, {x:65, y:75, label: 'DFC', valid: posValid.DFC}, {x:30, y:45, label: 'MC', valid: posValid.MC}, {x:70, y:45, label: 'MC', valid: posValid.MC}, {x:35, y:20, label: 'DC', valid: posValid.DC}, {x:65, y:20, label: 'DC', valid: posValid.DC} ],
+                "1-3-2": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:50, y:75, label: 'DFC', valid: posValid.DFC}, {x:20, y:50, label: 'MI', valid: posValid.MI}, {x:50, y:50, label: 'MC', valid: posValid.MC}, {x:80, y:50, label: 'MD', valid: posValid.MD}, {x:35, y:25, label: 'DC', valid: posValid.DC}, {x:65, y:25, label: 'DC', valid: posValid.DC} ],
+                "1-4-1": [ {x:50, y:90, label: 'POR', valid: posValid.POR}, {x:50, y:75, label: 'DFC', valid: posValid.DFC}, {x:15, y:45, label: 'MI', valid: posValid.MI}, {x:35, y:45, label: 'MC', valid: posValid.MC}, {x:65, y:45, label: 'MC', valid: posValid.MC}, {x:85, y:45, label: 'MD', valid: posValid.MD}, {x:50, y:20, label: 'DC', valid: posValid.DC} ]
+            }
+        };
+
+        window.showSection = function(sectionId) {
+            const sections = ['dashboard', 'players', 'matches', 'attendance', 'playerForm', 'matchForm', 'attendanceForm'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            const sec = document.getElementById(sectionId);
+            if(sec) sec.classList.remove('hidden');
+            
+            ['dashboard', 'players', 'matches', 'attendance'].forEach(id => {
+                const deskEl = document.getElementById('nav-desktop-' + id);
+                if(deskEl) { deskEl.classList.remove('text-white', 'bg-brand-700'); deskEl.classList.add('text-brand-100'); }
+                const mobEl = document.getElementById('nav-mobile-' + id);
+                if(mobEl) { mobEl.classList.remove('text-brand-600'); mobEl.classList.add('text-gray-500'); }
+            });
+
+            const activeDesk = document.getElementById('nav-desktop-' + sectionId);
+            if(activeDesk) { activeDesk.classList.add('text-white', 'bg-brand-700'); activeDesk.classList.remove('text-brand-100'); }
+            const activeMob = document.getElementById('nav-mobile-' + sectionId);
+            if(activeMob) { activeMob.classList.add('text-brand-600'); activeMob.classList.remove('text-gray-500'); }
+
+            if (sectionId === 'players') window.renderPlayers();
+            if (sectionId === 'matches') window.renderMatches();
+            if (sectionId === 'attendance') window.renderTrainings();
+            if (sectionId === 'dashboard') window.updateDashboard();
+            
+            window.scrollTo(0,0);
+        };
+
+        window.setFilter = function(filter) {
+            window.currentFilter = filter;
+            ['all', 'f11', 'f7'].forEach(f => {
+                const btn = document.getElementById(`btn-filter-${f}`);
+                if(btn) btn.className = f === filter ? "px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition hidden sm:inline-block" : "px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium hidden sm:inline-block";
+                if(btn && (f === 'f11' || f === 'f7')) btn.className = f === filter ? "px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition" : "px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium";
+            });
+            const filterName = filter === 'f11' ? ' (Fútbol 11)' : filter === 'f7' ? ' (Fútbol 7)' : '';
+            const dTitle = document.getElementById('dash-title'); if(dTitle) dTitle.textContent = 'Resumen de Competición' + filterName;
+            const pTitle = document.getElementById('players-title'); if(pTitle) pTitle.textContent = 'Nuestra Plantilla' + filterName;
+            const mTitle = document.getElementById('matches-title'); if(mTitle) mTitle.textContent = 'Partidos' + filterName;
+            
+            const dashSection = document.getElementById('dashboard');
+            if(dashSection && !dashSection.classList.contains('hidden')) window.updateDashboard();
+            const playerSection = document.getElementById('players');
+            if(playerSection && !playerSection.classList.contains('hidden')) window.renderPlayers();
+            const matchSection = document.getElementById('matches');
+            if(matchSection && !matchSection.classList.contains('hidden')) window.renderMatches();
+        };
+
+        window.setSeasonFilter = function(season) {
+            window.currentSeason = season;
+            const dashLabel = document.getElementById('dash-season-label');
+            if (dashLabel) {
+                if (season === 'all') dashLabel.classList.add('hidden');
+                else { dashLabel.textContent = `(Temporada ${season})`; dashLabel.classList.remove('hidden'); }
+            }
+            
+            const dashSection = document.getElementById('dashboard');
+            if(dashSection && !dashSection.classList.contains('hidden')) window.updateDashboard();
+            const playerSection = document.getElementById('players');
+            if(playerSection && !playerSection.classList.contains('hidden')) window.renderPlayers();
+            const matchSection = document.getElementById('matches');
+            if(matchSection && !matchSection.classList.contains('hidden')) window.renderMatches();
+        };
+
+        window.showToast = function(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            if(!toast) return;
+            document.getElementById('toast-msg').textContent = msg;
+            toast.className = `fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'}`;
+            setTimeout(() => toast.classList.remove('translate-x-[150%]'), 10);
+            setTimeout(() => toast.classList.add('translate-x-[150%]'), 3000);
+        };
+
+        window.toggleAdmin = function() {
+            if (window.isAdmin) {
+                window.isAdmin = false;
+                localStorage.removeItem('nisus_admin');
+                window.updateAdminUI();
+                window.showToast("Modo solo lectura activado");
+            } else {
+                document.getElementById('pinModal').classList.remove('hidden');
+                document.getElementById('admin-pin').value = '';
+                document.getElementById('admin-pin').focus();
+            }
+        };
+
+        window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
+        
+        window.verifyPin = function() {
+            const pin = document.getElementById('admin-pin').value;
+            if (pin === window.SECRET_PIN) {
+                window.isAdmin = true;
+                localStorage.setItem('nisus_admin', 'true');
+                window.closePinModal();
+                window.updateAdminUI();
+                window.showToast("¡Edición desbloqueada!");
+            } else { window.showToast("PIN incorrecto", true); }
+        };
+
+        window.updateAdminUI = function() {
+            if (window.isAdmin) {
+                document.body.classList.remove('read-only');
+                const btn = document.getElementById('btn-admin');
+                if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i> <span class="text-xs font-bold hidden sm:block">Modo Edición</span>';
+            } else {
+                document.body.classList.add('read-only');
+                const btn = document.getElementById('btn-admin');
+                if(btn) btn.innerHTML = '<i class="fas fa-lock text-gray-400"></i> <span class="text-xs font-bold hidden sm:block text-gray-500">Solo Lectura</span>';
             }
         };
 
@@ -1041,70 +1209,52 @@
             const uniqueSeasons = [...new Set(window.matches.map(m => String(m.season || '')).filter(s => s.trim() !== ''))].sort((a,b) => b.localeCompare(a));
             
             select.innerHTML = '<option value="all">Todas Temp.</option>';
-            uniqueSeasons.forEach(s => {
-                select.innerHTML += `<option value="${s}">Temp. ${s}</option>`;
-            });
+            uniqueSeasons.forEach(s => { select.innerHTML += `<option value="${s}">Temp. ${s}</option>`; });
             
-            if (currentVal === 'all' || uniqueSeasons.includes(currentVal)) {
-                select.value = currentVal;
-            } else {
-                window.currentSeason = 'all';
-                select.value = 'all';
-            }
+            if (currentVal === 'all' || uniqueSeasons.includes(currentVal)) select.value = currentVal;
+            else { window.currentSeason = 'all'; select.value = 'all'; }
         };
 
-        window.setSeasonFilter = function(season) {
-            window.currentSeason = season;
-            const dashLabel = document.getElementById('dash-season-label');
-            if (dashLabel) {
-                if (season === 'all') dashLabel.classList.add('hidden');
-                else { dashLabel.textContent = `(Temporada ${season})`; dashLabel.classList.remove('hidden'); }
-            }
+        window.getPlayerStat = function(player, statKey) {
+            if(!player) return 0;
+            if (player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalties', 'freekicks', 'penalty_saved'].includes(statKey)) return 0;
             
-            const dashSection = document.getElementById('dashboard');
-            if(dashSection && !dashSection.classList.contains('hidden')) window.updateDashboard();
-            const playerSection = document.getElementById('players');
-            if(playerSection && !playerSection.classList.contains('hidden')) window.renderPlayers();
-            const matchSection = document.getElementById('matches');
-            if(matchSection && !matchSection.classList.contains('hidden')) window.renderMatches();
-        };
-
-        window.showToast = function(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            if(!toast) return;
-            document.getElementById('toast-msg').textContent = msg;
-            toast.className = `fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'}`;
-            setTimeout(() => toast.classList.remove('translate-x-[150%]'), 10);
-            setTimeout(() => toast.classList.add('translate-x-[150%]'), 3000);
-        };
-
-        window.showSection = function(sectionId) {
-            const sections = ['dashboard', 'players', 'matches', 'attendance', 'playerForm', 'matchForm', 'attendanceForm'];
-            sections.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.classList.add('hidden');
+            if (window.currentSeason === 'all') {
+                if(window.currentFilter === 'all') {
+                    return (player.stats?.f11?.[statKey] || 0) + (player.stats?.f7?.[statKey] || 0);
+                }
+                return player.stats?.[window.currentFilter]?.[statKey] || 0;
+            } 
+            
+            let count = 0;
+            window.matches.forEach(m => {
+                if (m.status !== 'finished') return;
+                if (m.season !== window.currentSeason) return;
+                if (window.currentFilter !== 'all' && m.tournament !== window.currentFilter) return;
+                
+                const inLineup = m.lineup && m.lineup.some(l => l.playerId === player.id);
+                const subIn = m.events && m.events.some(e => e.type === 'sub' && e.playerId === player.id);
+                const played = inLineup || subIn;
+                
+                if (statKey === 'games' && played && !player.isStaff) count++;
+                
+                if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) {
+                    const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero');
+                    if (isGK && !player.isStaff) count++;
+                }
+                
+                if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
+                
+                if (m.events) {
+                    m.events.forEach(ev => {
+                        if (ev.playerId === player.id) {
+                            if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++;
+                            if (statKey === ev.type) count++; 
+                        }
+                    });
+                }
             });
-            const sec = document.getElementById(sectionId);
-            if(sec) sec.classList.remove('hidden');
-            
-            ['dashboard', 'players', 'matches', 'attendance'].forEach(id => {
-                const deskEl = document.getElementById('nav-desktop-' + id);
-                if(deskEl) { deskEl.classList.remove('text-white', 'bg-brand-700'); deskEl.classList.add('text-brand-100'); }
-                const mobEl = document.getElementById('nav-mobile-' + id);
-                if(mobEl) { mobEl.classList.remove('text-brand-600'); mobEl.classList.add('text-gray-500'); }
-            });
-
-            const activeDesk = document.getElementById('nav-desktop-' + sectionId);
-            if(activeDesk) { activeDesk.classList.add('text-white', 'bg-brand-700'); activeDesk.classList.remove('text-brand-100'); }
-            const activeMob = document.getElementById('nav-mobile-' + sectionId);
-            if(activeMob) { activeMob.classList.add('text-brand-600'); activeMob.classList.remove('text-gray-500'); }
-
-            if (sectionId === 'players') window.renderPlayers();
-            if (sectionId === 'matches') window.renderMatches();
-            if (sectionId === 'attendance') window.renderTrainings();
-            if (sectionId === 'dashboard') window.updateDashboard();
-            
-            window.scrollTo(0,0);
+            return count;
         };
 
         window.newPlayer = function() {
@@ -1128,26 +1278,6 @@
             for(let i = 0; i < selectPos.options.length; i++) selectPos.options[i].selected = false;
 
             window.showSection('playerForm');
-        };
-
-        window.setFilter = function(filter) {
-            window.currentFilter = filter;
-            ['all', 'f11', 'f7'].forEach(f => {
-                const btn = document.getElementById(`btn-filter-${f}`);
-                if(btn) btn.className = f === filter ? "px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition hidden sm:inline-block" : "px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium hidden sm:inline-block";
-                if(btn && (f === 'f11' || f === 'f7')) btn.className = f === filter ? "px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition" : "px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium";
-            });
-            const filterName = filter === 'f11' ? ' (Fútbol 11)' : filter === 'f7' ? ' (Fútbol 7)' : '';
-            const dTitle = document.getElementById('dash-title'); if(dTitle) dTitle.textContent = 'Resumen de Competición' + filterName;
-            const pTitle = document.getElementById('players-title'); if(pTitle) pTitle.textContent = 'Nuestra Plantilla' + filterName;
-            const mTitle = document.getElementById('matches-title'); if(mTitle) mTitle.textContent = 'Partidos' + filterName;
-            
-            const dashSection = document.getElementById('dashboard');
-            if(dashSection && !dashSection.classList.contains('hidden')) window.updateDashboard();
-            const playerSection = document.getElementById('players');
-            if(playerSection && !playerSection.classList.contains('hidden')) window.renderPlayers();
-            const matchSection = document.getElementById('matches');
-            if(matchSection && !matchSection.classList.contains('hidden')) window.renderMatches();
         };
 
         window.handleImageUpload = function(event) {
@@ -1179,53 +1309,9 @@
 
         window.getAvatarHtml = function(player, sizeClasses = "w-12 h-12 text-lg") {
             if (player.image) return `<img src="${player.image}" class="${sizeClasses} rounded-full object-cover border-2 border-white shadow-sm" alt="${player.name}">`;
-            
-            if (player.isStaff) {
-                return `<div class="${sizeClasses} rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center border-2 border-white shadow-sm"><i class="fas fa-user-tie"></i></div>`;
-            }
-            
+            if (player.isStaff) return `<div class="${sizeClasses} rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center border-2 border-white shadow-sm"><i class="fas fa-user-tie"></i></div>`;
             const initial = player.name.charAt(0).toUpperCase();
             return `<div class="${sizeClasses} rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center border-2 border-white shadow-sm">${initial}</div>`;
-        };
-
-        window.toggleAdmin = function() {
-            if (window.isAdmin) {
-                window.isAdmin = false;
-                localStorage.removeItem('nisus_admin');
-                window.updateAdminUI();
-                window.showToast("Modo solo lectura activado");
-            } else {
-                document.getElementById('pinModal').classList.remove('hidden');
-                document.getElementById('admin-pin').value = '';
-                document.getElementById('admin-pin').focus();
-            }
-        };
-
-        window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
-        
-        window.verifyPin = function() {
-            const pin = document.getElementById('admin-pin').value;
-            if (pin === window.SECRET_PIN) {
-                window.isAdmin = true;
-                localStorage.setItem('nisus_admin', 'true');
-                window.closePinModal();
-                window.updateAdminUI();
-                window.showToast("¡Edición desbloqueada!");
-            } else {
-                window.showToast("PIN incorrecto", true);
-            }
-        };
-
-        window.updateAdminUI = function() {
-            if (window.isAdmin) {
-                document.body.classList.remove('read-only');
-                const btn = document.getElementById('btn-admin');
-                if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>';
-            } else {
-                document.body.classList.add('read-only');
-                const btn = document.getElementById('btn-admin');
-                if(btn) btn.innerHTML = '<i class="fas fa-lock text-gray-400"></i>';
-            }
         };
 
         window.savePlayer = async function(e) {
@@ -1259,11 +1345,10 @@
                 isPaidUp: document.getElementById('p-is-paid-up').checked,
             };
             
-            if (!id) {
-                pData.stats = { f11: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0 }, f7: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0 } };
-            } else {
+            if (!id) { pData.stats = { f11: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0, penalty_saved: 0 }, f7: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0, penalty_saved: 0 } }; } 
+            else {
                 const existing = window.players.find(p => p.id === id);
-                pData.stats = existing && existing.stats ? existing.stats : { f11: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0 }, f7: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0 } };
+                pData.stats = existing && existing.stats ? existing.stats : { f11: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0, penalty_saved: 0 }, f7: { games: 0, goals: 0, assists: 0, yellows: 0, reds: 0, mvps: 0, cleanSheets: 0, penalties: 0, freekicks: 0, penalty_saved: 0 } };
             }
             
             try {
@@ -1271,11 +1356,8 @@
                 window.showToast(id ? 'Registro actualizado' : 'Registro creado exitosamente');
                 window.showSection('players');
             } catch (err) {
-                console.error(err);
-                window.showToast('Error al guardar.', true);
-            } finally {
-                btn.disabled = false; btn.textContent = "Guardar";
-            }
+                console.error(err); window.showToast('Error al guardar.', true);
+            } finally { btn.disabled = false; btn.textContent = "Guardar"; }
         };
 
         window.editPlayer = function(id) {
@@ -1298,9 +1380,7 @@
             
             const selectPos = document.getElementById('p-position');
             const pPositions = player.positions || (player.position ? [player.position] : []);
-            for(let i = 0; i < selectPos.options.length; i++) {
-                selectPos.options[i].selected = pPositions.includes(selectPos.options[i].value);
-            }
+            for(let i = 0; i < selectPos.options.length; i++) { selectPos.options[i].selected = pPositions.includes(selectPos.options[i].value); }
             
             const preview = document.getElementById('p-image-preview');
             const placeholder = document.getElementById('p-image-placeholder');
@@ -1330,12 +1410,101 @@
         
         window.deletePlayer = function(id) {
             if(!window.isReady) return;
-            window.showConfirm('¿Seguro que deseas eliminar este registro? Esta acción no se puede deshacer.', async () => {
+            window.showConfirm('¿Seguro que deseas eliminar este registro?', async () => {
                 try {
                     await deleteDoc(doc(db, window.playersPath, id));
                     window.showToast('Registro eliminado');
                 } catch(e) { console.error(e); window.showToast('Error al eliminar', true); }
             });
+        };
+
+        window.updateDashboard = function() {
+            let filteredMatches = window.matches;
+            if(window.currentFilter !== 'all') filteredMatches = window.matches.filter(m => m.tournament === window.currentFilter);
+            if(window.currentSeason !== 'all') filteredMatches = filteredMatches.filter(m => m.season === window.currentSeason);
+            
+            filteredMatches.sort((a,b) => new Date(b.date) - new Date(a.date));
+            
+            const pending = filteredMatches.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date));
+            const nextMatch = pending[0];
+            const btnTacticsNext = document.getElementById('btn-tactics-next');
+            
+            if (nextMatch) {
+                document.getElementById('next-match-vs').textContent = nextMatch.opponent;
+                const d = new Date(nextMatch.date + 'T12:00:00');
+                
+                let locationHtml = '';
+                if(nextMatch.location) {
+                    if(nextMatch.location.startsWith('http')) {
+                        locationHtml = `<a href="${nextMatch.location}" target="_blank" class="text-blue-500 hover:underline flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> Ir al mapa</a>`;
+                    } else {
+                        locationHtml = `<p class="text-gray-400 flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> ${nextMatch.location}</p>`;
+                    }
+                }
+                
+                document.getElementById('next-match-date').innerHTML = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) + locationHtml;
+                document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> Fútbol ${nextMatch.tournament==='f11'?'11':'7'}`;
+                btnTacticsNext.classList.remove('hidden'); btnTacticsNext.onclick = function() { window.editMatch(nextMatch.id); };
+            } else {
+                document.getElementById('next-match-vs').textContent = "Sin partidos";
+                document.getElementById('next-match-date').textContent = "Programa un encuentro";
+                document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> -`;
+                btnTacticsNext.classList.add('hidden');
+            }
+            
+            const finished = filteredMatches.filter(m => m.status === 'finished').slice(0, 3);
+            const resultsDiv = document.getElementById('latest-results');
+            if(resultsDiv) {
+                resultsDiv.innerHTML = '';
+                if(finished.length === 0) resultsDiv.innerHTML = '<p class="text-sm text-gray-500 italic">No hay resultados.</p>';
+                else {
+                    finished.forEach(m => {
+                        let rChar = 'E', rColor = 'bg-gray-200 text-gray-700';
+                        if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) { rChar = 'V'; rColor = 'bg-green-500 text-white'; }
+                        else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) { rChar = 'D'; rColor = 'bg-red-500 text-white'; }
+                        
+                        const tournBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 border ${m.tournament === 'f11' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-green-100 text-green-800 border-green-200'}">F${m.tournament==='f11'?11:7}</span>`;
+                        
+                        resultsDiv.innerHTML += `
+                            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer transition border border-transparent hover:border-gray-200" onclick="window.editMatch('${m.id}')">
+                                <div class="flex items-center gap-3"><span class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${rColor}">${rChar}</span><span class="text-sm font-medium text-gray-800 flex items-center">vs ${m.opponent} ${tournBadge}</span></div>
+                                <span class="font-bold text-gray-800">${m.goalsUs} - ${m.goalsThem}</span>
+                            </div>`;
+                    });
+                }
+            }
+            
+            let totalGoals = 0, totalAssists = 0;
+            let currentPlayers = window.players;
+            if(window.currentFilter === 'f11') currentPlayers = window.players.filter(p => p.availableF11);
+            if(window.currentFilter === 'f7') currentPlayers = window.players.filter(p => p.availableF7);
+            
+            const rankedPlayers = currentPlayers.filter(p => !p.isStaff);
+            
+            rankedPlayers.forEach(p => { totalGoals += window.getPlayerStat(p, 'goals'); totalAssists += window.getPlayerStat(p, 'assists'); });
+            
+            if(document.getElementById('stat-total-goals')) document.getElementById('stat-total-goals').textContent = totalGoals;
+            if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = totalAssists;
+            
+            const renderList = (arr, statKey, elId) => {
+                const el = document.getElementById(elId);
+                if(!el) return;
+                el.innerHTML = '';
+                arr.forEach((p, idx) => {
+                    const val = window.getPlayerStat(p, statKey);
+                    if(val === 0) return;
+                    el.innerHTML += `
+                        <tr class="hover:bg-gray-50 border-b border-gray-50 last:border-0">
+                            <td class="px-5 py-3 w-10 text-gray-400 font-bold">${idx + 1}</td>
+                            <td class="px-5 py-3 flex items-center gap-3">${window.getAvatarHtml(p, "w-8 h-8 text-sm")}<div><p class="font-medium text-gray-800 text-sm">${window.getAliasOrName(p)}</p></div></td>
+                            <td class="px-5 py-3 text-right font-bold text-gray-800">${val}</td>
+                        </tr>`;
+                });
+                if(el.innerHTML === '') el.innerHTML = '<tr><td colspan="3" class="px-5 py-4 text-center text-sm text-gray-500">Sin registros</td></tr>';
+            };
+            
+            renderList([...rankedPlayers].sort((a,b) => window.getPlayerStat(b, 'goals') - window.getPlayerStat(a, 'goals')).slice(0, 5), 'goals', 'top-scorers-list');
+            renderList([...rankedPlayers].sort((a,b) => window.getPlayerStat(b, 'assists') - window.getPlayerStat(a, 'assists')).slice(0, 5), 'assists', 'top-assists-list');
         };
 
         window.updatePlayerStatsInDB = async function(match, isAdding) {
@@ -1357,12 +1526,9 @@
                     const p = getPlayerToUpdate(l.playerId);
                     if(p && p.stats && p.stats[t] && !p.isStaff) {
                         p.stats[t].games = Math.max(0, (p.stats[t].games || 0) + factor);
-                        
                         if (match.goalsThem == 0 || match.goalsThem === "0") {
                             const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position === 'Portero');
-                            if (isGK) {
-                                p.stats[t].cleanSheets = Math.max(0, (p.stats[t].cleanSheets || 0) + factor);
-                            }
+                            if (isGK) p.stats[t].cleanSheets = Math.max(0, (p.stats[t].cleanSheets || 0) + factor);
                         }
                     }
                 });
@@ -1373,7 +1539,7 @@
                     if (ev.type === 'sub') return; 
                     const p = getPlayerToUpdate(ev.playerId);
                     if(p && p.stats && p.stats[t]) {
-                        if (p.isStaff && ['goals', 'assists', 'penalty', 'freekick'].includes(ev.type)) return; 
+                        if (p.isStaff && ['goals', 'assists', 'penalty', 'freekick', 'penalty_saved'].includes(ev.type)) return; 
                         
                         if (ev.type === 'penalty' || ev.type === 'freekick') {
                             p.stats[t]['goals'] = Math.max(0, (p.stats[t]['goals'] || 0) + factor);
@@ -1398,6 +1564,35 @@
             await Promise.all(updates);
         };
 
+        window.newMatch = function() {
+            document.getElementById('match-form').reset();
+            document.getElementById('m-id').value = '';
+            document.getElementById('match-form-title').textContent = 'Registrar Partido';
+            document.getElementById('m-location').classList.remove('hidden');
+            if(document.getElementById('m-location-link')) document.getElementById('m-location-link').classList.add('hidden');
+            window.currentLineup = [];
+            window.currentEvents = [];
+            document.getElementById('m-event-minute').value = '';
+            document.getElementById('m-event-type').value = 'goals';
+            
+            const mvpSel = document.getElementById('m-mvp');
+            if (mvpSel) { mvpSel.innerHTML = '<option value="">Ninguno seleccionado</option>'; mvpSel.value = ''; }
+            
+            const defaultRadio = document.querySelector('input[name="m-kit-radio"][value="black"]');
+            if(defaultRadio) defaultRadio.checked = true;
+            document.getElementById('m-opponent-kit').value = '#ef4444';
+
+            window.toggleSubField();
+            window.toggleScoreFields();
+            window.updateFormationOptions();
+            window.renderCallupList();
+            window.drawTacticalBoard();
+            window.renderMatchEvents();
+            window.updateKitPreview();
+            
+            window.showSection('matchForm');
+        };
+
         window.saveMatch = async function(e) {
             e.preventDefault();
             if(!window.isAdmin) return window.showToast('Desbloquea el candado superior para guardar', true);
@@ -1409,11 +1604,12 @@
             const id = document.getElementById('m-id').value;
             const docId = id || window.generateId();
             const status = document.getElementById('m-status').value;
-            
             const oldMatch = window.matches.find(m => m.id === id);
-            
             const mvpElement = document.getElementById('m-mvp');
             const capElement = document.getElementById('m-captain');
+            
+            const selectedKit = document.querySelector('input[name="m-kit-radio"]:checked')?.value || 'black';
+            const opponentKitHex = document.getElementById('m-opponent-kit').value;
             
             const newMatch = {
                 id: docId,
@@ -1424,7 +1620,8 @@
                 season: document.getElementById('m-season').value,
                 matchday: document.getElementById('m-matchday').value,
                 status: status,
-                kit: document.getElementById('m-kit').value,
+                kit: selectedKit,
+                opponentKit: opponentKitHex,
                 goalsUs: status === 'finished' ? (document.getElementById('m-goals-us').value || 0) : null,
                 goalsThem: status === 'finished' ? (document.getElementById('m-goals-them').value || 0) : null,
                 mvp: (status === 'finished' && mvpElement) ? mvpElement.value : null,
@@ -1452,16 +1649,32 @@
             const m = window.matches.find(x => x.id === id);
             if(!m) return;
             
+            const mvpSel = document.getElementById('m-mvp');
+            if (mvpSel) { mvpSel.innerHTML = '<option value="">Ninguno seleccionado</option>'; mvpSel.value = ''; }
+            
             document.getElementById('m-id').value = m.id;
             document.getElementById('m-opponent').value = m.opponent;
             document.getElementById('m-date').value = m.date;
             document.getElementById('m-location').value = m.location || '';
+            
+            const locLink = document.getElementById('m-location-link');
+            if (!window.isAdmin && m.location && m.location.startsWith('http')) {
+                document.getElementById('m-location').classList.add('hidden');
+                if(locLink) { locLink.href = m.location; locLink.classList.remove('hidden'); }
+            } else {
+                document.getElementById('m-location').classList.remove('hidden');
+                if(locLink) locLink.classList.add('hidden');
+            }
+
             document.getElementById('m-tournament').value = m.tournament;
             document.getElementById('m-season').value = m.season || '';
             document.getElementById('m-matchday').value = m.matchday || '';
             document.getElementById('m-status').value = m.status;
-            document.getElementById('m-kit').value = m.kit || 'black';
             document.getElementById('m-notes').value = m.notes || '';
+
+            const kitRadio = document.querySelector(`input[name="m-kit-radio"][value="${m.kit || 'black'}"]`);
+            if(kitRadio) kitRadio.checked = true;
+            document.getElementById('m-opponent-kit').value = m.opponentKit || '#ef4444';
             
             if (m.status === 'finished') {
                 document.getElementById('m-goals-us').value = m.goalsUs;
@@ -1474,19 +1687,13 @@
             window.currentLineup = JSON.parse(JSON.stringify(m.lineup || []));
             window.currentEvents = m.events ? JSON.parse(JSON.stringify(m.events)) : [];
             
-            document.getElementById('match-form-title').textContent = 'Editar Partido';
+            document.getElementById('match-form-title').textContent = window.isAdmin ? 'Editar Partido' : 'Detalles del Partido';
             
             window.renderCallupList(); 
             window.toggleScoreFields(); 
             
-            if (m.status === 'finished' && m.mvp) {
-                document.getElementById('m-mvp').value = m.mvp;
-            }
-            
-            if (m.captain) {
-                const capSelect = document.getElementById('m-captain');
-                if(capSelect) capSelect.value = m.captain;
-            }
+            if (m.status === 'finished' && m.mvp) document.getElementById('m-mvp').value = m.mvp;
+            if (m.captain) { const capSelect = document.getElementById('m-captain'); if(capSelect) capSelect.value = m.captain; }
 
             window.updateFormationOptions();
             
@@ -1497,11 +1704,12 @@
             window.showSection('matchForm'); 
             window.drawTacticalBoard();
             window.renderMatchEvents();
+            window.updateKitPreview();
         };
 
         window.deleteMatch = function(id) {
             if(!window.isReady) return;
-            window.showConfirm('¿Borrar partido? Si estaba finalizado, sus estadísticas se restarán de los jugadores en la nube.', async () => {
+            window.showConfirm('¿Borrar partido? Las estadísticas se restarán en la nube.', async () => {
                 const m = window.matches.find(x => x.id === id);
                 try {
                     if(m && m.status === 'finished') await window.updatePlayerStatsInDB(m, false); 
@@ -1517,12 +1725,8 @@
             const labelOpp = document.getElementById('label-opponent');
             if(labelOpp) labelOpp.textContent = document.getElementById('m-opponent').value || 'Rival';
             
-            if(status === 'finished') {
-                container.classList.remove('hidden');
-                window.updateMvpSelect();
-            } else {
-                container.classList.add('hidden');
-            }
+            if(status === 'finished') { container.classList.remove('hidden'); window.updateMvpSelect(); } 
+            else { container.classList.add('hidden'); }
         };
 
         window.updateMvpSelect = function() {
@@ -1536,7 +1740,7 @@
             const allInvolvedIds = [...new Set([...playerIdsInLineup, ...playerIdsInSubs])];
             const validPlayers = window.players.filter(p => allInvolvedIds.includes(p.id) && !p.isStaff);
             
-            validPlayers.forEach(p => { html += `<option value="${p.id}">${p.name} (#${p.number||'-'})</option>`; });
+            validPlayers.forEach(p => { html += `<option value="${p.id}">${window.getAliasOrName(p)} (#${p.number||'-'})</option>`; });
             sel.innerHTML = html;
             if(validPlayers.find(p => p.id === currentMvp)) sel.value = currentMvp;
         };
@@ -1548,9 +1752,13 @@
             let html = '<option value="">Ninguno seleccionado</option>';
             
             const validPlayers = window.players.filter(p => window.currentLineup.some(l => l.playerId === p.id) && !p.isStaff);
-            validPlayers.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+            validPlayers.sort((a,b) => {
+                const numA = (a.number !== null && a.number !== undefined && a.number !== '') ? parseInt(a.number) : 9999;
+                const numB = (b.number !== null && b.number !== undefined && b.number !== '') ? parseInt(b.number) : 9999;
+                return numA - numB;
+            });
             
-            validPlayers.forEach(p => { html += `<option value="${p.id}">${p.name} (#${p.number||'-'})</option>`; });
+            validPlayers.forEach(p => { html += `<option value="${p.id}">${window.getAliasOrName(p)} (#${p.number||'-'})</option>`; });
             sel.innerHTML = html;
             if(validPlayers.find(p => p.id === currentCap)) sel.value = currentCap;
             
@@ -1606,39 +1814,29 @@
         window.applyFormation = function() {
             const tournament = document.getElementById('m-tournament').value;
             const formationKey = document.getElementById('m-formation').value;
-            if(!formationKey) {
-                window.drawTacticalBoard(); 
-                return; 
-            }
+            if(!formationKey) { window.drawTacticalBoard(); return; }
             const coords = formations[tournament][formationKey];
+            const maxPlayers = tournament === 'f11' ? 11 : 7;
             
-            window.currentLineup.forEach(p => { 
-                const pObj = window.players.find(x => x.id === p.playerId);
-                if(pObj && !pObj.isStaff) { p.x = null; p.y = null; }
-            });
+            window.currentLineup.forEach(p => { p.x = null; p.y = null; });
             
-            let unassigned = window.currentLineup.filter(l => {
-                const pObj = window.players.find(x => x.id === l.playerId);
-                return pObj && !pObj.isStaff;
+            window.currentLineup.sort((a, b) => {
+                const pA = window.players.find(x => x.id === a.playerId);
+                const pB = window.players.find(x => x.id === b.playerId);
+                return window.getPlayerRoleWeight(pA) - window.getPlayerRoleWeight(pB);
             });
 
-            coords.forEach(slot => {
-                const matchIdx = unassigned.findIndex(l => {
-                    const pObj = window.players.find(x => x.id === l.playerId);
-                    const pPos = Array.isArray(pObj.positions) ? pObj.positions : (pObj.position ? [pObj.position] : []);
-                    return pPos.some(pos => slot.valid.includes(pos));
-                });
-
-                if (matchIdx !== -1) {
-                    const l = unassigned[matchIdx];
-                    l.x = slot.x;
-                    l.y = slot.y;
-                    unassigned.splice(matchIdx, 1); 
+            let assigned = 0;
+            for(let i = 0; i < window.currentLineup.length; i++) {
+                const playerObj = window.players.find(x => x.id === window.currentLineup[i].playerId);
+                if(playerObj && !playerObj.isStaff && assigned < maxPlayers && coords[assigned]) {
+                    window.currentLineup[i].x = coords[assigned].x; 
+                    window.currentLineup[i].y = coords[assigned].y; 
+                    assigned++;
                 }
-            });
-
+            }
             window.drawTacticalBoard(); 
-            window.showToast(`Formación ${formationKey} aplicada inteligentemente`);
+            window.showToast(`Formación ${formationKey} aplicada`);
         };
 
         window.renderCallupList = function() {
@@ -1647,7 +1845,16 @@
             container.innerHTML = '';
             const tour = document.getElementById('m-tournament').value;
             
-            window.players.forEach(p => {
+            const sortedPlayers = [...window.players].sort((a, b) => {
+                if (a.isStaff && !b.isStaff) return 1;
+                if (!a.isStaff && b.isStaff) return -1;
+                const numA = (a.number !== null && a.number !== undefined && a.number !== '') ? parseInt(a.number) : 9999;
+                const numB = (b.number !== null && b.number !== undefined && b.number !== '') ? parseInt(b.number) : 9999;
+                if (numA !== numB) return numA - numB;
+                return (a.name || '').localeCompare(b.name || '');
+            });
+            
+            sortedPlayers.forEach(p => {
                 if(tour === 'f11' && !p.availableF11) return;
                 if(tour === 'f7' && !p.availableF7) return;
                 
@@ -1665,8 +1872,8 @@
                 
                 container.innerHTML += `
                     <div class="flex items-center gap-2 ${opacityClass}">
-                        <input type="checkbox" id="cb-${p.id}" value="${p.id}" ${isCalled ? 'checked' : ''} onchange="window.handleCallupChange('${p.id}', this.checked)" class="rounded text-brand-600 focus:ring-brand-500 cursor-pointer w-4 h-4">
-                        <label for="cb-${p.id}" class="cursor-pointer truncate text-gray-700" title="${p.name}">${staffIcon}${numStr}${p.name} ${statusIcon}</label>
+                        <input type="checkbox" id="cb-${p.id}" value="${p.id}" ${isCalled ? 'checked' : ''} onchange="window.handleCallupChange('${p.id}', this.checked)" class="read-only-disable rounded text-brand-600 focus:ring-brand-500 cursor-pointer w-4 h-4">
+                        <label for="cb-${p.id}" class="cursor-pointer truncate text-gray-700" title="${p.name}">${staffIcon}${numStr}${window.getAliasOrName(p)} ${statusIcon}</label>
                     </div>`;
             });
             window.updateEventPlayerSelect();
@@ -1691,7 +1898,9 @@
         window.drawTacticalBoard = function() {
             const pitch = document.getElementById('tactical-pitch');
             const bench = document.getElementById('tactical-bench');
-            if(!pitch || !bench) return;
+            const staffArea = document.getElementById('tactical-staff');
+            
+            if(!pitch || !bench || !staffArea) return;
             
             document.querySelectorAll('.player-token').forEach(t => t.remove());
             document.querySelectorAll('.formation-slot').forEach(t => t.remove());
@@ -1728,9 +1937,7 @@
                 const gkIcon = isGK ? ' 🧤' : '';
 
                 let displayLabel = (p.name || 'N/A').split(' ')[0];
-                if (p.showAlias && p.alias) {
-                    displayLabel = p.alias; 
-                }
+                if (p.showAlias && p.alias) { displayLabel = p.alias; }
                 const initial = (p.name || '?').charAt(0).toUpperCase();
                 
                 if (p.isStaff) {
@@ -1750,7 +1957,7 @@
                     if(!p.isStaff) onPitchCount++;
                 } else {
                     token.style.position = 'relative'; token.style.transform = 'none'; token.style.left = 'auto'; token.style.top = 'auto';
-                    bench.appendChild(token);
+                    if (p.isStaff) staffArea.appendChild(token); else bench.appendChild(token);
                 }
             });
             
@@ -1940,7 +2147,7 @@
             if(!playerId) return window.showToast('Selecciona el jugador', true);
             
             const p = window.players.find(x => x.id === playerId);
-            if(p && p.isStaff && ['goals', 'assists', 'penalty', 'freekick', 'sub'].includes(type)) {
+            if(p && p.isStaff && ['goals', 'assists', 'penalty', 'freekick', 'penalty_saved', 'sub'].includes(type)) {
                 return window.showToast('El cuerpo técnico solo puede recibir tarjetas', true);
             }
 
@@ -1967,8 +2174,8 @@
             
             if(window.currentEvents.length === 0) { list.innerHTML = '<p class="text-xs text-gray-400 italic">No hay eventos</p>'; return; }
             
-            const labels = { goals: 'Gol ⚽', penalty: 'Gol de Penal 🎯', freekick: 'Tiro Libre 👟', assists: 'Asist. 👟', yellows: 'Amarilla 🟨', reds: 'Roja 🟥', sub: 'Cambio 🔄' };
-            const colors = { goals: 'bg-green-100 text-green-800', penalty: 'bg-teal-100 text-teal-800', freekick: 'bg-emerald-100 text-emerald-800', assists: 'bg-blue-100 text-blue-800', yellows: 'bg-yellow-100 text-yellow-800', reds: 'bg-red-100 text-red-800', sub: 'bg-gray-200 text-gray-800' };
+            const labels = { goals: 'Gol ⚽', penalty: 'Gol de Penal 🎯', freekick: 'Tiro Libre 👟', assists: 'Asist. 👟', penalty_saved: 'Penal Atajado 🧤', yellows: 'Amarilla 🟨', reds: 'Roja 🟥', sub: 'Cambio 🔄' };
+            const colors = { goals: 'bg-green-100 text-green-800', penalty: 'bg-teal-100 text-teal-800', freekick: 'bg-emerald-100 text-emerald-800', assists: 'bg-blue-100 text-blue-800', penalty_saved: 'bg-purple-100 text-purple-800', yellows: 'bg-yellow-100 text-yellow-800', reds: 'bg-red-100 text-red-800', sub: 'bg-gray-200 text-gray-800' };
             
             window.currentEvents.sort((a, b) => (parseInt(a.minute) || 999) - (parseInt(b.minute) || 999));
             window.currentEvents.forEach((ev, idx) => {
@@ -1976,17 +2183,117 @@
                 if(!pIn) return;
                 let minTxt = ev.minute ? `<span class="font-mono text-gray-500 mr-2 text-xs">${ev.minute}'</span>` : '';
                 let detail = '';
+                
+                const pInName = window.getAliasOrName(pIn);
+
                 if (ev.type === 'sub') {
                     const pOut = window.players.find(x => x.id === ev.playerOutId);
-                    detail = `<span class="text-green-600 font-bold text-xs"><i class="fas fa-arrow-up"></i> ${(pIn.name || 'N/A').split(' ')[0]}</span> <span class="text-red-500 font-bold text-xs ml-1"><i class="fas fa-arrow-down"></i> ${pOut ? (pOut.name || 'N/A').split(' ')[0] : '?'}</span>`;
-                } else { detail = `<span class="font-bold text-gray-700 text-sm">${pIn.name}</span>`; }
+                    const pOutName = pOut ? window.getAliasOrName(pOut) : '?';
+                    detail = `<span class="text-green-600 font-bold text-xs"><i class="fas fa-arrow-up"></i> ${pInName.split(' ')[0]}</span> <span class="text-red-500 font-bold text-xs ml-1"><i class="fas fa-arrow-down"></i> ${pOutName.split(' ')[0]}</span>`;
+                } else { detail = `<span class="font-bold text-gray-700 text-sm">${pInName}</span>`; }
                 
                 list.innerHTML += `
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <div class="flex items-center gap-1">${minTxt} ${detail} <span class="${colors[ev.type]} text-[10px] font-bold px-2 py-0.5 rounded ml-2">${labels[ev.type]}</span></div>
-                        <button type="button" onclick="window.removeMatchEvent(${idx})" class="text-gray-400 hover:text-red-500 transition ml-2"><i class="fas fa-times"></i></button>
+                        <button type="button" onclick="window.removeMatchEvent(${idx})" class="admin-only text-gray-400 hover:text-red-500 transition ml-2"><i class="fas fa-times"></i></button>
                     </div>`;
             });
+        };
+
+        window.exportMatchResult = function(matchId) {
+            const m = window.matches.find(x => x.id === matchId);
+            if(!m) return;
+            
+            const container = document.getElementById('result-render-container');
+            
+            const isF11 = m.tournament === 'f11';
+            const tournLabel = `FÚTBOL ${isF11 ? '11' : '7'}`;
+            const dateObj = new Date(m.date + 'T12:00:00');
+            const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+            
+            let resultColor = '#9ca3af'; // gray
+            let resultText = 'EMPATE';
+            if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) { resultColor = '#4ade80'; resultText = 'VICTORIA'; }
+            else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) { resultColor = '#f87171'; resultText = 'DERROTA'; }
+
+            let scorersHtml = '';
+            if(m.events && m.events.length > 0) {
+                const goals = m.events.filter(e => ['goals', 'penalty', 'freekick'].includes(e.type));
+                if(goals.length > 0) {
+                    const scorers = goals.map(g => { 
+                        const p = window.players.find(x => x.id === g.playerId);
+                        let icon = g.type === 'penalty' ? '🎯' : (g.type === 'freekick' ? '👟' : '');
+                        return (p ? window.getAliasOrName(p).split(' ')[0] : '?') + (icon ? ` ${icon}` : ''); 
+                    }).join(', ');
+                    scorersHtml = `<div class="mt-4 text-center z-20 relative"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Goleadores</p><p class="text-sm text-white font-medium"><i class="fas fa-futbol text-green-400 mr-2"></i>${scorers}</p></div>`;
+                }
+            }
+
+            let mvpHtml = '';
+            if (m.mvp) {
+                const mvpP = window.players.find(x => x.id === m.mvp);
+                if (mvpP) mvpHtml = `<div class="mt-3 text-center z-20 relative"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Mejor Jugador</p><p class="text-sm text-yellow-400 font-bold"><i class="fas fa-star mr-1"></i>${(window.getAliasOrName(mvpP)||'').split(' ')[0]}</p></div>`;
+            }
+
+            const nisusKit = m.kit || 'black';
+            const oppColor = m.opponentKit || '#ef4444';
+
+            container.innerHTML = `
+                <div id="match-result-node" class="match-result-export" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                    <img src="escudo.png" onerror="this.style.display='none'" class="absolute opacity-10 w-64 h-64 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
+                    
+                    <div class="z-10 w-full flex flex-col items-center">
+                        <p class="text-[10px] font-bold tracking-widest text-brand-300 mb-1">${tournLabel} ${m.season ? '| T-'+m.season : ''}</p>
+                        <p class="text-xs font-medium text-gray-400 mb-4">${dateStr}</p>
+                        
+                        <p class="text-[10px] font-bold tracking-widest mb-2 px-3 py-1 bg-gray-900 rounded-full" style="color: ${resultColor}">${resultText}</p>
+                        
+                        <div class="flex items-center justify-center gap-6 mb-2 w-full">
+                            <div class="text-right flex-1"><p class="text-xl font-black truncate uppercase text-white drop-shadow-md">NISUS FC</p></div>
+                            <div class="flex items-center justify-center gap-3 bg-gray-900/90 px-4 py-2 rounded-xl border border-gray-700 shadow-xl">
+                                <span class="text-4xl font-black text-white">${m.goalsUs}</span>
+                                <span class="text-xl font-black text-gray-600">-</span>
+                                <span class="text-4xl font-black text-white">${m.goalsThem}</span>
+                            </div>
+                            <div class="text-left flex-1"><p class="text-xl font-black truncate uppercase text-gray-300 drop-shadow-md">${m.opponent}</p></div>
+                        </div>
+                        
+                        ${scorersHtml}
+                        ${mvpHtml}
+                    </div>
+
+                    <div class="absolute bottom-0 left-0 w-full bg-gray-900/80 border-t border-gray-800 p-2 flex justify-between items-center z-20">
+                        <div class="flex gap-2">
+                            <div class="w-8 h-10 drop-shadow-lg">${window.getKitSVG(nisusKit, false)}</div>
+                            <div class="w-8 h-10 drop-shadow-lg">${window.getKitSVG(nisusKit, true)}</div>
+                        </div>
+                        <p class="text-[8px] font-bold text-gray-600 tracking-widest">NISUS FC CLOUD</p>
+                        <div class="flex gap-2">
+                            <div class="w-8 h-10 drop-shadow-lg">${window.getKitSVG('opponent', false, oppColor)}</div>
+                            <div class="w-8 h-10 drop-shadow-lg">${window.getKitSVG('opponent', true, oppColor)}</div>
+                        </div>
+                    </div>
+                </div>`;
+
+            document.getElementById('modalMatchResult').classList.remove('hidden');
+
+            document.getElementById('btn-download-result').onclick = function() {
+                const node = document.getElementById('match-result-node');
+                const btn = this; 
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+                
+                html2canvas(node, { backgroundColor: '#0f172a', scale: 2, useCORS: true, allowTaint: true }).then(canvas => {
+                    const link = document.createElement('a'); 
+                    link.download = `Resultado_NISUS_vs_${m.opponent.replace(/\s+/g, '_')}.png`;
+                    link.href = canvas.toDataURL('image/png'); 
+                    link.click();
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar para Redes', 2000);
+                }).catch(err => { 
+                    window.showToast("Error al generar imagen", true); 
+                    btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar para Redes'; 
+                });
+            };
         };
 
         window.newAttendance = function() {
@@ -1994,6 +2301,8 @@
             document.getElementById('a-id').value = '';
             document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('a-location').value = '';
+            document.getElementById('a-location').classList.remove('hidden');
+            if(document.getElementById('a-location-link')) document.getElementById('a-location-link').classList.add('hidden');
             window.currentAttendees = [];
             window.renderAttendanceChecklist();
             window.showSection('attendanceForm');
@@ -2004,7 +2313,14 @@
             if(!container) return;
             container.innerHTML = '';
             
-            const sortedPlayers = [...window.players].sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+            const sortedPlayers = [...window.players].sort((a, b) => {
+                if (a.isStaff && !b.isStaff) return 1;
+                if (!a.isStaff && b.isStaff) return -1;
+                const numA = (a.number !== null && a.number !== undefined && a.number !== '') ? parseInt(a.number) : 9999;
+                const numB = (b.number !== null && b.number !== undefined && b.number !== '') ? parseInt(b.number) : 9999;
+                if (numA !== numB) return numA - numB;
+                return (a.name || '').localeCompare(b.name || '');
+            });
 
             sortedPlayers.forEach(p => {
                 const isChecked = window.currentAttendees.includes(p.id) ? 'checked' : '';
@@ -2017,8 +2333,8 @@
 
                 container.innerHTML += `
                     <div class="flex items-center gap-2 bg-white p-2 rounded border border-gray-200 hover:bg-gray-50 transition">
-                        <input type="checkbox" id="att-${p.id}" value="${p.id}" ${isChecked} onchange="window.handleAttendanceChange('${p.id}', this.checked)" class="rounded text-brand-600 focus:ring-brand-500 cursor-pointer w-4 h-4">
-                        <label for="att-${p.id}" class="cursor-pointer truncate text-gray-700 text-sm font-medium flex-1">${staffIcon}${p.name} ${statusIcon}</label>
+                        <input type="checkbox" id="att-${p.id}" value="${p.id}" ${isChecked} onchange="window.handleAttendanceChange('${p.id}', this.checked)" class="read-only-disable rounded text-brand-600 focus:ring-brand-500 cursor-pointer w-4 h-4">
+                        <label for="att-${p.id}" class="cursor-pointer truncate text-gray-700 text-sm font-medium flex-1">${staffIcon}${window.getAliasOrName(p)} ${statusIcon}</label>
                     </div>`;
             });
         };
@@ -2067,6 +2383,16 @@
             document.getElementById('a-id').value = t.id;
             document.getElementById('a-date').value = t.date;
             document.getElementById('a-location').value = t.location || '';
+            
+            const locLink = document.getElementById('a-location-link');
+            if (!window.isAdmin && t.location && t.location.startsWith('http')) {
+                document.getElementById('a-location').classList.add('hidden');
+                if(locLink) { locLink.href = t.location; locLink.classList.remove('hidden'); }
+            } else {
+                document.getElementById('a-location').classList.remove('hidden');
+                if(locLink) locLink.classList.add('hidden');
+            }
+
             document.getElementById('a-notes').value = t.notes || '';
             window.currentAttendees = [...(t.attendees || [])];
             window.renderAttendanceChecklist();
@@ -2140,150 +2466,106 @@
             if (!hasPast) gridPast.innerHTML = '<div class="col-span-full text-sm text-gray-500 italic">No hay historial de entrenamientos.</div>';
         };
 
-        window.getPlayerStat = function(player, statKey) {
-            if(!player) return 0;
-            if (player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalties', 'freekicks'].includes(statKey)) return 0;
+        window.renderMatches = function() {
+            const grid = document.getElementById('matches-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
             
-            if (window.currentSeason === 'all') {
-                if(window.currentFilter === 'all') {
-                    return (player.stats?.f11?.[statKey] || 0) + (player.stats?.f7?.[statKey] || 0);
-                }
-                return player.stats?.[window.currentFilter]?.[statKey] || 0;
-            } 
+            let filteredMatches = window.matches;
+            if(window.currentFilter !== 'all') filteredMatches = window.matches.filter(m => m.tournament === window.currentFilter);
+            if(window.currentSeason !== 'all') filteredMatches = filteredMatches.filter(m => m.season === window.currentSeason);
             
-            let count = 0;
-            window.matches.forEach(m => {
-                if (m.status !== 'finished') return;
-                if (m.season !== window.currentSeason) return;
-                if (window.currentFilter !== 'all' && m.tournament !== window.currentFilter) return;
+            filteredMatches.sort((a,b) => new Date(b.date) - new Date(a.date));
+            
+            if(filteredMatches.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-100">No hay partidos</div>'; return; }
+            
+            filteredMatches.forEach(m => {
+                const dateObj = new Date(m.date + 'T12:00:00');
+                const dateStr = dateObj.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+                const isF11 = m.tournament === 'f11';
                 
-                const inLineup = m.lineup && m.lineup.some(l => l.playerId === player.id);
-                const subIn = m.events && m.events.some(e => e.type === 'sub' && e.playerId === player.id);
-                const played = inLineup || subIn;
-                
-                if (statKey === 'games' && played && !player.isStaff) count++;
-                
-                if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) {
-                    const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero');
-                    if (isGK && !player.isStaff) count++;
+                const tournBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded border ${isF11 ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-green-100 text-green-800 border-green-200'}">F${isF11?11:7}</span>`;
+                const seasonBadge = m.season ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 ml-1" title="Temporada">${m.season}</span>` : '';
+                const matchdayBadge = m.matchday ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 ml-1" title="Jornada">${m.matchday}</span>` : '';
+
+                let statusBadge, scoreHtml, btnShare = '';
+                if(m.status === 'pending') {
+                    statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full border border-yellow-200"><i class="far fa-clock mr-1"></i>Por Jugar</span>`;
+                    scoreHtml = `<div class="text-2xl font-black text-gray-300">VS</div>`;
+                } else {
+                    statusBadge = `<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full border border-gray-200"><i class="fas fa-check mr-1"></i>Finalizado</span>`;
+                    let resultColor = 'text-gray-500';
+                    if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) resultColor = 'text-green-600';
+                    else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) resultColor = 'text-red-500';
+                    scoreHtml = `<div class="flex items-center gap-4"><span class="text-3xl font-black ${resultColor}">${m.goalsUs}</span><span class="text-gray-300 font-bold">-</span><span class="text-3xl font-black text-gray-800">${m.goalsThem}</span></div>`;
+                    
+                    btnShare = `<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
                 }
                 
-                if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
-                
-                if (m.events) {
-                    m.events.forEach(ev => {
-                        if (ev.playerId === player.id) {
-                            if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++;
-                            if (statKey === ev.type) count++; 
-                        }
-                    });
+                let eventsHtml = '';
+                if(m.events && m.events.length > 0) {
+                    const goals = m.events.filter(e => ['goals', 'penalty', 'freekick'].includes(e.type));
+                    if(goals.length > 0) {
+                        const scorers = goals.map(g => { 
+                            const p = window.players.find(x => x.id === g.playerId);
+                            let icon = g.type === 'penalty' ? '🎯' : (g.type === 'freekick' ? '👟' : '');
+                            return (p ? window.getAliasOrName(p).split(' ')[0] : '?') + (icon ? ` ${icon}` : ''); 
+                        }).join(', ');
+                        eventsHtml += `<p class="text-[11px] text-gray-500 mt-2 text-center"><i class="fas fa-futbol text-green-600 mr-1"></i> ${scorers}</p>`;
+                    }
                 }
+                if (m.status === 'finished' && m.mvp) {
+                    const mvpP = window.players.find(x => x.id === m.mvp);
+                    if (mvpP) eventsHtml += `<p class="text-[11px] font-bold text-yellow-600 mt-1 text-center"><i class="fas fa-star mr-1"></i>MVP: ${window.getAliasOrName(mvpP).split(' ')[0]}</p>`;
+                }
+                if (m.captain) {
+                    const capP = window.players.find(x => x.id === m.captain);
+                    if (capP) eventsHtml += `<p class="text-[11px] font-bold text-brand-600 mt-1 text-center"><i class="fas fa-copyright mr-1"></i>Capitán: ${window.getAliasOrName(capP).split(' ')[0]}</p>`;
+                }
+
+                let locationHtml = '';
+                if(m.location) {
+                    let locText = m.location.length > 25 ? m.location.substring(0, 25) + '...' : m.location;
+                    if(m.location.startsWith('http')) {
+                        locationHtml = `<a href="${m.location}" target="_blank" class="text-blue-500 hover:underline flex items-center justify-center gap-1 text-[11px] font-medium mt-1" title="${m.location}"><i class="fas fa-map-marker-alt"></i> Ver en Maps</a>`;
+                    } else {
+                        locationHtml = `<p class="text-gray-500 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> ${locText}</p>`;
+                    }
+                }
+                
+                grid.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex flex-wrap items-center gap-1">${statusBadge} ${tournBadge} ${seasonBadge} ${matchdayBadge}</div>
+                            <div class="admin-only flex gap-2">
+                                <button onclick="window.editMatch('${m.id}')" class="text-gray-400 hover:text-blue-600 transition"><i class="fas fa-edit"></i></button>
+                                <button onclick="window.deleteMatch('${m.id}')" class="text-gray-400 hover:text-red-600 transition"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center justify-center py-2 mb-4 border-y border-dashed border-gray-200">
+                            <div class="text-center mb-3">
+                                <p class="text-xs text-gray-400 font-medium uppercase">${dateStr}</p>
+                                ${locationHtml}
+                            </div>
+                            
+                            <div class="flex items-center justify-between w-full px-2 mt-2">
+                                <div class="flex-1 flex flex-col items-center">
+                                    <div class="w-10 h-14 mb-1 drop-shadow-md">${window.getKitSVG(m.kit || 'black', false)}</div>
+                                    <p class="font-bold text-gray-800 text-[10px] truncate uppercase">NISUS FC</p>
+                                </div>
+                                <div class="w-1/3 flex justify-center">${scoreHtml}</div>
+                                <div class="flex-1 flex flex-col items-center">
+                                    <div class="w-10 h-14 mb-1 drop-shadow-md">${window.getKitSVG('opponent', false, m.opponentKit || '#ef4444')}</div>
+                                    <p class="font-bold text-gray-800 text-[10px] truncate uppercase" title="${m.opponent}">${m.opponent}</p>
+                                </div>
+                            </div>
+                            
+                            ${eventsHtml}
+                        </div>
+                        ${btnShare}
+                        <button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition"><i class="fas fa-clipboard-list mr-1"></i> Ver Detalles</button>
+                    </div>`;
             });
-            return count;
-        };
-
-        window.openPlayerCard = function(playerId) {
-            const p = window.players.find(x => x.id === playerId);
-            if (!p) return;
-
-            const container = document.getElementById('card-render-container');
-            const safeName = p.name || 'N/A';
-            const displayAlias = p.alias ? `<p class="text-sm font-medium italic text-gray-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
-            const initials = p.name ? p.name.charAt(0).toUpperCase() : '?';
-            
-            let posString = "N/A";
-            if (p.positions && Array.isArray(p.positions) && p.positions.length > 0) posString = p.positions[0];
-            else if (p.position && typeof p.position === 'string') posString = p.position;
-            
-            let posStr = p.isStaff ? 'CT' : String(posString).substring(0, 3).toUpperCase();
-            
-            const games = window.getPlayerStat(p, 'games');
-            const goals = window.getPlayerStat(p, 'goals');
-            const assists = window.getPlayerStat(p, 'assists');
-            const mvps = window.getPlayerStat(p, 'mvps');
-            
-            let filterLabel = window.currentFilter === 'all' ? 'GLOBAL' : window.currentFilter.toUpperCase();
-            let seasonLabel = window.currentSeason === 'all' ? 'HISTÓRICO' : `TEMP. ${window.currentSeason}`;
-
-            let ageStr = '--';
-            if (p.birthdate) {
-                const birthYear = new Date(p.birthdate).getFullYear();
-                const currentYear = new Date().getFullYear();
-                ageStr = (currentYear - birthYear) + ' Años';
-            }
-            
-            let footStr = p.foot ? p.foot.toUpperCase() : 'N/E';
-
-            let matchesPlayed = 0, matchesWon = 0;
-            window.matches.forEach(m => {
-                if (m.status !== 'finished') return;
-                if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return;
-                if (window.currentFilter !== 'all' && m.tournament !== window.currentFilter) return;
-                
-                const played = (m.lineup && m.lineup.some(l => l.playerId === p.id)) || (m.events && m.events.some(e => e.type === 'sub' && e.playerId === p.id));
-                if (played) {
-                    matchesPlayed++;
-                    if (parseInt(m.goalsUs) > parseInt(m.goalsThem)) matchesWon++;
-                }
-            });
-            const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) + '%' : '0%';
-
-            let statsHtml = '';
-            if (p.isStaff) {
-                const yellows = window.getPlayerStat(p, 'yellows'); 
-                const reds = window.getPlayerStat(p, 'reds');
-                statsHtml = `<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-yellow-400 uppercase">Amarillas</p><p class="text-lg font-bold text-yellow-400">${yellows}</p></div><div><p class="text-xs text-red-400 uppercase">Rojas</p><p class="text-lg font-bold text-red-400">${reds}</p></div></div>`;
-            } else {
-                statsHtml = `<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-gray-400 uppercase">Partidos</p><p class="text-lg font-bold">${games}</p></div><div><p class="text-xs text-gray-400 uppercase">Goles</p><p class="text-lg font-bold">${goals}</p></div><div><p class="text-xs text-gray-400 uppercase">Asist.</p><p class="text-lg font-bold">${assists}</p></div></div>`;
-            }
-            
-            const imgHtml = p.image 
-                ? `<img src="${p.image}" class="w-full h-full object-cover">`
-                : `<span class="text-4xl font-bold text-gray-400">${initials}</span>`;
-
-            container.innerHTML = `
-                <div id="player-card-node" class="player-card-export">
-                    <div class="absolute top-4 left-4 text-center"><p class="text-2xl font-bold text-yellow-400">${p.number || '--'}</p><p class="text-sm font-semibold uppercase tracking-wider">${posStr}</p></div>
-                    <div class="absolute top-4 right-4 opacity-50"><img src="escudo.png" class="w-10 h-10 object-contain" onerror="this.style.display='none'"></div>
-                    
-                    <div class="w-32 h-32 rounded-full border-4 border-gray-600 bg-gray-800 flex items-center justify-center mt-6 mb-3 overflow-hidden shadow-lg">
-                        ${imgHtml}
-                    </div>
-                    
-                    <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-gray-700 pb-1" style="font-size: ${safeName.length > 15 ? '1.25rem' : '1.5rem'}">${safeName}</h2>
-                    ${displayAlias}
-                    
-                    <div class="flex justify-center gap-3 mt-1 text-[9px] font-medium text-gray-400">
-                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">EDAD: ${ageStr}</span>
-                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">PIE: ${footStr}</span>
-                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700" title="Victorias con el equipo">VICTORIAS: ${winRate}</span>
-                    </div>
-
-                    <p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest font-bold">ESTADÍSTICAS ${filterLabel} - ${seasonLabel}</p>
-                    ${statsHtml}
-                    ${mvps > 0 ? `<div class="mt-2 bg-yellow-900/50 border border-yellow-500/50 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold shadow-inner flex items-center gap-1"><i class="fas fa-star"></i> ${mvps} MVP</div>` : ''}
-                    <div class="absolute bottom-2 text-[8px] text-gray-600">NISUS FC CLOUD</div>
-                </div>`;
-
-            document.getElementById('modalPlayerCard').classList.remove('hidden');
-
-            document.getElementById('btn-download-card').onclick = function() {
-                const node = document.getElementById('player-card-node');
-                const btn = this; 
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-                
-                html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true }).then(canvas => {
-                    const link = document.createElement('a'); 
-                    link.download = `Ficha_${safeName.replace(/\s+/g, '_')}_${filterLabel}.png`;
-                    link.href = canvas.toDataURL('image/png'); 
-                    link.click();
-                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
-                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar Imagen', 2000);
-                }).catch(err => { 
-                    window.showToast("Error al generar imagen", true); 
-                    btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar Imagen'; 
-                });
-            };
         };
 
         window.renderPlayers = function() {
@@ -2296,8 +2578,11 @@
             else if (window.currentFilter === 'f7') filteredPlayers = window.players.filter(p => p.availableF7);
             
             filteredPlayers.sort((a,b) => {
-                if (a.isStaff && !b.isStaff) return -1;
-                if (!a.isStaff && b.isStaff) return 1;
+                if (a.isStaff && !b.isStaff) return 1;
+                if (!a.isStaff && b.isStaff) return -1;
+                const numA = (a.number !== null && a.number !== undefined && a.number !== '') ? parseInt(a.number) : 9999;
+                const numB = (b.number !== null && b.number !== undefined && b.number !== '') ? parseInt(b.number) : 9999;
+                if (numA !== numB) return numA - numB;
                 return (a.name || '').localeCompare(b.name || '');
             });
             
@@ -2372,6 +2657,8 @@
                     quickStatsBtn = `<button onclick="window.openQuickStats('${p.id}')" class="admin-only mt-auto w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition mb-2">Ajustar Manualmente</button>`;
                 }
                 
+                const displayName = p.name + (p.alias ? ` <span class="italic text-gray-400 font-normal text-sm">"${p.alias}"</span>` : '');
+                
                 grid.innerHTML += `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden group hover:shadow-md transition ${opacityClass}">
                         <div class="admin-only absolute top-3 right-3 flex gap-2 transition z-20">
@@ -2381,7 +2668,7 @@
                         <div class="flex items-center gap-4 mb-4 mt-2 cursor-pointer" onclick="window.openPlayerCard('${p.id}')" title="Abrir Perfil Ampliado">
                             ${window.getAvatarHtml(p, "w-16 h-16 text-2xl")}
                             <div class="overflow-hidden">
-                                <h3 class="font-bold text-gray-800 text-lg truncate hover:text-brand-600 transition">${p.name}</h3>
+                                <h3 class="font-bold text-gray-800 text-lg truncate hover:text-brand-600 transition" title="${p.alias||p.name}">${displayName}</h3>
                                 <div class="flex flex-wrap gap-2 text-[10px] font-bold mt-1">${badges} ${statusBadge}</div>
                                 <div class="flex flex-wrap gap-1 text-xs font-medium mt-2 items-center">
                                     ${posBadges}
@@ -2397,280 +2684,12 @@
             });
         };
 
-        window.exportMatchResult = function(matchId) {
-            const m = window.matches.find(x => x.id === matchId);
-            if(!m) return;
-            
-            const container = document.getElementById('result-render-container');
-            
-            const isF11 = m.tournament === 'f11';
-            const tournLabel = `FÚTBOL ${isF11 ? '11' : '7'}`;
-            const dateObj = new Date(m.date + 'T12:00:00');
-            const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
-            
-            let resultColor = '#9ca3af'; // gray
-            let resultText = 'EMPATE';
-            if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) { resultColor = '#4ade80'; resultText = 'VICTORIA'; }
-            else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) { resultColor = '#f87171'; resultText = 'DERROTA'; }
-
-            let scorersHtml = '';
-            if(m.events && m.events.length > 0) {
-                const goals = m.events.filter(e => ['goals', 'penalty', 'freekick'].includes(e.type));
-                if(goals.length > 0) {
-                    const scorers = goals.map(g => { 
-                        const p = window.players.find(x => x.id === g.playerId);
-                        let icon = g.type === 'penalty' ? '🎯' : (g.type === 'freekick' ? '👟' : '');
-                        return (p ? (p.name||'').split(' ')[0] : '?') + (icon ? ` ${icon}` : ''); 
-                    }).join(', ');
-                    scorersHtml = `<div class="mt-4 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Goleadores</p><p class="text-sm text-white font-medium"><i class="fas fa-futbol text-green-400 mr-2"></i>${scorers}</p></div>`;
-                }
-            }
-
-            let mvpHtml = '';
-            if (m.mvp) {
-                const mvpP = window.players.find(x => x.id === m.mvp);
-                if (mvpP) mvpHtml = `<div class="mt-3 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Mejor Jugador</p><p class="text-sm text-yellow-400 font-bold"><i class="fas fa-star mr-1"></i>${(mvpP.name||'').split(' ')[0]}</p></div>`;
-            }
-
-            container.innerHTML = `
-                <div id="match-result-node" class="match-result-export">
-                    <img src="escudo.png" onerror="this.style.display='none'" class="absolute opacity-10 w-64 h-64 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                    
-                    <div class="z-10 w-full flex flex-col items-center">
-                        <p class="text-[10px] font-bold tracking-widest text-brand-300 mb-1">${tournLabel} ${m.season ? '| T-'+m.season : ''}</p>
-                        <p class="text-xs font-medium text-gray-300 mb-6">${dateStr}</p>
-                        
-                        <p class="text-[10px] font-bold tracking-widest mb-2" style="color: ${resultColor}">${resultText}</p>
-                        
-                        <div class="flex items-center justify-center gap-6 mb-2 w-full">
-                            <div class="text-right flex-1"><p class="text-xl font-black truncate uppercase text-white">NISUS FC</p></div>
-                            <div class="flex items-center justify-center gap-3 bg-gray-900/80 px-4 py-2 rounded-xl border border-gray-700 shadow-lg">
-                                <span class="text-5xl font-black text-white">${m.goalsUs}</span>
-                                <span class="text-2xl font-black text-gray-600">-</span>
-                                <span class="text-5xl font-black text-white">${m.goalsThem}</span>
-                            </div>
-                            <div class="text-left flex-1"><p class="text-xl font-black truncate uppercase text-gray-300">${m.opponent}</p></div>
-                        </div>
-                        
-                        ${scorersHtml}
-                        ${mvpHtml}
-                    </div>
-                </div>`;
-
-            document.getElementById('modalMatchResult').classList.remove('hidden');
-
-            document.getElementById('btn-download-result').onclick = function() {
-                const node = document.getElementById('match-result-node');
-                const btn = this; 
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-                
-                html2canvas(node, { backgroundColor: '#111827', scale: 2, useCORS: true, allowTaint: true }).then(canvas => {
-                    const link = document.createElement('a'); 
-                    link.download = `Resultado_NISUS_vs_${m.opponent.replace(/\s+/g, '_')}.png`;
-                    link.href = canvas.toDataURL('image/png'); 
-                    link.click();
-                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
-                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar para Redes', 2000);
-                }).catch(err => { 
-                    window.showToast("Error al generar imagen", true); 
-                    btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar para Redes'; 
-                });
-            };
-        };
-
-        window.renderMatches = function() {
-            const grid = document.getElementById('matches-grid');
-            if(!grid) return;
-            grid.innerHTML = '';
-            
-            let filteredMatches = window.matches;
-            if(window.currentFilter !== 'all') filteredMatches = window.matches.filter(m => m.tournament === window.currentFilter);
-            if(window.currentSeason !== 'all') filteredMatches = filteredMatches.filter(m => m.season === window.currentSeason);
-            
-            filteredMatches.sort((a,b) => new Date(b.date) - new Date(a.date));
-            
-            if(filteredMatches.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-100">No hay partidos</div>'; return; }
-            
-            filteredMatches.forEach(m => {
-                const dateObj = new Date(m.date + 'T12:00:00');
-                const dateStr = dateObj.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-                const isF11 = m.tournament === 'f11';
-                
-                const tournBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded border ${isF11 ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-green-100 text-green-800 border-green-200'}">F${isF11?11:7}</span>`;
-                const seasonBadge = m.season ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 ml-1" title="Temporada">${m.season}</span>` : '';
-                const matchdayBadge = m.matchday ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 ml-1" title="Jornada">${m.matchday}</span>` : '';
-                
-                let kitBadge = '';
-                if (m.kit === 'white_blue') kitBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 ml-1" title="Indumentaria"><i class="fas fa-tshirt mr-1"></i>B/A</span>`;
-                else kitBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-800 text-white ml-1" title="Indumentaria"><i class="fas fa-tshirt mr-1"></i>Negro</span>`;
-
-                let statusBadge, scoreHtml, btnShare = '';
-                if(m.status === 'pending') {
-                    statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full border border-yellow-200"><i class="far fa-clock mr-1"></i>Por Jugar</span>`;
-                    scoreHtml = `<div class="text-2xl font-black text-gray-300">VS</div>`;
-                } else {
-                    statusBadge = `<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full border border-gray-200"><i class="fas fa-check mr-1"></i>Finalizado</span>`;
-                    let resultColor = 'text-gray-500';
-                    if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) resultColor = 'text-green-600';
-                    else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) resultColor = 'text-red-500';
-                    scoreHtml = `<div class="flex items-center gap-4"><span class="text-3xl font-black ${resultColor}">${m.goalsUs}</span><span class="text-gray-300 font-bold">-</span><span class="text-3xl font-black text-gray-800">${m.goalsThem}</span></div>`;
-                    
-                    btnShare = `<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
-                }
-                
-                let eventsHtml = '';
-                if(m.events && m.events.length > 0) {
-                    const goals = m.events.filter(e => ['goals', 'penalty', 'freekick'].includes(e.type));
-                    if(goals.length > 0) {
-                        const scorers = goals.map(g => { 
-                            const p = window.players.find(x => x.id === g.playerId);
-                            let icon = g.type === 'penalty' ? '🎯' : (g.type === 'freekick' ? '👟' : '');
-                            return (p ? (p.name||'').split(' ')[0] : '?') + (icon ? ` ${icon}` : ''); 
-                        }).join(', ');
-                        eventsHtml += `<p class="text-[11px] text-gray-500 mt-2 text-center"><i class="fas fa-futbol text-green-600 mr-1"></i> ${scorers}</p>`;
-                    }
-                }
-                if (m.status === 'finished' && m.mvp) {
-                    const mvpP = window.players.find(x => x.id === m.mvp);
-                    if (mvpP) eventsHtml += `<p class="text-[11px] font-bold text-yellow-600 mt-1 text-center"><i class="fas fa-star mr-1"></i>MVP: ${(mvpP.name||'').split(' ')[0]}</p>`;
-                }
-                if (m.captain) {
-                    const capP = window.players.find(x => x.id === m.captain);
-                    if (capP) eventsHtml += `<p class="text-[11px] font-bold text-brand-600 mt-1 text-center"><i class="fas fa-copyright mr-1"></i>Capitán: ${(capP.name||'').split(' ')[0]}</p>`;
-                }
-
-                let locationHtml = '';
-                if(m.location) {
-                    let locText = m.location.length > 25 ? m.location.substring(0, 25) + '...' : m.location;
-                    if(m.location.startsWith('http')) {
-                        locationHtml = `<a href="${m.location}" target="_blank" class="text-blue-500 hover:underline flex items-center justify-center gap-1 text-[11px] font-medium mt-1" title="${m.location}"><i class="fas fa-map-marker-alt"></i> Ver en Maps</a>`;
-                    } else {
-                        locationHtml = `<p class="text-gray-500 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> ${locText}</p>`;
-                    }
-                }
-                
-                grid.innerHTML += `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex flex-wrap items-center gap-1">${statusBadge} ${tournBadge} ${seasonBadge} ${matchdayBadge} ${kitBadge}</div>
-                            <div class="admin-only flex gap-2">
-                                <button onclick="window.editMatch('${m.id}')" class="text-gray-400 hover:text-blue-600 transition"><i class="fas fa-edit"></i></button>
-                                <button onclick="window.deleteMatch('${m.id}')" class="text-gray-400 hover:text-red-600 transition"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-center justify-center py-2 mb-4 border-y border-dashed border-gray-200">
-                            <div class="text-center mb-3">
-                                <p class="text-xs text-gray-400 font-medium uppercase">${dateStr}</p>
-                                ${locationHtml}
-                            </div>
-                            <div class="flex items-center justify-between w-full px-4">
-                                <div class="text-center w-1/3"><p class="font-bold text-gray-800 truncate">NISUS FC</p></div>
-                                <div class="w-1/3 flex justify-center">${scoreHtml}</div>
-                                <div class="text-center w-1/3"><p class="font-bold text-gray-800 truncate" title="${m.opponent}">${m.opponent}</p></div>
-                            </div>
-                            ${eventsHtml}
-                        </div>
-                        ${btnShare}
-                        <button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition"><i class="fas fa-clipboard-list mr-1"></i> Ver Detalles</button>
-                    </div>`;
-            });
-        };
-
-        window.updateDashboard = function() {
-            let filteredMatches = window.matches;
-            if(window.currentFilter !== 'all') filteredMatches = window.matches.filter(m => m.tournament === window.currentFilter);
-            if(window.currentSeason !== 'all') filteredMatches = filteredMatches.filter(m => m.season === window.currentSeason);
-            
-            filteredMatches.sort((a,b) => new Date(b.date) - new Date(a.date));
-            
-            const pending = filteredMatches.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date));
-            const nextMatch = pending[0];
-            const btnTacticsNext = document.getElementById('btn-tactics-next');
-            
-            if (nextMatch) {
-                document.getElementById('next-match-vs').textContent = nextMatch.opponent;
-                const d = new Date(nextMatch.date + 'T12:00:00');
-                
-                let locationHtml = '';
-                if(nextMatch.location) {
-                    if(nextMatch.location.startsWith('http')) {
-                        locationHtml = `<a href="${nextMatch.location}" target="_blank" class="text-blue-500 hover:underline flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> Ir al mapa</a>`;
-                    } else {
-                        locationHtml = `<p class="text-gray-400 flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> ${nextMatch.location}</p>`;
-                    }
-                }
-                
-                document.getElementById('next-match-date').innerHTML = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) + locationHtml;
-                document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> Fútbol ${nextMatch.tournament==='f11'?'11':'7'}`;
-                btnTacticsNext.classList.remove('hidden'); btnTacticsNext.onclick = function() { window.editMatch(nextMatch.id); };
-            } else {
-                document.getElementById('next-match-vs').textContent = "Sin partidos";
-                document.getElementById('next-match-date').textContent = "Programa un encuentro";
-                document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> -`;
-                btnTacticsNext.classList.add('hidden');
-            }
-            
-            const finished = filteredMatches.filter(m => m.status === 'finished').slice(0, 3);
-            const resultsDiv = document.getElementById('latest-results');
-            if(resultsDiv) {
-                resultsDiv.innerHTML = '';
-                if(finished.length === 0) resultsDiv.innerHTML = '<p class="text-sm text-gray-500 italic">No hay resultados.</p>';
-                else {
-                    finished.forEach(m => {
-                        let rChar = 'E', rColor = 'bg-gray-200 text-gray-700';
-                        if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) { rChar = 'V'; rColor = 'bg-green-500 text-white'; }
-                        else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) { rChar = 'D'; rColor = 'bg-red-500 text-white'; }
-                        
-                        const tournBadge = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 border ${m.tournament === 'f11' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-green-100 text-green-800 border-green-200'}">F${m.tournament==='f11'?11:7}</span>`;
-                        
-                        resultsDiv.innerHTML += `
-                            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer transition border border-transparent hover:border-gray-200" onclick="window.editMatch('${m.id}')">
-                                <div class="flex items-center gap-3"><span class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${rColor}">${rChar}</span><span class="text-sm font-medium text-gray-800 flex items-center">vs ${m.opponent} ${tournBadge}</span></div>
-                                <span class="font-bold text-gray-800">${m.goalsUs} - ${m.goalsThem}</span>
-                            </div>`;
-                    });
-                }
-            }
-            
-            let totalGoals = 0, totalAssists = 0;
-            let currentPlayers = window.players;
-            if(window.currentFilter === 'f11') currentPlayers = window.players.filter(p => p.availableF11);
-            if(window.currentFilter === 'f7') currentPlayers = window.players.filter(p => p.availableF7);
-            
-            const rankedPlayers = currentPlayers.filter(p => !p.isStaff);
-            
-            rankedPlayers.forEach(p => { totalGoals += window.getPlayerStat(p, 'goals'); totalAssists += window.getPlayerStat(p, 'assists'); });
-            
-            if(document.getElementById('stat-total-goals')) document.getElementById('stat-total-goals').textContent = totalGoals;
-            if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = totalAssists;
-            
-            const renderList = (arr, statKey, elId) => {
-                const el = document.getElementById(elId);
-                if(!el) return;
-                el.innerHTML = '';
-                arr.forEach((p, idx) => {
-                    const val = window.getPlayerStat(p, statKey);
-                    if(val === 0) return;
-                    el.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b border-gray-50 last:border-0">
-                            <td class="px-5 py-3 w-10 text-gray-400 font-bold">${idx + 1}</td>
-                            <td class="px-5 py-3 flex items-center gap-3">${window.getAvatarHtml(p, "w-8 h-8 text-sm")}<div><p class="font-medium text-gray-800 text-sm">${p.name}</p></div></td>
-                            <td class="px-5 py-3 text-right font-bold text-gray-800">${val}</td>
-                        </tr>`;
-                });
-                if(el.innerHTML === '') el.innerHTML = '<tr><td colspan="3" class="px-5 py-4 text-center text-sm text-gray-500">Sin registros</td></tr>';
-            };
-            
-            renderList([...rankedPlayers].sort((a,b) => window.getPlayerStat(b, 'goals') - window.getPlayerStat(a, 'goals')).slice(0, 5), 'goals', 'top-scorers-list');
-            renderList([...rankedPlayers].sort((a,b) => window.getPlayerStat(b, 'assists') - window.getPlayerStat(a, 'assists')).slice(0, 5), 'assists', 'top-assists-list');
-        };
-
         window.openQuickStats = function(id) {
             const player = window.players.find(p => p.id === id);
             if(!player) return; 
             
             document.getElementById('qs-id').value = id;
-            document.getElementById('qs-name').textContent = player.name;
+            document.getElementById('qs-name').textContent = window.getAliasOrName(player);
             
             document.getElementById('tab-qs-f11').style.display = player.availableF11 ? 'block' : 'none';
             document.getElementById('tab-qs-f7').style.display = player.availableF7 ? 'block' : 'none';
