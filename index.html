@@ -8,7 +8,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Librería para exportar imágenes (Cromos y Pizarra) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
@@ -43,7 +42,8 @@
         .penalty-area-bottom { position: absolute; bottom: 0; left: 50%; width: 140px; height: 70px; border: 2px solid white; border-bottom: none; transform: translateX(-50%); }
         
         .formation-slot {
-            position: absolute; width: 45px; height: 45px; border: 2px dashed rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none;
+            position: absolute; width: 45px; height: 45px; border: 2px dashed rgba(255,255,255,0.7); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none;
+            display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.8);
         }
 
         .bench-container { min-height: 80px; background: #e5e7eb; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -53,19 +53,31 @@
         .player-token:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.1); z-index: 50; }
         .player-token img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .player-token .name-label {
-            position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; white-space: nowrap; pointer-events: none;
+            position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; white-space: nowrap; pointer-events: none; z-index: 20;
+        }
+        .captain-armband {
+            position: absolute; top: -6px; right: -6px; background-color: #fbbf24; color: black; font-size: 9px; font-weight: 900; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; z-index: 30;
+        }
+        .dorsal-badge {
+            position: absolute; top: -6px; left: -6px; background-color: #f3f4f6; color: #111827; font-size: 9px; font-weight: 900; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; z-index: 30;
         }
         
         select[multiple] { height: auto; min-height: 120px; }
         select[multiple] option { padding: 6px; border-radius: 4px; margin-bottom: 2px; }
         select[multiple] option:checked { background-color: #e0f2fe; color: #075985; font-weight: bold; }
 
-        /* Estilos del Cromo de Jugador */
         .player-card-export {
             width: 300px; height: 440px; background: linear-gradient(135deg, #111827, #1f2937);
             border: 4px solid #fbbf24; border-radius: 12px; padding: 16px; color: white;
             font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center;
+        }
+
+        .match-result-export {
+            width: 400px; height: 400px; background: linear-gradient(135deg, #075985, #111827);
+            border-radius: 16px; padding: 20px; color: white; font-family: 'Inter', sans-serif;
+            position: relative; box-sizing: border-box; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; overflow: hidden;
         }
     </style>
 </head>
@@ -87,7 +99,6 @@
                 </nav>
             </div>
             <div class="flex bg-brand-900 rounded-lg p-1 text-sm items-center">
-                <!-- Indicador de usuarios online -->
                 <div class="hidden sm:flex items-center gap-2 mr-3 px-2 border-r border-brand-800" title="Usuarios en línea viendo la app">
                     <span class="relative flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -103,7 +114,6 @@
                 <button onclick="window.setFilter('f7')" id="btn-filter-f7" class="px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium">F7</button>
                 
                 <div class="w-px h-4 bg-brand-800 mx-1"></div>
-                <!-- Dropdown Filtro de Temporada -->
                 <select id="season-filter" onchange="window.setSeasonFilter(this.value)" class="bg-brand-900 text-brand-100 hover:text-white border border-transparent hover:border-brand-700 rounded-md px-2 py-1 text-sm outline-none font-medium cursor-pointer max-w-[100px] truncate">
                     <option value="all">Todas Temp.</option>
                 </select>
@@ -113,7 +123,7 @@
     
     <main class="max-w-5xl mx-auto px-4 py-6">
         
-        <!-- ================= DASHBOARD ================= -->
+        <!-- DASHBOARD -->
         <section id="dashboard" class="space-y-6">
             <div class="flex justify-between items-end">
                 <div>
@@ -185,21 +195,32 @@
             </div>
         </section>
 
-        <!-- ================= ASISTENCIA ================= -->
+        <!-- ASISTENCIA -->
         <section id="attendance" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800">Control de Asistencia</h2>
-                    <p class="text-gray-500 text-sm mt-1">Registra los entrenamientos para evaluar el compromiso</p>
+                    <p class="text-gray-500 text-sm mt-1">Entrenamientos programados e historial</p>
                 </div>
                 <button onclick="window.newAttendance()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-medium transition flex items-center gap-2">
                     <i class="fas fa-clipboard-list"></i> Nuevo Entrenamiento
                 </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="attendance-grid"></div>
+            
+            <!-- PRÓXIMOS ENTRENAMIENTOS -->
+            <div>
+                <h3 class="font-bold text-gray-700 flex items-center gap-2 mb-3 border-b pb-2"><i class="far fa-calendar-alt text-yellow-500"></i> Programados</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="attendance-grid-upcoming"></div>
+            </div>
+            
+            <!-- HISTORIAL -->
+            <div class="mt-8">
+                <h3 class="font-bold text-gray-700 flex items-center gap-2 mb-3 border-b pb-2"><i class="fas fa-history text-brand-500"></i> Realizados</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="attendance-grid-past"></div>
+            </div>
         </section>
 
-        <!-- ================= JUGADORES (PLANTILLA) ================= -->
+        <!-- JUGADORES (PLANTILLA) -->
         <section id="players" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -213,7 +234,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="players-grid"></div>
         </section>
 
-        <!-- ================= PARTIDOS ================= -->
+        <!-- PARTIDOS -->
         <section id="matches" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -227,7 +248,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="matches-grid"></div>
         </section>
 
-        <!-- ================= FORMULARIO ASISTENCIA ================= -->
+        <!-- FORMULARIO ASISTENCIA -->
         <section id="attendanceForm" class="hidden">
             <div class="max-w-md mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -238,15 +259,20 @@
                 <form id="attendance-form" onsubmit="window.saveAttendance(event)" class="space-y-4">
                     <input type="hidden" id="a-id">
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha del Entrenamiento *</label>
-                        <input type="date" id="a-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha del Entrenamiento *</label>
+                            <input type="date" id="a-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación / Maps</label>
+                            <input type="text" id="a-location" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Enlace de Maps o nombre del lugar">
+                        </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Jugadores que asistieron:</label>
                         <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-64 overflow-y-auto space-y-1" id="a-players-list">
-                            <!-- Lista generada en JS -->
                         </div>
                     </div>
 
@@ -263,7 +289,7 @@
             </div>
         </section>
 
-        <!-- ================= FORMULARIO JUGADOR ================= -->
+        <!-- FORMULARIO JUGADOR -->
         <section id="playerForm" class="hidden">
             <div class="max-w-lg mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -288,9 +314,20 @@
                             <input type="hidden" id="p-image-base64">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                        <input type="text" id="p-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition" placeholder="Ej. Lionel Messi">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Real *</label>
+                            <input type="text" id="p-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition" placeholder="Ej. Lionel Messi">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alias (Opcional)</label>
+                            <input type="text" id="p-alias" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition" placeholder="Ej. La Pulga">
+                            <label class="flex items-center gap-2 cursor-pointer mt-2">
+                                <input type="checkbox" id="p-show-alias" class="rounded text-brand-600 focus:ring-brand-500 w-4 h-4">
+                                <span class="text-xs text-gray-600 font-medium">Usar alias en la pizarra</span>
+                            </label>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
@@ -326,19 +363,27 @@
                         </div>
                     </div>
 
-                    <!-- Datos Ampliados: Pie y Edad -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nacimiento (Edad)</label>
-                            <input type="date" id="p-birthdate" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nacimiento</label>
+                            <input type="date" id="p-birthdate" class="w-full px-2 py-2 border border-gray-300 rounded-lg outline-none text-xs">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Pie Dominante</label>
-                            <select id="p-foot" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm">
-                                <option value="">No especificado</option>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pie Dom.</label>
+                            <select id="p-foot" class="w-full px-2 py-2 border border-gray-300 rounded-lg outline-none bg-white text-xs">
+                                <option value="">N/E</option>
                                 <option value="Diestro">Diestro</option>
                                 <option value="Zurdo">Zurdo</option>
-                                <option value="Ambidiestro">Ambidiestro</option>
+                                <option value="Ambidiestro">Ambi.</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select id="p-status" class="w-full px-2 py-2 border border-gray-300 rounded-lg outline-none bg-white text-xs font-medium">
+                                <option value="active">Activo ✅</option>
+                                <option value="injured">Lesión 🚑</option>
+                                <option value="suspended">Sanción 🟥</option>
+                                <option value="absent">Ausente ✈️</option>
                             </select>
                         </div>
                     </div>
@@ -376,7 +421,7 @@
             </div>
         </section>
 
-        <!-- ================= FORMULARIO PARTIDO ================= -->
+        <!-- FORMULARIO PARTIDO -->
         <section id="matchForm" class="hidden">
             <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -395,6 +440,10 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
                             <input type="date" id="m-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación / Maps</label>
+                            <input type="text" id="m-location" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm" placeholder="Enlace de Google Maps o nombre de la cancha">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -445,7 +494,6 @@
                             </div>
                         </div>
                         
-                        <!-- SECCIÓN DE MVP -->
                         <div class="pt-4 border-t border-gray-200">
                             <label class="block text-xs font-bold text-yellow-600 uppercase mb-1 text-center"><i class="fas fa-star mr-1"></i> MVP (Mejor Jugador)</label>
                             <select id="m-mvp" class="w-full max-w-xs mx-auto block px-3 py-2 border border-yellow-300 bg-yellow-50 rounded-lg text-sm outline-none">
@@ -457,9 +505,17 @@
                     <div class="border-t pt-4">
                         <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-clipboard-list mr-2 text-brand-600"></i>Convocatoria y Táctica</h3>
                         <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 h-32 overflow-y-auto">
-                            <p class="text-xs font-semibold text-gray-500 mb-2 uppercase">Selecciona los convocados (Solo disponibles para este torneo):</p>
+                            <p class="text-xs font-semibold text-gray-500 mb-2 uppercase">Selecciona los convocados (Atento a las bajas 🚑🟥):</p>
                             <div id="m-callup-list" class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm"></div>
                         </div>
+                        
+                        <div class="flex items-center gap-3 mb-4 bg-yellow-50/50 p-2 rounded-lg border border-yellow-100">
+                            <label class="text-xs font-bold text-yellow-700 uppercase whitespace-nowrap"><i class="fas fa-copyright mr-1"></i> Capitán:</label>
+                            <select id="m-captain" onchange="window.drawTacticalBoard()" class="flex-1 px-3 py-1.5 border border-yellow-300 bg-white rounded-md text-sm outline-none font-medium">
+                                <option value="">Ninguno seleccionado</option>
+                            </select>
+                        </div>
+
                         <div class="space-y-4">
                             <div class="flex justify-between items-center border-b pb-2">
                                 <h3 class="font-bold text-gray-700">Alineación</h3>
@@ -469,7 +525,7 @@
                                 <select id="m-formation" onchange="window.drawTacticalBoard()" class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none bg-white"></select>
                                 <button type="button" onclick="window.applyFormation()" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-900 transition shadow-sm">Aplicar Automático</button>
                             </div>
-                            <p class="text-xs text-gray-500 italic mb-2">Arrastra los jugadores a los slots disponibles. Si arrastras a uno ocupado, se intercambiarán automáticamente.</p>
+                            <p class="text-xs text-gray-500 italic mb-2">Las posiciones están bloqueadas según el perfil del jugador. Si necesitas mover a un jugador a una posición no natural, elige "Formación Libre".</p>
                             
                             <div class="pitch-container" id="tactical-pitch">
                                 <div class="pitch-line-center"></div>
@@ -478,7 +534,6 @@
                                 <div class="penalty-area-bottom"></div>
                             </div>
                             
-                            <!-- Botón de Exportar Alineación -->
                             <button type="button" onclick="window.exportPitchImage()" class="w-full mt-2 border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-2">
                                 <i class="fas fa-camera"></i> Descargar Pizarra para WhatsApp
                             </button>
@@ -531,7 +586,7 @@
             </div>
         </section>
 
-        <!-- ================= MODALES ================= -->
+        <!-- MODALES -->
         <div id="quickStatsModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
                 <div class="bg-brand-800 px-4 py-3 flex justify-between items-center text-white">
@@ -610,7 +665,6 @@
             </div>
         </div>
 
-        <!-- MODAL CROMO EXPORTAR (PERFIL AMPLIADO) -->
         <div id="modalPlayerCard" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center">
                 <div class="flex justify-between items-center mb-4">
@@ -619,6 +673,17 @@
                 </div>
                 <div id="card-render-container" class="flex justify-center mb-6"></div>
                 <button id="btn-download-card" class="w-full bg-brand-600 text-white py-2 rounded-lg font-medium hover:bg-brand-700 transition"><i class="fas fa-download mr-2"></i>Descargar Imagen</button>
+            </div>
+        </div>
+
+        <div id="modalMatchResult" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Gráfico de Resultado</h3>
+                    <button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div id="result-render-container" class="flex justify-center mb-6"></div>
+                <button id="btn-download-result" class="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"><i class="fas fa-download mr-2"></i>Descargar para Redes</button>
             </div>
         </div>
 
@@ -702,14 +767,11 @@
         window.isAdmin = localStorage.getItem('nisus_admin') === 'true';
         window.currentSeason = 'all'; 
 
-        // Generador de IDs 100% seguro para cualquier navegador/celular
         window.generateId = function() {
             if (typeof crypto !== 'undefined' && crypto.randomUUID) {
                 try {
                     return crypto.randomUUID();
-                } catch(e) {
-                    // Fallback si falla en contexto inseguro
-                }
+                } catch(e) {}
             }
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -717,24 +779,189 @@
             });
         };
 
+        window.getAliasOrName = function(p) {
+            if (!p) return '?';
+            return p.name; 
+        };
+
+        const posValid = {
+            POR: ['Portero'],
+            DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'],
+            LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'],
+            LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'],
+            CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'],
+            MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'],
+            MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'],
+            MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'],
+            MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'],
+            MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'],
+            ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'],
+            EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'],
+            DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta']
+        };
+
         const formations = {
             f11: {
-                "4-4-2": [{x:50,y:90}, {x:20,y:75}, {x:40,y:75}, {x:60,y:75}, {x:80,y:75}, {x:20,y:50}, {x:40,y:50}, {x:60,y:50}, {x:80,y:50}, {x:35,y:25}, {x:65,y:25}],
-                "4-3-3": [{x:50,y:90}, {x:20,y:75}, {x:40,y:75}, {x:60,y:75}, {x:80,y:75}, {x:30,y:55}, {x:50,y:55}, {x:70,y:55}, {x:20,y:25}, {x:50,y:25}, {x:80,y:25}],
-                "4-2-3-1": [{x:50,y:90}, {x:15,y:75}, {x:35,y:75}, {x:65,y:75}, {x:85,y:75}, {x:35,y:60}, {x:65,y:60}, {x:20,y:40}, {x:50,y:40}, {x:80,y:40}, {x:50,y:20}],
-                "4-1-4-1": [{x:50,y:90}, {x:15,y:75}, {x:35,y:75}, {x:65,y:75}, {x:85,y:75}, {x:50,y:60}, {x:15,y:45}, {x:35,y:45}, {x:65,y:45}, {x:85,y:45}, {x:50,y:20}],
-                "4-5-1": [{x:50,y:90}, {x:15,y:75}, {x:35,y:75}, {x:65,y:75}, {x:85,y:75}, {x:15,y:50}, {x:35,y:50}, {x:50,y:50}, {x:65,y:50}, {x:85,y:50}, {x:50,y:25}],
-                "3-5-2": [{x:50,y:90}, {x:30,y:75}, {x:50,y:75}, {x:70,y:75}, {x:15,y:50}, {x:35,y:50}, {x:50,y:50}, {x:65,y:50}, {x:85,y:50}, {x:35,y:25}, {x:65,y:25}],
-                "3-4-3": [{x:50,y:90}, {x:30,y:75}, {x:50,y:75}, {x:70,y:75}, {x:15,y:50}, {x:35,y:50}, {x:65,y:50}, {x:85,y:50}, {x:25,y:25}, {x:50,y:25}, {x:75,y:25}],
-                "5-3-2": [{x:50,y:90}, {x:15,y:75}, {x:30,y:80}, {x:50,y:80}, {x:70,y:80}, {x:85,y:75}, {x:35,y:55}, {x:50,y:55}, {x:65,y:55}, {x:35,y:25}, {x:65,y:25}]
+                "4-4-2": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:20, y:75, label: 'LI', valid: posValid.LI},
+                    {x:40, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:60, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:80, y:75, label: 'LD', valid: posValid.LD},
+                    {x:20, y:50, label: 'MI', valid: posValid.MI},
+                    {x:40, y:50, label: 'MC', valid: posValid.MC},
+                    {x:60, y:50, label: 'MC', valid: posValid.MC},
+                    {x:80, y:50, label: 'MD', valid: posValid.MD},
+                    {x:35, y:25, label: 'DC', valid: posValid.DC},
+                    {x:65, y:25, label: 'DC', valid: posValid.DC}
+                ],
+                "4-3-3": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:20, y:75, label: 'LI', valid: posValid.LI},
+                    {x:40, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:60, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:80, y:75, label: 'LD', valid: posValid.LD},
+                    {x:30, y:55, label: 'MC', valid: posValid.MC},
+                    {x:50, y:55, label: 'MCD', valid: posValid.MCD},
+                    {x:70, y:55, label: 'MC', valid: posValid.MC},
+                    {x:20, y:25, label: 'EI', valid: posValid.EI},
+                    {x:50, y:25, label: 'DC', valid: posValid.DC},
+                    {x:80, y:25, label: 'ED', valid: posValid.ED}
+                ],
+                "4-2-3-1": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:15, y:75, label: 'LI', valid: posValid.LI},
+                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:85, y:75, label: 'LD', valid: posValid.LD},
+                    {x:35, y:60, label: 'MCD', valid: posValid.MCD},
+                    {x:65, y:60, label: 'MCD', valid: posValid.MCD},
+                    {x:20, y:40, label: 'MI', valid: posValid.MI},
+                    {x:50, y:40, label: 'MCO', valid: posValid.MCO},
+                    {x:80, y:40, label: 'MD', valid: posValid.MD},
+                    {x:50, y:20, label: 'DC', valid: posValid.DC}
+                ],
+                "4-1-4-1": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:15, y:75, label: 'LI', valid: posValid.LI},
+                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:85, y:75, label: 'LD', valid: posValid.LD},
+                    {x:50, y:60, label: 'MCD', valid: posValid.MCD},
+                    {x:15, y:45, label: 'MI', valid: posValid.MI},
+                    {x:35, y:45, label: 'MC', valid: posValid.MC},
+                    {x:65, y:45, label: 'MC', valid: posValid.MC},
+                    {x:85, y:45, label: 'MD', valid: posValid.MD},
+                    {x:50, y:20, label: 'DC', valid: posValid.DC}
+                ],
+                "4-5-1": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:15, y:75, label: 'LI', valid: posValid.LI},
+                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:85, y:75, label: 'LD', valid: posValid.LD},
+                    {x:15, y:50, label: 'MI', valid: posValid.MI},
+                    {x:35, y:50, label: 'MC', valid: posValid.MC},
+                    {x:50, y:50, label: 'MCD', valid: posValid.MCD},
+                    {x:65, y:50, label: 'MC', valid: posValid.MC},
+                    {x:85, y:50, label: 'MD', valid: posValid.MD},
+                    {x:50, y:25, label: 'DC', valid: posValid.DC}
+                ],
+                "3-5-2": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:30, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:70, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:15, y:50, label: 'CAR', valid: posValid.CAR},
+                    {x:35, y:50, label: 'MC', valid: posValid.MC},
+                    {x:50, y:50, label: 'MCD', valid: posValid.MCD},
+                    {x:65, y:50, label: 'MC', valid: posValid.MC},
+                    {x:85, y:50, label: 'CAR', valid: posValid.CAR},
+                    {x:35, y:25, label: 'DC', valid: posValid.DC},
+                    {x:65, y:25, label: 'DC', valid: posValid.DC}
+                ],
+                "3-4-3": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:30, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:70, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:15, y:50, label: 'MI', valid: posValid.MI},
+                    {x:35, y:50, label: 'MC', valid: posValid.MC},
+                    {x:65, y:50, label: 'MC', valid: posValid.MC},
+                    {x:85, y:50, label: 'MD', valid: posValid.MD},
+                    {x:25, y:25, label: 'EI', valid: posValid.EI},
+                    {x:50, y:25, label: 'DC', valid: posValid.DC},
+                    {x:75, y:25, label: 'ED', valid: posValid.ED}
+                ],
+                "5-3-2": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:15, y:75, label: 'CAR', valid: posValid.CAR},
+                    {x:30, y:80, label: 'DFC', valid: posValid.DFC},
+                    {x:50, y:80, label: 'DFC', valid: posValid.DFC},
+                    {x:70, y:80, label: 'DFC', valid: posValid.DFC},
+                    {x:85, y:75, label: 'CAR', valid: posValid.CAR},
+                    {x:35, y:55, label: 'MC', valid: posValid.MC},
+                    {x:50, y:55, label: 'MCD', valid: posValid.MCD},
+                    {x:65, y:55, label: 'MC', valid: posValid.MC},
+                    {x:35, y:25, label: 'DC', valid: posValid.DC},
+                    {x:65, y:25, label: 'DC', valid: posValid.DC}
+                ]
             },
             f7: {
-                "3-2-1": [{x:50,y:90}, {x:25,y:70}, {x:50,y:70}, {x:75,y:70}, {x:35,y:45}, {x:65,y:45}, {x:50,y:20}],
-                "3-1-2": [{x:50,y:90}, {x:25,y:70}, {x:50,y:70}, {x:75,y:70}, {x:50,y:45}, {x:35,y:20}, {x:65,y:20}],
-                "2-3-1": [{x:50,y:90}, {x:35,y:70}, {x:65,y:70}, {x:20,y:45}, {x:50,y:45}, {x:80,y:45}, {x:50,y:20}],
-                "2-2-2": [{x:50,y:90}, {x:35,y:75}, {x:65,y:75}, {x:30,y:45}, {x:70,y:45}, {x:35,y:20}, {x:65,y:20}],
-                "1-3-2": [{x:50,y:90}, {x:50,y:75}, {x:20,y:50}, {x:50,y:50}, {x:80,y:50}, {x:35,y:25}, {x:65,y:25}],
-                "1-4-1": [{x:50,y:90}, {x:50,y:75}, {x:15,y:45}, {x:35,y:45}, {x:65,y:45}, {x:85,y:45}, {x:50,y:20}]
+                "3-2-1": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:25, y:70, label: 'LI', valid: posValid.LI},
+                    {x:50, y:70, label: 'DFC', valid: posValid.DFC},
+                    {x:75, y:70, label: 'LD', valid: posValid.LD},
+                    {x:35, y:45, label: 'MC', valid: posValid.MC},
+                    {x:65, y:45, label: 'MC', valid: posValid.MC},
+                    {x:50, y:20, label: 'DC', valid: posValid.DC}
+                ],
+                "3-1-2": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:25, y:70, label: 'LI', valid: posValid.LI},
+                    {x:50, y:70, label: 'DFC', valid: posValid.DFC},
+                    {x:75, y:70, label: 'LD', valid: posValid.LD},
+                    {x:50, y:45, label: 'MCD', valid: posValid.MCD},
+                    {x:35, y:20, label: 'DC', valid: posValid.DC},
+                    {x:65, y:20, label: 'DC', valid: posValid.DC}
+                ],
+                "2-3-1": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:35, y:70, label: 'DFC', valid: posValid.DFC},
+                    {x:65, y:70, label: 'DFC', valid: posValid.DFC},
+                    {x:20, y:45, label: 'MI', valid: posValid.MI},
+                    {x:50, y:45, label: 'MC', valid: posValid.MC},
+                    {x:80, y:45, label: 'MD', valid: posValid.MD},
+                    {x:50, y:20, label: 'DC', valid: posValid.DC}
+                ],
+                "2-2-2": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:35, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:65, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:30, y:45, label: 'MC', valid: posValid.MC},
+                    {x:70, y:45, label: 'MC', valid: posValid.MC},
+                    {x:35, y:20, label: 'DC', valid: posValid.DC},
+                    {x:65, y:20, label: 'DC', valid: posValid.DC}
+                ],
+                "1-3-2": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:20, y:50, label: 'MI', valid: posValid.MI},
+                    {x:50, y:50, label: 'MC', valid: posValid.MC},
+                    {x:80, y:50, label: 'MD', valid: posValid.MD},
+                    {x:35, y:25, label: 'DC', valid: posValid.DC},
+                    {x:65, y:25, label: 'DC', valid: posValid.DC}
+                ],
+                "1-4-1": [
+                    {x:50, y:90, label: 'POR', valid: posValid.POR},
+                    {x:50, y:75, label: 'DFC', valid: posValid.DFC},
+                    {x:15, y:45, label: 'MI', valid: posValid.MI},
+                    {x:35, y:45, label: 'MC', valid: posValid.MC},
+                    {x:65, y:45, label: 'MC', valid: posValid.MC},
+                    {x:85, y:45, label: 'MD', valid: posValid.MD},
+                    {x:50, y:20, label: 'DC', valid: posValid.DC}
+                ]
             }
         };
 
@@ -811,7 +1038,6 @@
         window.updateSeasonDropdown = function() {
             const select = document.getElementById('season-filter');
             const currentVal = select.value;
-            // Se asegura de que la temporada sea un string para evitar errores con ".trim()" en datos viejos
             const uniqueSeasons = [...new Set(window.matches.map(m => String(m.season || '')).filter(s => s.trim() !== ''))].sort((a,b) => b.localeCompare(a));
             
             select.innerHTML = '<option value="all">Todas Temp.</option>';
@@ -888,10 +1114,13 @@
             document.getElementById('p-image-preview').classList.add('hidden');
             document.getElementById('p-image-placeholder').classList.remove('hidden');
             document.getElementById('p-image-base64').value = '';
+            document.getElementById('p-alias').value = '';
+            document.getElementById('p-show-alias').checked = false;
             document.getElementById('p-avail-f11').checked = true;
             document.getElementById('p-avail-f7').checked = true;
             document.getElementById('p-is-staff').checked = false;
             document.getElementById('p-is-paid-up').checked = true;
+            document.getElementById('p-status').value = 'active';
             document.getElementById('p-birthdate').value = '';
             document.getElementById('p-foot').value = '';
             
@@ -899,25 +1128,6 @@
             for(let i = 0; i < selectPos.options.length; i++) selectPos.options[i].selected = false;
 
             window.showSection('playerForm');
-        };
-
-        window.newMatch = function() {
-            document.getElementById('match-form').reset();
-            document.getElementById('m-id').value = '';
-            document.getElementById('match-form-title').textContent = 'Registrar Partido';
-            window.currentLineup = [];
-            window.currentEvents = [];
-            document.getElementById('m-event-minute').value = '';
-            document.getElementById('m-event-type').value = 'goals';
-            
-            window.toggleSubField();
-            window.toggleScoreFields();
-            window.updateFormationOptions();
-            window.renderCallupList();
-            window.drawTacticalBoard();
-            window.renderMatchEvents();
-            
-            window.showSection('matchForm');
         };
 
         window.setFilter = function(filter) {
@@ -1035,11 +1245,14 @@
             const pData = {
                 id: docId,
                 name: document.getElementById('p-name').value,
+                alias: document.getElementById('p-alias').value,
+                showAlias: document.getElementById('p-show-alias').checked,
                 number: document.getElementById('p-number').value,
                 positions: selectedPositions, 
                 image: document.getElementById('p-image-base64').value,
                 birthdate: document.getElementById('p-birthdate').value,
                 foot: document.getElementById('p-foot').value,
+                status: document.getElementById('p-status').value || 'active',
                 availableF11: document.getElementById('p-avail-f11').checked,
                 availableF7: document.getElementById('p-avail-f7').checked,
                 isStaff: document.getElementById('p-is-staff').checked,
@@ -1071,10 +1284,13 @@
             
             document.getElementById('p-id').value = player.id;
             document.getElementById('p-name').value = player.name;
+            document.getElementById('p-alias').value = player.alias || '';
+            document.getElementById('p-show-alias').checked = player.showAlias || false;
             document.getElementById('p-number').value = player.number || '';
             document.getElementById('p-image-base64').value = player.image || '';
             document.getElementById('p-birthdate').value = player.birthdate || '';
             document.getElementById('p-foot').value = player.foot || '';
+            document.getElementById('p-status').value = player.status || 'active';
             document.getElementById('p-avail-f11').checked = player.availableF11;
             document.getElementById('p-avail-f7').checked = player.availableF7;
             document.getElementById('p-is-staff').checked = player.isStaff || false;
@@ -1197,11 +1413,13 @@
             const oldMatch = window.matches.find(m => m.id === id);
             
             const mvpElement = document.getElementById('m-mvp');
+            const capElement = document.getElementById('m-captain');
             
             const newMatch = {
                 id: docId,
                 opponent: document.getElementById('m-opponent').value,
                 date: document.getElementById('m-date').value,
+                location: document.getElementById('m-location').value,
                 tournament: document.getElementById('m-tournament').value,
                 season: document.getElementById('m-season').value,
                 matchday: document.getElementById('m-matchday').value,
@@ -1210,6 +1428,7 @@
                 goalsUs: status === 'finished' ? (document.getElementById('m-goals-us').value || 0) : null,
                 goalsThem: status === 'finished' ? (document.getElementById('m-goals-them').value || 0) : null,
                 mvp: (status === 'finished' && mvpElement) ? mvpElement.value : null,
+                captain: capElement ? capElement.value : null,
                 notes: document.getElementById('m-notes').value,
                 lineup: JSON.parse(JSON.stringify(window.currentLineup)),
                 events: JSON.parse(JSON.stringify(window.currentEvents))
@@ -1236,6 +1455,7 @@
             document.getElementById('m-id').value = m.id;
             document.getElementById('m-opponent').value = m.opponent;
             document.getElementById('m-date').value = m.date;
+            document.getElementById('m-location').value = m.location || '';
             document.getElementById('m-tournament').value = m.tournament;
             document.getElementById('m-season').value = m.season || '';
             document.getElementById('m-matchday').value = m.matchday || '';
@@ -1261,6 +1481,11 @@
             
             if (m.status === 'finished' && m.mvp) {
                 document.getElementById('m-mvp').value = m.mvp;
+            }
+            
+            if (m.captain) {
+                const capSelect = document.getElementById('m-captain');
+                if(capSelect) capSelect.value = m.captain;
             }
 
             window.updateFormationOptions();
@@ -1314,6 +1539,22 @@
             validPlayers.forEach(p => { html += `<option value="${p.id}">${p.name} (#${p.number||'-'})</option>`; });
             sel.innerHTML = html;
             if(validPlayers.find(p => p.id === currentMvp)) sel.value = currentMvp;
+        };
+        
+        window.updateCaptainSelect = function() {
+            const sel = document.getElementById('m-captain');
+            if(!sel) return;
+            const currentCap = sel.value;
+            let html = '<option value="">Ninguno seleccionado</option>';
+            
+            const validPlayers = window.players.filter(p => window.currentLineup.some(l => l.playerId === p.id) && !p.isStaff);
+            validPlayers.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+            
+            validPlayers.forEach(p => { html += `<option value="${p.id}">${p.name} (#${p.number||'-'})</option>`; });
+            sel.innerHTML = html;
+            if(validPlayers.find(p => p.id === currentCap)) sel.value = currentCap;
+            
+            window.drawTacticalBoard(); 
         };
 
         window.handleTournamentChange = function() {
@@ -1370,27 +1611,34 @@
                 return; 
             }
             const coords = formations[tournament][formationKey];
-            const maxPlayers = tournament === 'f11' ? 11 : 7;
             
-            window.currentLineup.forEach(p => { p.x = null; p.y = null; });
+            window.currentLineup.forEach(p => { 
+                const pObj = window.players.find(x => x.id === p.playerId);
+                if(pObj && !pObj.isStaff) { p.x = null; p.y = null; }
+            });
             
-            window.currentLineup.sort((a, b) => {
-                const pA = window.players.find(x => x.id === a.playerId);
-                const pB = window.players.find(x => x.id === b.playerId);
-                return window.getPlayerRoleWeight(pA) - window.getPlayerRoleWeight(pB);
+            let unassigned = window.currentLineup.filter(l => {
+                const pObj = window.players.find(x => x.id === l.playerId);
+                return pObj && !pObj.isStaff;
             });
 
-            let assigned = 0;
-            for(let i = 0; i < window.currentLineup.length; i++) {
-                const playerObj = window.players.find(x => x.id === window.currentLineup[i].playerId);
-                if(playerObj && !playerObj.isStaff && assigned < maxPlayers && coords[assigned]) {
-                    window.currentLineup[i].x = coords[assigned].x; 
-                    window.currentLineup[i].y = coords[assigned].y; 
-                    assigned++;
+            coords.forEach(slot => {
+                const matchIdx = unassigned.findIndex(l => {
+                    const pObj = window.players.find(x => x.id === l.playerId);
+                    const pPos = Array.isArray(pObj.positions) ? pObj.positions : (pObj.position ? [pObj.position] : []);
+                    return pPos.some(pos => slot.valid.includes(pos));
+                });
+
+                if (matchIdx !== -1) {
+                    const l = unassigned[matchIdx];
+                    l.x = slot.x;
+                    l.y = slot.y;
+                    unassigned.splice(matchIdx, 1); 
                 }
-            }
+            });
+
             window.drawTacticalBoard(); 
-            window.showToast(`Formación ${formationKey} aplicada`);
+            window.showToast(`Formación ${formationKey} aplicada inteligentemente`);
         };
 
         window.renderCallupList = function() {
@@ -1407,14 +1655,23 @@
                 const staffIcon = p.isStaff ? '<i class="fas fa-user-tie text-purple-600 mr-1" title="Cuerpo Técnico"></i> ' : '';
                 const numStr = (!p.isStaff && p.number) ? p.number + '-' : '';
                 
+                let statusIcon = '';
+                if (p.status === 'injured') statusIcon = '<span title="Lesionado" class="ml-1">🚑</span>';
+                if (p.status === 'suspended') statusIcon = '<span title="Sancionado" class="ml-1">🟥</span>';
+                if (p.status === 'absent') statusIcon = '<span title="Ausente" class="ml-1">✈️</span>';
+                
+                const isUnavailable = (p.status !== 'active' && p.status !== undefined);
+                const opacityClass = isUnavailable ? 'opacity-50' : 'opacity-100';
+                
                 container.innerHTML += `
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 ${opacityClass}">
                         <input type="checkbox" id="cb-${p.id}" value="${p.id}" ${isCalled ? 'checked' : ''} onchange="window.handleCallupChange('${p.id}', this.checked)" class="rounded text-brand-600 focus:ring-brand-500 cursor-pointer w-4 h-4">
-                        <label for="cb-${p.id}" class="cursor-pointer truncate text-gray-700" title="${p.name}">${staffIcon}${numStr}${p.name}</label>
+                        <label for="cb-${p.id}" class="cursor-pointer truncate text-gray-700" title="${p.name}">${staffIcon}${numStr}${p.name} ${statusIcon}</label>
                     </div>`;
             });
             window.updateEventPlayerSelect();
             window.updateMvpSelect();
+            window.updateCaptainSelect();
         };
 
         window.handleCallupChange = function(playerId, isChecked) {
@@ -1422,10 +1679,13 @@
                 if (!window.currentLineup.some(l => l.playerId === playerId)) window.currentLineup.push({ playerId: playerId, x: null, y: null });
             } else {
                 window.currentLineup = window.currentLineup.filter(l => l.playerId !== playerId);
+                const capSelect = document.getElementById('m-captain');
+                if(capSelect && capSelect.value === playerId) capSelect.value = '';
             }
             window.drawTacticalBoard();
             window.updateEventPlayerSelect();
             window.updateMvpSelect();
+            window.updateCaptainSelect();
         };
 
         window.drawTacticalBoard = function() {
@@ -1440,6 +1700,7 @@
             const tournament = document.getElementById('m-tournament').value;
             const maxPlayers = tournament === 'f11' ? 11 : 7;
             const formationKey = document.getElementById('m-formation').value;
+            const currentCap = document.getElementById('m-captain') ? document.getElementById('m-captain').value : null;
             
             if (formationKey && formations[tournament][formationKey]) {
                 const coords = formations[tournament][formationKey];
@@ -1448,6 +1709,7 @@
                     slot.className = "formation-slot";
                     slot.style.left = c.x + '%';
                     slot.style.top = c.y + '%';
+                    slot.innerHTML = c.label;
                     pitch.appendChild(slot);
                 });
             }
@@ -1459,12 +1721,24 @@
                 token.className = "player-token"; 
                 token.dataset.id = l.playerId;
                 
+                let captainBadge = (p.id === currentCap) ? `<div class="captain-armband">C</div>` : '';
+                let dorsalBadge = (!p.isStaff && p.number) ? `<div class="dorsal-badge">${p.number}</div>` : '';
+                
+                const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position === 'Portero');
+                const gkIcon = isGK ? ' 🧤' : '';
+
+                let displayLabel = (p.name || 'N/A').split(' ')[0];
+                if (p.showAlias && p.alias) {
+                    displayLabel = p.alias; 
+                }
+                const initial = (p.name || '?').charAt(0).toUpperCase();
+                
                 if (p.isStaff) {
                     token.style.borderColor = '#9333ea'; 
-                    token.innerHTML = (p.image ? `<img src="${p.image}" alt="">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f3e8ff; border-radius:50%;"><i class="fas fa-user-tie text-purple-600"></i></div>`) + `<span class="name-label" style="background: rgba(107, 33, 168, 0.9);">${(p.name || '').split(' ')[0]}</span>`;
+                    token.innerHTML = (p.image ? `<img src="${p.image}" alt="">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f3e8ff; border-radius:50%;"><i class="fas fa-user-tie text-purple-600"></i></div>`) + `<span class="name-label" style="background: rgba(107, 33, 168, 0.9);">${displayLabel}</span>`;
                 } else {
-                    if (p.image) token.innerHTML = `<img src="${p.image}" alt=""><span class="name-label">${(p.name || '').split(' ')[0]}</span>`;
-                    else token.innerHTML = `${p.number || (p.name ? p.name.charAt(0) : '?')}<span class="name-label">${(p.name || '').split(' ')[0]}</span>`;
+                    if (p.image) token.innerHTML = `${dorsalBadge}${captainBadge}<img src="${p.image}" alt=""><span class="name-label">${displayLabel}${gkIcon}</span>`;
+                    else token.innerHTML = `${dorsalBadge}${captainBadge}${initial}<span class="name-label">${displayLabel}${gkIcon}</span>`;
                 }
                 
                 token.onmousedown = window.dragStart;
@@ -1573,10 +1847,42 @@
                                 const dist = Math.sqrt(Math.pow(x - c.x, 2) + Math.pow(y - c.y, 2));
                                 if (dist < minDist) { minDist = dist; nearest = c; }
                             });
+
+                            let draggedValid = false;
+                            const draggedPositions = Array.isArray(playerObj.positions) ? playerObj.positions : (playerObj.position ? [playerObj.position] : []);
+                            draggedValid = nearest.valid ? draggedPositions.some(p => nearest.valid.includes(p)) : true;
+
+                            if (!draggedValid && !isStaff) {
+                                window.showToast(`${(playerObj.name||'').split(' ')[0]} no juega como ${nearest.label}`, true);
+                                window.currentLineup[lineupIndex].x = originalX;
+                                window.currentLineup[lineupIndex].y = originalY;
+                                window.draggedElement = null; 
+                                window.drawTacticalBoard();
+                                return;
+                            }
                             
                             const occupantIndex = window.currentLineup.findIndex(l => l.x === nearest.x && l.y === nearest.y && l.playerId !== playerId);
                             
                             if (occupantIndex >= 0) {
+                                let occupantValidForOldSlot = true;
+                                if (originalX !== null && originalY !== null) {
+                                    const oldSlot = coords.find(c => c.x === originalX && c.y === originalY);
+                                    if (oldSlot && oldSlot.valid) {
+                                        const occupantObj = window.players.find(x => x.id === window.currentLineup[occupantIndex].playerId);
+                                        const occPositions = Array.isArray(occupantObj.positions) ? occupantObj.positions : (occupantObj.position ? [occupantObj.position] : []);
+                                        occupantValidForOldSlot = occPositions.some(p => oldSlot.valid.includes(p));
+                                    }
+                                }
+
+                                if (!occupantValidForOldSlot) {
+                                    window.showToast(`El intercambio es inválido por posición`, true);
+                                    window.currentLineup[lineupIndex].x = originalX;
+                                    window.currentLineup[lineupIndex].y = originalY;
+                                    window.draggedElement = null; 
+                                    window.drawTacticalBoard();
+                                    return;
+                                }
+
                                 if (originalX === null) {
                                     window.currentLineup[occupantIndex].x = null;
                                     window.currentLineup[occupantIndex].y = null;
@@ -1687,6 +1993,7 @@
             document.getElementById('attendance-form').reset();
             document.getElementById('a-id').value = '';
             document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('a-location').value = '';
             window.currentAttendees = [];
             window.renderAttendanceChecklist();
             window.showSection('attendanceForm');
@@ -1702,10 +2009,16 @@
             sortedPlayers.forEach(p => {
                 const isChecked = window.currentAttendees.includes(p.id) ? 'checked' : '';
                 const staffIcon = p.isStaff ? '<i class="fas fa-user-tie text-purple-600 mr-1" title="Cuerpo Técnico"></i> ' : '';
+                
+                let statusIcon = '';
+                if (p.status === 'injured') statusIcon = '<span title="Lesionado" class="ml-1 text-xs">🚑</span>';
+                if (p.status === 'suspended') statusIcon = '<span title="Sancionado" class="ml-1 text-xs">🟥</span>';
+                if (p.status === 'absent') statusIcon = '<span title="Ausente" class="ml-1 text-xs">✈️</span>';
+
                 container.innerHTML += `
                     <div class="flex items-center gap-2 bg-white p-2 rounded border border-gray-200 hover:bg-gray-50 transition">
                         <input type="checkbox" id="att-${p.id}" value="${p.id}" ${isChecked} onchange="window.handleAttendanceChange('${p.id}', this.checked)" class="rounded text-brand-600 focus:ring-brand-500 cursor-pointer w-4 h-4">
-                        <label for="att-${p.id}" class="cursor-pointer truncate text-gray-700 text-sm font-medium flex-1">${staffIcon}${p.name}</label>
+                        <label for="att-${p.id}" class="cursor-pointer truncate text-gray-700 text-sm font-medium flex-1">${staffIcon}${p.name} ${statusIcon}</label>
                     </div>`;
             });
         };
@@ -1732,6 +2045,7 @@
             const data = {
                 id: docId,
                 date: document.getElementById('a-date').value,
+                location: document.getElementById('a-location').value,
                 notes: document.getElementById('a-notes').value,
                 attendees: window.currentAttendees
             };
@@ -1752,6 +2066,7 @@
             if(!t) return;
             document.getElementById('a-id').value = t.id;
             document.getElementById('a-date').value = t.date;
+            document.getElementById('a-location').value = t.location || '';
             document.getElementById('a-notes').value = t.notes || '';
             window.currentAttendees = [...(t.attendees || [])];
             window.renderAttendanceChecklist();
@@ -1769,35 +2084,62 @@
         };
 
         window.renderTrainings = function() {
-            const grid = document.getElementById('attendance-grid');
-            if(!grid) return;
-            grid.innerHTML = '';
+            const gridUpcoming = document.getElementById('attendance-grid-upcoming');
+            const gridPast = document.getElementById('attendance-grid-past');
+            if(!gridUpcoming || !gridPast) return;
+            gridUpcoming.innerHTML = '';
+            gridPast.innerHTML = '';
             
             const sorted = [...window.trainings].sort((a,b) => new Date(b.date) - new Date(a.date));
 
-            if(sorted.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-100">Aún no hay entrenamientos registrados</div>'; return; }
+            if(sorted.length === 0) { 
+                gridUpcoming.innerHTML = '<div class="col-span-full text-sm text-gray-500 italic">No hay entrenamientos programados.</div>';
+                gridPast.innerHTML = '<div class="col-span-full text-sm text-gray-500 italic">No hay historial de entrenamientos.</div>';
+                return; 
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            let hasUpcoming = false, hasPast = false;
 
             sorted.forEach(t => {
                 const dateObj = new Date(t.date + 'T12:00:00');
                 const dateStr = dateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+                const isUpcoming = t.date >= todayStr;
                 
-                grid.innerHTML += `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col">
+                let locationHtml = '';
+                if(t.location) {
+                    let locText = t.location.length > 30 ? t.location.substring(0, 30) + '...' : t.location;
+                    if(t.location.startsWith('http')) {
+                        locationHtml = `<a href="${t.location}" target="_blank" class="text-blue-500 hover:underline flex items-center gap-1 text-[11px] font-medium mt-1 mb-2" title="${t.location}"><i class="fas fa-map-marker-alt"></i> Ver ubicación en Maps</a>`;
+                    } else {
+                        locationHtml = `<p class="text-gray-500 flex items-center gap-1 text-[11px] font-medium mt-1 mb-2"><i class="fas fa-map-marker-alt"></i> ${locText}</p>`;
+                    }
+                }
+                
+                const cardHtml = `
+                    <div class="bg-white rounded-xl shadow-sm border ${isUpcoming ? 'border-yellow-200' : 'border-gray-100'} p-5 flex flex-col relative">
                         <div class="flex justify-between items-start mb-3">
-                            <span class="bg-brand-100 text-brand-800 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide"><i class="fas fa-clipboard-check mr-1"></i> Entrenamiento</span>
+                            <span class="${isUpcoming ? 'bg-yellow-100 text-yellow-800' : 'bg-brand-100 text-brand-800'} text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide"><i class="fas ${isUpcoming ? 'fa-clock' : 'fa-check'} mr-1"></i> ${isUpcoming ? 'Pronto' : 'Completado'}</span>
                             <div class="admin-only flex gap-2">
                                 <button onclick="window.editAttendance('${t.id}')" class="text-gray-400 hover:text-blue-600 transition"><i class="fas fa-edit"></i></button>
                                 <button onclick="window.deleteAttendance('${t.id}')" class="text-gray-400 hover:text-red-600 transition"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
                         <h3 class="text-lg font-bold text-gray-800 capitalize">${dateStr}</h3>
+                        ${locationHtml}
                         <p class="text-sm font-medium text-gray-500 mt-2 flex items-center"><i class="fas fa-users text-gray-400 mr-2"></i> ${t.attendees ? t.attendees.length : 0} asistentes al entreno</p>
                         ${t.notes ? `<p class="text-xs text-gray-500 mt-3 bg-gray-50 border border-gray-100 p-2 rounded italic"><i class="fas fa-info-circle mr-1"></i> ${t.notes}</p>` : ''}
+                        ${isUpcoming ? `<button onclick="window.editAttendance('${t.id}')" class="admin-only mt-4 w-full py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-lg text-sm font-bold transition border border-yellow-200"><i class="fas fa-clipboard-list mr-1"></i> Tomar Asistencia</button>` : ''}
                     </div>`;
+
+                if (isUpcoming) { gridUpcoming.innerHTML += cardHtml; hasUpcoming = true; }
+                else { gridPast.innerHTML += cardHtml; hasPast = true; }
             });
+
+            if (!hasUpcoming) gridUpcoming.innerHTML = '<div class="col-span-full text-sm text-gray-500 italic">No hay entrenamientos próximos.</div>';
+            if (!hasPast) gridPast.innerHTML = '<div class="col-span-full text-sm text-gray-500 italic">No hay historial de entrenamientos.</div>';
         };
 
-        // Lógica de cálculo dinámico para respetar la Temporada Seleccionada
         window.getPlayerStat = function(player, statKey) {
             if(!player) return 0;
             if (player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalties', 'freekicks'].includes(statKey)) return 0;
@@ -1846,6 +2188,7 @@
 
             const container = document.getElementById('card-render-container');
             const safeName = p.name || 'N/A';
+            const displayAlias = p.alias ? `<p class="text-sm font-medium italic text-gray-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
             const initials = p.name ? p.name.charAt(0).toUpperCase() : '?';
             
             let posString = "N/A";
@@ -1907,9 +2250,10 @@
                         ${imgHtml}
                     </div>
                     
-                    <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-gray-700 pb-2">${safeName}</h2>
+                    <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-gray-700 pb-1" style="font-size: ${safeName.length > 15 ? '1.25rem' : '1.5rem'}">${safeName}</h2>
+                    ${displayAlias}
                     
-                    <div class="flex justify-center gap-3 mt-2 text-[9px] font-medium text-gray-400">
+                    <div class="flex justify-center gap-3 mt-1 text-[9px] font-medium text-gray-400">
                         <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">EDAD: ${ageStr}</span>
                         <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">PIE: ${footStr}</span>
                         <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700" title="Victorias con el equipo">VICTORIAS: ${winRate}</span>
@@ -1983,6 +2327,19 @@
                 } else {
                     badges += '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1" title="Al día con pagos"><i class="fas fa-check-circle"></i> Al día</span> ';
                 }
+                
+                let statusBadge = '';
+                let opacityClass = 'opacity-100';
+                if (p.status === 'injured') {
+                    statusBadge = '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200 flex items-center gap-1 font-bold text-[10px]"><i class="fas fa-briefcase-medical"></i> Lesión</span> ';
+                    opacityClass = 'opacity-70';
+                } else if (p.status === 'suspended') {
+                    statusBadge = '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200 flex items-center gap-1 font-bold text-[10px]"><i class="fas fa-ban"></i> Sanción</span> ';
+                    opacityClass = 'opacity-70';
+                } else if (p.status === 'absent') {
+                    statusBadge = '<span class="bg-gray-200 text-gray-800 px-2 py-0.5 rounded border border-gray-300 flex items-center gap-1 font-bold text-[10px]"><i class="fas fa-plane"></i> Ausente</span> ';
+                    opacityClass = 'opacity-70';
+                }
 
                 let posBadges = '';
                 let statsHtml = '';
@@ -2016,7 +2373,7 @@
                 }
                 
                 grid.innerHTML += `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden group hover:shadow-md transition">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden group hover:shadow-md transition ${opacityClass}">
                         <div class="admin-only absolute top-3 right-3 flex gap-2 transition z-20">
                             <button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 shadow-sm border border-blue-100"><i class="fas fa-edit"></i></button>
                             <button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 shadow-sm border border-red-100"><i class="fas fa-trash"></i></button>
@@ -2025,7 +2382,7 @@
                             ${window.getAvatarHtml(p, "w-16 h-16 text-2xl")}
                             <div class="overflow-hidden">
                                 <h3 class="font-bold text-gray-800 text-lg truncate hover:text-brand-600 transition">${p.name}</h3>
-                                <div class="flex flex-wrap gap-2 text-[10px] font-bold mt-1">${badges}</div>
+                                <div class="flex flex-wrap gap-2 text-[10px] font-bold mt-1">${badges} ${statusBadge}</div>
                                 <div class="flex flex-wrap gap-1 text-xs font-medium mt-2 items-center">
                                     ${posBadges}
                                 </div>
@@ -2038,6 +2395,87 @@
                         </button>
                     </div>`;
             });
+        };
+
+        window.exportMatchResult = function(matchId) {
+            const m = window.matches.find(x => x.id === matchId);
+            if(!m) return;
+            
+            const container = document.getElementById('result-render-container');
+            
+            const isF11 = m.tournament === 'f11';
+            const tournLabel = `FÚTBOL ${isF11 ? '11' : '7'}`;
+            const dateObj = new Date(m.date + 'T12:00:00');
+            const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+            
+            let resultColor = '#9ca3af'; // gray
+            let resultText = 'EMPATE';
+            if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) { resultColor = '#4ade80'; resultText = 'VICTORIA'; }
+            else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) { resultColor = '#f87171'; resultText = 'DERROTA'; }
+
+            let scorersHtml = '';
+            if(m.events && m.events.length > 0) {
+                const goals = m.events.filter(e => ['goals', 'penalty', 'freekick'].includes(e.type));
+                if(goals.length > 0) {
+                    const scorers = goals.map(g => { 
+                        const p = window.players.find(x => x.id === g.playerId);
+                        let icon = g.type === 'penalty' ? '🎯' : (g.type === 'freekick' ? '👟' : '');
+                        return (p ? (p.name||'').split(' ')[0] : '?') + (icon ? ` ${icon}` : ''); 
+                    }).join(', ');
+                    scorersHtml = `<div class="mt-4 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Goleadores</p><p class="text-sm text-white font-medium"><i class="fas fa-futbol text-green-400 mr-2"></i>${scorers}</p></div>`;
+                }
+            }
+
+            let mvpHtml = '';
+            if (m.mvp) {
+                const mvpP = window.players.find(x => x.id === m.mvp);
+                if (mvpP) mvpHtml = `<div class="mt-3 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Mejor Jugador</p><p class="text-sm text-yellow-400 font-bold"><i class="fas fa-star mr-1"></i>${(mvpP.name||'').split(' ')[0]}</p></div>`;
+            }
+
+            container.innerHTML = `
+                <div id="match-result-node" class="match-result-export">
+                    <img src="escudo.png" onerror="this.style.display='none'" class="absolute opacity-10 w-64 h-64 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                    
+                    <div class="z-10 w-full flex flex-col items-center">
+                        <p class="text-[10px] font-bold tracking-widest text-brand-300 mb-1">${tournLabel} ${m.season ? '| T-'+m.season : ''}</p>
+                        <p class="text-xs font-medium text-gray-300 mb-6">${dateStr}</p>
+                        
+                        <p class="text-[10px] font-bold tracking-widest mb-2" style="color: ${resultColor}">${resultText}</p>
+                        
+                        <div class="flex items-center justify-center gap-6 mb-2 w-full">
+                            <div class="text-right flex-1"><p class="text-xl font-black truncate uppercase text-white">NISUS FC</p></div>
+                            <div class="flex items-center justify-center gap-3 bg-gray-900/80 px-4 py-2 rounded-xl border border-gray-700 shadow-lg">
+                                <span class="text-5xl font-black text-white">${m.goalsUs}</span>
+                                <span class="text-2xl font-black text-gray-600">-</span>
+                                <span class="text-5xl font-black text-white">${m.goalsThem}</span>
+                            </div>
+                            <div class="text-left flex-1"><p class="text-xl font-black truncate uppercase text-gray-300">${m.opponent}</p></div>
+                        </div>
+                        
+                        ${scorersHtml}
+                        ${mvpHtml}
+                    </div>
+                </div>`;
+
+            document.getElementById('modalMatchResult').classList.remove('hidden');
+
+            document.getElementById('btn-download-result').onclick = function() {
+                const node = document.getElementById('match-result-node');
+                const btn = this; 
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+                
+                html2canvas(node, { backgroundColor: '#111827', scale: 2, useCORS: true, allowTaint: true }).then(canvas => {
+                    const link = document.createElement('a'); 
+                    link.download = `Resultado_NISUS_vs_${m.opponent.replace(/\s+/g, '_')}.png`;
+                    link.href = canvas.toDataURL('image/png'); 
+                    link.click();
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar para Redes', 2000);
+                }).catch(err => { 
+                    window.showToast("Error al generar imagen", true); 
+                    btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar para Redes'; 
+                });
+            };
         };
 
         window.renderMatches = function() {
@@ -2066,7 +2504,7 @@
                 if (m.kit === 'white_blue') kitBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 ml-1" title="Indumentaria"><i class="fas fa-tshirt mr-1"></i>B/A</span>`;
                 else kitBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-800 text-white ml-1" title="Indumentaria"><i class="fas fa-tshirt mr-1"></i>Negro</span>`;
 
-                let statusBadge, scoreHtml;
+                let statusBadge, scoreHtml, btnShare = '';
                 if(m.status === 'pending') {
                     statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full border border-yellow-200"><i class="far fa-clock mr-1"></i>Por Jugar</span>`;
                     scoreHtml = `<div class="text-2xl font-black text-gray-300">VS</div>`;
@@ -2076,6 +2514,8 @@
                     if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) resultColor = 'text-green-600';
                     else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) resultColor = 'text-red-500';
                     scoreHtml = `<div class="flex items-center gap-4"><span class="text-3xl font-black ${resultColor}">${m.goalsUs}</span><span class="text-gray-300 font-bold">-</span><span class="text-3xl font-black text-gray-800">${m.goalsThem}</span></div>`;
+                    
+                    btnShare = `<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
                 }
                 
                 let eventsHtml = '';
@@ -2094,6 +2534,20 @@
                     const mvpP = window.players.find(x => x.id === m.mvp);
                     if (mvpP) eventsHtml += `<p class="text-[11px] font-bold text-yellow-600 mt-1 text-center"><i class="fas fa-star mr-1"></i>MVP: ${(mvpP.name||'').split(' ')[0]}</p>`;
                 }
+                if (m.captain) {
+                    const capP = window.players.find(x => x.id === m.captain);
+                    if (capP) eventsHtml += `<p class="text-[11px] font-bold text-brand-600 mt-1 text-center"><i class="fas fa-copyright mr-1"></i>Capitán: ${(capP.name||'').split(' ')[0]}</p>`;
+                }
+
+                let locationHtml = '';
+                if(m.location) {
+                    let locText = m.location.length > 25 ? m.location.substring(0, 25) + '...' : m.location;
+                    if(m.location.startsWith('http')) {
+                        locationHtml = `<a href="${m.location}" target="_blank" class="text-blue-500 hover:underline flex items-center justify-center gap-1 text-[11px] font-medium mt-1" title="${m.location}"><i class="fas fa-map-marker-alt"></i> Ver en Maps</a>`;
+                    } else {
+                        locationHtml = `<p class="text-gray-500 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> ${locText}</p>`;
+                    }
+                }
                 
                 grid.innerHTML += `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition">
@@ -2105,7 +2559,10 @@
                             </div>
                         </div>
                         <div class="flex flex-col items-center justify-center py-2 mb-4 border-y border-dashed border-gray-200">
-                            <p class="text-xs text-gray-400 font-medium uppercase mb-2">${dateStr}</p>
+                            <div class="text-center mb-3">
+                                <p class="text-xs text-gray-400 font-medium uppercase">${dateStr}</p>
+                                ${locationHtml}
+                            </div>
                             <div class="flex items-center justify-between w-full px-4">
                                 <div class="text-center w-1/3"><p class="font-bold text-gray-800 truncate">NISUS FC</p></div>
                                 <div class="w-1/3 flex justify-center">${scoreHtml}</div>
@@ -2113,7 +2570,8 @@
                             </div>
                             ${eventsHtml}
                         </div>
-                        <button onclick="window.editMatch('${m.id}')" class="mt-auto w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition"><i class="fas fa-clipboard-list mr-1"></i> Ver Detalles</button>
+                        ${btnShare}
+                        <button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition"><i class="fas fa-clipboard-list mr-1"></i> Ver Detalles</button>
                     </div>`;
             });
         };
@@ -2132,7 +2590,17 @@
             if (nextMatch) {
                 document.getElementById('next-match-vs').textContent = nextMatch.opponent;
                 const d = new Date(nextMatch.date + 'T12:00:00');
-                document.getElementById('next-match-date').textContent = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                
+                let locationHtml = '';
+                if(nextMatch.location) {
+                    if(nextMatch.location.startsWith('http')) {
+                        locationHtml = `<a href="${nextMatch.location}" target="_blank" class="text-blue-500 hover:underline flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> Ir al mapa</a>`;
+                    } else {
+                        locationHtml = `<p class="text-gray-400 flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> ${nextMatch.location}</p>`;
+                    }
+                }
+                
+                document.getElementById('next-match-date').innerHTML = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) + locationHtml;
                 document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> Fútbol ${nextMatch.tournament==='f11'?'11':'7'}`;
                 btnTacticsNext.classList.remove('hidden'); btnTacticsNext.onclick = function() { window.editMatch(nextMatch.id); };
             } else {
