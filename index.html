@@ -674,74 +674,35 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div id="qs-group-games"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Partidos</label><div class="flex mt-1"><button onclick="window.adjStat('games',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-games" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('games',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
                         <div id="qs-group-goals"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Goles</label><div class="flex mt-1"><button onclick="window.adjStat('goals',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-goals" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('goals',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
-                        <div id="qs-group-assists"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Asist.</label><div class="flex mt-1"><button onclick="window.adjStat('assists',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-assists" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('assists',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
+                        <div id="qs-group-assists"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Asist</label><div class="flex mt-1"><button onclick="window.adjStat('assists',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-assists" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('assists',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
                         <div id="qs-group-yellows"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Amarillas</label><div class="flex mt-1"><button onclick="window.adjStat('yellows',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-yellows" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('yellows',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
                         <div id="qs-group-reds"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Rojas</label><div class="flex mt-1"><button onclick="window.adjStat('reds',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-reds" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('reds',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
                         <div id="qs-group-mvps"><label class="block text-[10px] font-semibold text-gray-500 uppercase">MVPs</label><div class="flex mt-1"><button onclick="window.adjStat('mvps',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-mvps" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('mvps',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
-                        <div id="qs-group-cleansheets"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Valla Invicta</label><div class="flex mt-1"><button onclick="window.adjStat('cleanSheets',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-cleansheets" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('cleanSheets',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
+                        <div id="qs-group-cleansheets"><label class="block text-[10px] font-semibold text-gray-500 uppercase">Invictas</label><div class="flex mt-1"><button onclick="window.adjStat('cleanSheets',-1)" class="w-8 h-8 bg-gray-100 rounded-l border">-</button><input type="number" id="qs-cleansheets" class="w-full h-8 text-center border-y outline-none" readonly><button onclick="window.adjStat('cleanSheets',1)" class="w-8 h-8 bg-gray-100 rounded-r border">+</button></div></div>
                     </div>
-                    <button onclick="window.saveQuickStats()" class="w-full mt-4 bg-brand-600 text-white py-2 rounded-lg font-medium">Guardar Histórico</button>
-                </div>
-            </div>
-        </div>
-        
-        <div id="modalPlayerCard" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center">
-                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Ficha del Jugador</h3><button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div>
-                <div id="card-render-container" class="flex justify-center mb-6"></div>
-                <button id="btn-download-card" class="w-full bg-brand-600 hover:bg-brand-700 text-white py-3 rounded-lg font-bold transition"><i class="fas fa-download mr-2"></i>Descargar Imagen</button>
-            </div>
-        </div>
-
-        <div id="modalMatchResult" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center">
-                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Gráfico de Resultado</h3><button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div>
-                <div id="result-render-container" class="flex justify-center mb-6"></div>
-                <button id="btn-download-result" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition"><i class="fas fa-download mr-2"></i>Descargar para Redes</button>
-            </div>
-        </div>
-
-        <div id="modalArbitraje" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 relative">
-                <button onclick="document.getElementById('modalArbitraje').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
-                <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-3 text-xl"><i class="fas fa-file-invoice-dollar"></i></div>
-                <h3 class="text-lg font-bold text-gray-800 mb-1 text-center">Desglose de Arbitraje</h3>
-                <p class="text-sm text-gray-500 mb-4 text-center" id="arb-desc">Partido vs Equipo</p>
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                    <div class="flex justify-between mb-2"><span class="text-sm text-gray-600">Costo Total:</span><span class="text-sm font-bold text-gray-800" id="arb-total"></span></div>
-                    <div class="flex justify-between mb-2"><span class="text-sm text-gray-600">Convocados:</span><span class="text-sm font-bold text-gray-800" id="arb-count"></span></div>
-                    <div class="border-t border-gray-200 my-2"></div>
-                    <div class="flex justify-between"><span class="text-sm font-bold text-brand-700">Deuda por jugador:</span><span class="text-lg font-black text-brand-700" id="arb-cuota"></span></div>
-                </div>
-                <div class="max-h-48 overflow-y-auto">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Se aplicó esta deuda a:</p>
-                    <ul id="arb-players-list" class="space-y-1"></ul>
+                    <button onclick="window.saveQuickStats()" class="w-full mt-4 bg-brand-600 text-white py-2 rounded-lg font-medium">Guardar</button>
                 </div>
             </div>
         </div>
 
-        <div id="toast" class="fixed top-20 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 translate-x-[150%] z-50 flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-medium text-sm">Mensaje</span></div>
+        <div id="modalPlayerCard" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Ficha</h3><button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div><div id="card-render-container" class="flex justify-center mb-6"></div><button id="btn-download-card" class="w-full bg-brand-600 text-white py-2 rounded-lg font-medium"><i class="fas fa-download mr-2"></i>Descargar</button></div></div>
         
-        <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div id="confirmModalContent" class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200 p-6 text-center"><div class="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-exclamation-triangle"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">¿Estás seguro?</h3><p id="confirm-msg" class="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer.</p><div class="flex gap-3 justify-center"><button onclick="window.closeConfirm()" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg flex-1">Cancelar</button><button onclick="window.executeConfirm()" class="px-4 py-2 bg-red-600 text-white rounded-lg flex-1">Eliminar</button></div></div></div>
-        
-        <div id="pinModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center"><div class="w-16 h-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-lock"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">Acceso Restringido</h3><p class="text-sm text-gray-500 mb-4">Ingresa el PIN para desbloquear la edición.</p><input type="password" id="admin-pin" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-center mb-6 text-xl tracking-[0.5em] font-bold" placeholder="****" maxlength="4"><div class="flex gap-3 justify-center"><button onclick="window.closePinModal()" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg flex-1">Cancelar</button><button onclick="window.verifyPin()" class="px-4 py-2 bg-brand-600 text-white rounded-lg flex-1">Desbloquear</button></div></div></div>
+        <div id="modalMatchResult" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Resultado</h3><button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div><div id="result-render-container" class="flex justify-center mb-6"></div><button id="btn-download-result" class="w-full bg-blue-600 text-white py-2 rounded-lg font-medium"><i class="fas fa-download mr-2"></i>Descargar</button></div></div>
+
+        <div id="modalArbitraje" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden"><div class="bg-brand-800 px-4 py-3 flex justify-between items-center text-white"><h3 class="font-bold">Desglose de Arbitraje</h3><button onclick="document.getElementById('modalArbitraje').classList.add('hidden')" class="hover:text-gray-200"><i class="fas fa-times"></i></button></div><div class="p-4"><p class="text-sm text-gray-600 mb-4" id="arb-desc"></p><div class="grid grid-cols-3 gap-2 text-center mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200"><div><p class="text-[10px] font-bold text-gray-400 uppercase">Total Pagado</p><p class="text-lg font-black text-red-600" id="arb-total"></p></div><div><p class="text-[10px] font-bold text-gray-400 uppercase">Convocados</p><p class="text-lg font-black text-gray-800" id="arb-count"></p></div><div><p class="text-[10px] font-bold text-gray-400 uppercase">Deuda C/U</p><p class="text-lg font-black text-brand-600" id="arb-cuota"></p></div></div><p class="text-xs font-bold text-gray-700 mb-2 border-b pb-1">Generaron deuda:</p><ul id="arb-players-list" class="space-y-1 max-h-48 overflow-y-auto"></ul></div></div></div>
+
+        <div id="toast" class="fixed top-20 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 translate-x-[150%] z-50 flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-medium text-sm"></span></div>
+
+        <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div id="confirmModalContent" class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200"><div class="p-6 text-center"><div class="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-exclamation-triangle"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">¿Estás seguro?</h3><p id="confirm-msg" class="text-sm text-gray-500 mb-6"></p><div class="flex gap-3 justify-center"><button onclick="window.closeConfirm()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition flex-1">Cancelar</button><button onclick="window.executeConfirm()" class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium flex-1">Eliminar</button></div></div></div></div>
+
+        <div id="pinModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center"><div class="w-16 h-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-lock"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">Acceso Restringido</h3><p class="text-sm text-gray-500 mb-4">Ingresa el PIN</p><input type="password" id="admin-pin" class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-center mb-6 text-xl tracking-[0.5em] font-bold" placeholder="****" maxlength="4"><div class="flex gap-3 justify-center"><button onclick="window.closePinModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition flex-1">Cancelar</button><button onclick="window.verifyPin()" class="px-4 py-2 bg-brand-600 text-white rounded-lg font-medium flex-1">Desbloquear</button></div></div></div>
     </main>
 
-    <!-- Navegación Inferior Móvil -->
-    <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 z-40 pb-safe">
-        <button onclick="window.showSection('dashboard')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-mobile-dashboard"><i class="fas fa-chart-pie text-xl mb-1"></i><span class="text-[10px] font-medium">Inicio</span></button>
-        <button onclick="window.showSection('players')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-mobile-players"><i class="fas fa-users text-xl mb-1"></i><span class="text-[10px] font-medium">Plantilla</span></button>
-        <button onclick="window.showSection('attendance')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-mobile-attendance"><i class="fas fa-clipboard-check text-xl mb-1"></i><span class="text-[10px] font-medium">Entrenos</span></button>
-        <button onclick="window.showSection('matches')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-mobile-matches"><i class="fas fa-calendar-alt text-xl mb-1"></i><span class="text-[10px] font-medium">Partidos</span></button>
-        <button onclick="window.showSection('finances')" class="flex flex-col items-center p-2 text-gray-500 hover:text-brand-600 transition" id="nav-mobile-finances"><i class="fas fa-wallet text-xl mb-1"></i><span class="text-[10px] font-medium">Finanzas</span></button>
-    </nav>
-
-    <!-- SCRIPTS -->
+    <!-- ================= JS GLOBAL ================= -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ================= CONFIGURACIÓN DE FIREBASE =================
         const firebaseConfig = {
             apiKey: "AIzaSyCXssxxTsyNBrp6x08dCX9QAPts6mon_1U",
             authDomain: "nisus-fc.firebaseapp.com",
@@ -750,6 +711,86 @@
             messagingSenderId: "1095183265565",
             appId: "1:1095183265565:web:019161bbd603bba7ccfbf4"
         };
+        
+        // Asignación de funciones de Arrastre AL INICIO
+        window.draggedElement = null;
+        window.dragStart = function(e) {
+            if(!window.isAdmin) return window.showToast('Desbloquea el candado para editar', true);
+            window.draggedElement = e.target.closest('.player-token');
+            if(!window.draggedElement) return;
+            const pitch = document.getElementById('tactical-pitch');
+            if(window.draggedElement.parentElement !== pitch) {
+                window.draggedElement.style.position='absolute';
+                window.draggedElement.style.transform='translate(-50%,-50%)';
+                pitch.appendChild(window.draggedElement);
+            }
+        };
+
+        window.dragMove = function(e) {
+            if(!window.draggedElement) return;
+            if(e.type==='touchmove' && e.cancelable) e.preventDefault();
+            const p = document.getElementById('tactical-pitch');
+            const r = p.getBoundingClientRect();
+            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            let x = ((clientX - r.left) / r.width) * 100;
+            let y = ((clientY - r.top) / r.height) * 100;
+            window.draggedElement.style.left = x + '%';
+            window.draggedElement.style.top = y + '%';
+        };
+
+        window.dragEnd = function(e) {
+            if(!window.draggedElement) return;
+            const p = document.getElementById('tactical-pitch');
+            const r = p.getBoundingClientRect();
+            let cy = (e.type.includes('touch') ? e.changedTouches[0].clientY : e.clientY);
+            let cx = (e.type.includes('touch') ? e.changedTouches[0].clientX : e.clientX);
+
+            const pid = window.draggedElement.dataset.id;
+            const idx = window.currentLineup.findIndex(l => l.playerId === pid);
+
+            if(idx >= 0) {
+                const oldX = window.currentLineup[idx].x;
+                const oldY = window.currentLineup[idx].y;
+
+                if(cy > r.bottom + 10) {
+                    // Si se suelta debajo de la cancha, se va al banquillo
+                    window.currentLineup[idx].x = null;
+                    window.currentLineup[idx].y = null;
+                } else {
+                    let nx = ((cx - r.left) / r.width) * 100;
+                    let ny = ((cy - r.top) / r.height) * 100;
+                    const mod = document.getElementById('m-modality').value;
+                    const formKey = document.getElementById('m-formation').value;
+
+                    if (formKey && formations[mod] && formations[mod][formKey]) {
+                        const coords = formations[mod][formKey];
+                        let nearest = coords[0];
+                        let minDist = Infinity;
+                        coords.forEach(c => {
+                            const dist = Math.sqrt(Math.pow(nx - c.x, 2) + Math.pow(ny - c.y, 2));
+                            if(dist < minDist) { minDist = dist; nearest = c; }
+                        });
+
+                        // Lógica de Intercambio (Swap) si la posición ya está ocupada
+                        const occupantIdx = window.currentLineup.findIndex(l => l.playerId !== pid && l.x === nearest.x && l.y === nearest.y);
+                        if(occupantIdx >= 0) {
+                            window.currentLineup[occupantIdx].x = oldX;
+                            window.currentLineup[occupantIdx].y = oldY;
+                        }
+
+                        window.currentLineup[idx].x = nearest.x;
+                        window.currentLineup[idx].y = nearest.y;
+                    } else {
+                        window.currentLineup[idx].x = nx;
+                        window.currentLineup[idx].y = ny;
+                    }
+                }
+            }
+            window.draggedElement = null;
+            window.drawTacticalBoard();
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
@@ -1258,30 +1299,6 @@
             const b = document.getElementById('pitch-count-badge'); if(b) { b.textContent = `${onPitch}/${max} en cancha`; b.className = `px-2 py-1 text-xs font-bold rounded ${onPitch>max?'bg-red-100 text-red-800':onPitch===max?'bg-green-100 text-green-800':'bg-brand-100 text-brand-800'}`; }
         };
 
-        window.dragStart = function(e) { if(!window.isAdmin) return; window.draggedElement = e.target.closest('.player-token'); if(!window.draggedElement) return; const pitch = document.getElementById('tactical-pitch'); if(window.draggedElement.parentElement !== pitch) { window.draggedElement.style.position='absolute'; window.draggedElement.style.transform='translate(-50%,-50%)'; pitch.appendChild(window.draggedElement); } };
-        window.dragMove = function(e) { if(!window.draggedElement) return; if(e.type==='touchmove'&&e.cancelable) e.preventDefault(); const p=document.getElementById('tactical-pitch'); const r=p.getBoundingClientRect(); let x=(( (e.type.includes('touch')?e.touches[0].clientX:e.clientX) - r.left)/r.width)*100; let y=(( (e.type.includes('touch')?e.touches[0].clientY:e.clientY) - r.top)/r.height)*100; window.draggedElement.style.left=x+'%'; window.draggedElement.style.top=y+'%'; };
-        window.dragEnd = function(e) { 
-            if(!window.draggedElement) return; const p=document.getElementById('tactical-pitch'); const r=p.getBoundingClientRect(); let cy=(e.type.includes('touch')?e.changedTouches[0].clientY:e.clientY); let cx=(e.type.includes('touch')?e.changedTouches[0].clientX:e.clientX);
-            const pid = window.draggedElement.dataset.id; const idx = window.currentLineup.findIndex(l=>l.playerId===pid);
-            if(cy>r.bottom+10) { if(idx>=0){window.currentLineup[idx].x=null;window.currentLineup[idx].y=null;} }
-            else { 
-                if(idx>=0){ 
-                    let nx = ((cx-r.left)/r.width)*100; let ny = ((cy-r.top)/r.height)*100;
-                    const mod = document.getElementById('m-modality').value;
-                    const formKey = document.getElementById('m-formation').value;
-                    if (formKey && formations[mod] && formations[mod][formKey]) {
-                        const coords = formations[mod][formKey];
-                        let nearest = coords[0]; let minDist = Infinity;
-                        coords.forEach(c => { const dist = Math.sqrt(Math.pow(nx-c.x,2) + Math.pow(ny-c.y,2)); if(dist<minDist){minDist=dist;nearest=c;} });
-                        window.currentLineup[idx].x = nearest.x; window.currentLineup[idx].y = nearest.y;
-                    } else {
-                        window.currentLineup[idx].x = nx; window.currentLineup[idx].y = ny;
-                    }
-                } 
-            }
-            window.draggedElement = null; window.drawTacticalBoard();
-        };
-
         window.toggleSubField = () => { const t = document.getElementById('m-event-type').value, o = document.getElementById('m-event-player-out'); if(t==='sub') o.classList.remove('hidden'); else { o.classList.add('hidden'); o.value=''; } };
         window.addMatchEvent = function() {
             if(!window.isAdmin) return;
@@ -1709,41 +1726,18 @@
             window.showSection('dashboard'); 
             window.updateAdminUI(); 
             initCloudApp();
-        };
 
-        window.showConfirm = (msg, action) => { document.getElementById('confirm-msg').textContent = msg; window.pendingConfirmAction = action; document.getElementById('confirmModal').classList.remove('hidden'); setTimeout(()=>document.getElementById('confirmModalContent').classList.replace('scale-95','scale-100'),10); setTimeout(()=>document.getElementById('confirmModalContent').classList.replace('opacity-0','opacity-100'),10); };
-        window.closeConfirm = () => { document.getElementById('confirmModalContent').classList.replace('scale-100','scale-95'); document.getElementById('confirmModalContent').classList.replace('opacity-100','opacity-0'); setTimeout(()=>{document.getElementById('confirmModal').classList.add('hidden'); window.pendingConfirmAction=null;},200); };
-        window.executeConfirm = () => { if(window.pendingConfirmAction) window.pendingConfirmAction(); window.closeConfirm(); };
-
-        window.openQuickStats = function(id) {
-            const player = window.players.find(p => p.id === id); if(!player) return; 
-            document.getElementById('qs-id').value = id; document.getElementById('qs-name').textContent = player.name;
-            document.getElementById('tab-qs-f11').style.display = player.availableF11 ? 'block' : 'none';
-            document.getElementById('tab-qs-f7').style.display = player.availableF7 ? 'block' : 'none';
-            document.getElementById('qs-group-games').style.display = player.isStaff ? 'none' : 'block';
-            document.getElementById('qs-group-goals').style.display = player.isStaff ? 'none' : 'block';
-            document.getElementById('qs-group-assists').style.display = player.isStaff ? 'none' : 'block';
-            document.getElementById('qs-group-mvps').style.display = player.isStaff ? 'none' : 'block';
-            const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero');
-            document.getElementById('qs-group-cleansheets').style.display = (!player.isStaff && isGK) ? 'block' : 'none';
-            let defaultTab = window.currentFilter === 'all' ? (player.availableF11 ? 'f11' : 'f7') : window.currentFilter;
-            if(!player.availableF11 && defaultTab === 'f11') defaultTab = 'f7'; if(!player.availableF7 && defaultTab === 'f7') defaultTab = 'f11';
-            window.switchQsTab(defaultTab); document.getElementById('quickStatsModal').classList.remove('hidden');
-        };
-        window.closeQuickStats = function() { document.getElementById('quickStatsModal').classList.add('hidden'); };
-        window.switchQsTab = function(tab) {
-            window.currentQsTab = tab;
-            const btnF11 = document.getElementById('tab-qs-f11'); const btnF7 = document.getElementById('tab-qs-f7');
-            if(tab === 'f11') { btnF11.className = "flex-1 py-2 text-sm font-medium text-brand-600 border-b-2 border-brand-600"; btnF7.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent"; } 
-            else { btnF7.className = "flex-1 py-2 text-sm font-medium text-brand-600 border-b-2 border-brand-600"; btnF11.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent"; }
-            const p = window.players.find(x => x.id === document.getElementById('qs-id').value);
-            if(p && p.stats) {
-                document.getElementById('qs-games').value = p.stats[tab]?.games || 0; document.getElementById('qs-goals').value = p.stats[tab]?.goals || 0;
-                document.getElementById('qs-assists').value = p.stats[tab]?.assists || 0; document.getElementById('qs-yellows').value = p.stats[tab]?.yellows || 0;
-                document.getElementById('qs-reds').value = p.stats[tab]?.reds || 0; document.getElementById('qs-mvps').value = p.stats[tab]?.mvps || 0;
-                document.getElementById('qs-cleansheets').value = p.stats[tab]?.cleanSheets || 0;
+            // ================= SENSORES GLOBALES PIZARRA TÁCTICA =================
+            document.addEventListener('mousemove', window.dragMove);
+            document.addEventListener('mouseup', window.dragEnd);
+            
+            const pitch = document.getElementById('tactical-pitch');
+            if(pitch) {
+                pitch.addEventListener('touchmove', window.dragMove, {passive: false});
+                pitch.addEventListener('touchend', window.dragEnd);
             }
         };
+
         window.adjStat = function(field, change) { const input = document.getElementById(`qs-${field}`); let val = parseInt(input.value) || 0; val += change; if(val < 0) val = 0; input.value = val; };
         window.saveQuickStats = async function() {
             if(!window.isAdmin) return window.showToast('Solo edición', true);
@@ -1754,6 +1748,131 @@
                 p.stats[window.currentQsTab].games = parseInt(document.getElementById('qs-games').value) || 0; p.stats[window.currentQsTab].goals = parseInt(document.getElementById('qs-goals').value) || 0; p.stats[window.currentQsTab].assists = parseInt(document.getElementById('qs-assists').value) || 0;
                 p.stats[window.currentQsTab].yellows = parseInt(document.getElementById('qs-yellows').value) || 0; p.stats[window.currentQsTab].reds = parseInt(document.getElementById('qs-reds').value) || 0; p.stats[window.currentQsTab].mvps = parseInt(document.getElementById('qs-mvps').value) || 0; p.stats[window.currentQsTab].cleanSheets = parseInt(document.getElementById('qs-cleansheets').value) || 0;
                 try { await setDoc(getDocRef('jugadores', id), p); window.closeQuickStats(); window.showToast(`Stats actualizadas`); } catch(e) { window.showToast("Error", true); }
+            }
+        };
+        
+        window.openPlayerCard = function(playerId) {
+            const p = window.players.find(x => x.id === playerId);
+            if (!p) return;
+
+            const container = document.getElementById('card-render-container');
+            const safeName = p.name || 'N/A';
+            const displayAlias = p.alias ? `<p class="text-sm font-medium italic text-gray-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
+            const initials = p.name ? p.name.charAt(0).toUpperCase() : '?';
+            
+            let posString = "N/A";
+            if (p.positions && Array.isArray(p.positions) && p.positions.length > 0) posString = p.positions[0];
+            else if (p.position && typeof p.position === 'string') posString = p.position;
+            let posStr = p.isStaff ? 'CT' : String(posString).substring(0, 3).toUpperCase();
+            
+            const games = window.getPlayerStat(p, 'games');
+            const goals = window.getPlayerStat(p, 'goals');
+            const assists = window.getPlayerStat(p, 'assists');
+            const mvps = window.getPlayerStat(p, 'mvps');
+            
+            let filterLabel = window.currentFilter === 'all' ? 'GLOBAL' : window.currentFilter.toUpperCase();
+            let seasonLabel = window.currentSeason === 'all' ? 'HISTÓRICO' : `TEMP. ${window.currentSeason}`;
+
+            let ageStr = '--';
+            if (p.birthdate) {
+                const birthYear = new Date(p.birthdate).getFullYear();
+                const currentYear = new Date().getFullYear();
+                ageStr = (currentYear - birthYear) + ' Años';
+            }
+            let footStr = p.foot ? p.foot.toUpperCase() : 'N/E';
+
+            let matchesPlayed = 0, matchesWon = 0;
+            window.matches.forEach(m => {
+                if (m.status !== 'finished') return;
+                if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return;
+                if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
+                
+                const played = (m.lineup && m.lineup.some(l => l.playerId === p.id)) || (m.events && m.events.some(e => e.type === 'sub' && e.playerId === p.id));
+                if (played) { matchesPlayed++; if (parseInt(m.goalsUs) > parseInt(m.goalsThem)) matchesWon++; }
+            });
+            const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) + '%' : '0%';
+
+            let statsHtml = '';
+            if (p.isStaff) {
+                const yellows = window.getPlayerStat(p, 'yellows'); const reds = window.getPlayerStat(p, 'reds');
+                statsHtml = `<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-yellow-400 uppercase">Amarillas</p><p class="text-lg font-bold text-yellow-400">${yellows}</p></div><div><p class="text-xs text-red-400 uppercase">Rojas</p><p class="text-lg font-bold text-red-400">${reds}</p></div></div>`;
+            } else {
+                statsHtml = `<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-gray-400 uppercase">Partidos</p><p class="text-lg font-bold">${games}</p></div><div><p class="text-xs text-gray-400 uppercase">Goles</p><p class="text-lg font-bold">${goals}</p></div><div><p class="text-xs text-gray-400 uppercase">Asist.</p><p class="text-lg font-bold">${assists}</p></div></div>`;
+            }
+            
+            const imgHtml = p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<span class="text-4xl font-bold text-gray-400">${initials}</span>`;
+
+            container.innerHTML = `
+                <div id="player-card-node" class="player-card-export">
+                    <div class="absolute top-4 left-4 text-center"><p class="text-2xl font-bold text-yellow-400">${p.number || '--'}</p><p class="text-sm font-semibold uppercase tracking-wider">${posStr}</p></div>
+                    <div class="absolute top-4 right-4 opacity-50"><img src="escudo.png" class="w-10 h-10 object-contain" onerror="this.style.display='none'"></div>
+                    
+                    <div class="w-32 h-32 rounded-full border-4 border-gray-600 bg-gray-800 flex items-center justify-center mt-6 mb-3 overflow-hidden shadow-lg">
+                        ${imgHtml}
+                    </div>
+                    <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-gray-700 pb-1" style="font-size: ${safeName.length > 15 ? '1.25rem' : '1.5rem'}">${safeName}</h2>
+                    ${displayAlias}
+                    <div class="flex justify-center gap-3 mt-1 text-[9px] font-medium text-gray-400">
+                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">EDAD: ${ageStr}</span>
+                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">PIE: ${footStr}</span>
+                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700" title="Victorias">VICTORIAS: ${winRate}</span>
+                    </div>
+                    <p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest font-bold">ESTADÍSTICAS ${filterLabel} - ${seasonLabel}</p>
+                    ${statsHtml}
+                    ${mvps > 0 ? `<div class="mt-2 bg-yellow-900/50 border border-yellow-500/50 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold shadow-inner flex items-center gap-1"><i class="fas fa-star"></i> ${mvps} MVP</div>` : ''}
+                    <div class="absolute bottom-2 text-[8px] text-gray-600">NISUS FC CLOUD</div>
+                </div>`;
+
+            document.getElementById('modalPlayerCard').classList.remove('hidden');
+            document.getElementById('btn-download-card').onclick = function() {
+                const node = document.getElementById('player-card-node');
+                const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+                html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true }).then(canvas => {
+                    const link = document.createElement('a'); link.download = `Ficha_${safeName.replace(/\s+/g, '_')}_${filterLabel}.png`;
+                    link.href = canvas.toDataURL('image/png'); link.click();
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar Imagen', 2000);
+                }).catch(err => { window.showToast("Error", true); btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar Imagen'; });
+            };
+        };
+        
+        window.openQuickStats = function(id) {
+            const player = window.players.find(p => p.id === id);
+            if(!player) return; 
+            document.getElementById('qs-id').value = id; document.getElementById('qs-name').textContent = player.name;
+            document.getElementById('tab-qs-f11').style.display = player.availableF11 ? 'block' : 'none';
+            document.getElementById('tab-qs-f7').style.display = player.availableF7 ? 'block' : 'none';
+            
+            const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero');
+            document.getElementById('qs-group-games').style.display = player.isStaff ? 'none' : 'block';
+            document.getElementById('qs-group-goals').style.display = player.isStaff ? 'none' : 'block';
+            document.getElementById('qs-group-assists').style.display = player.isStaff ? 'none' : 'block';
+            document.getElementById('qs-group-mvps').style.display = player.isStaff ? 'none' : 'block';
+            document.getElementById('qs-group-cleansheets').style.display = (!player.isStaff && isGK) ? 'block' : 'none';
+            
+            let defaultTab = window.currentFilter === 'all' ? (player.availableF11 ? 'f11' : 'f7') : window.currentFilter;
+            if(!player.availableF11 && defaultTab === 'f11') defaultTab = 'f7';
+            if(!player.availableF7 && defaultTab === 'f7') defaultTab = 'f11';
+            
+            window.switchQsTab(defaultTab);
+            document.getElementById('quickStatsModal').classList.remove('hidden');
+        };
+
+        window.switchQsTab = function(tab) {
+            window.currentQsTab = tab;
+            const btnF11 = document.getElementById('tab-qs-f11'); const btnF7 = document.getElementById('tab-qs-f7');
+            if(tab === 'f11') { btnF11.className = "flex-1 py-2 text-sm font-medium text-brand-600 border-b-2 border-brand-600"; btnF7.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent"; } 
+            else { btnF7.className = "flex-1 py-2 text-sm font-medium text-brand-600 border-b-2 border-brand-600"; btnF11.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent"; }
+            
+            const p = window.players.find(x => x.id === document.getElementById('qs-id').value);
+            if(p && p.stats) {
+                document.getElementById('qs-games').value = p.stats[tab]?.games || 0;
+                document.getElementById('qs-goals').value = p.stats[tab]?.goals || 0;
+                document.getElementById('qs-assists').value = p.stats[tab]?.assists || 0;
+                document.getElementById('qs-yellows').value = p.stats[tab]?.yellows || 0;
+                document.getElementById('qs-reds').value = p.stats[tab]?.reds || 0;
+                document.getElementById('qs-mvps').value = p.stats[tab]?.mvps || 0;
+                document.getElementById('qs-cleansheets').value = p.stats[tab]?.cleanSheets || 0;
             }
         };
     </script>
