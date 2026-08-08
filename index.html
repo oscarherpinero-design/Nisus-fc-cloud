@@ -31,9 +31,10 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        /* Ocultar elementos forzadamente */
         .force-hidden { display: none !important; }
         
-        /* MODO SOLO LECTURA */
+        /* MODO SOLO LECTURA: Oculta admin-only y bloquea inputs, pero salva a los que tienen pointer-events-auto */
         body.read-only .admin-only { display: none !important; }
         body.read-only .ro-hide { display: none !important; }
         body.read-only .ro-show { display: block !important; }
@@ -48,7 +49,7 @@
         }
         body.read-only select:not(.pointer-events-auto)::-ms-expand { display: none; }
         
-        /* Pizarra Táctica */
+        /* Pizarra Táctica Realista */
         .pitch-container {
             width: 100%; max-width: 320px; height: 480px; margin: 0 auto;
             background-color: #4ade80; position: relative; border-radius: 8px; overflow: hidden;
@@ -87,18 +88,19 @@
         select[multiple] option { padding: 6px; border-radius: 4px; margin-bottom: 2px; }
         select[multiple] option:checked { background-color: #e0f2fe; color: #075985; font-weight: bold; }
 
-        /* Estilos de Exportación */
+        /* Estilos de Exportación de Imágenes */
         .player-card-export { width: 300px; height: 440px; background: linear-gradient(135deg, #111827, #1f2937); border: 4px solid #fbbf24; border-radius: 12px; padding: 16px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
         .match-result-export { width: 400px; height: 400px; background: linear-gradient(135deg, #075985, #111827); border-radius: 16px; padding: 20px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
     </style>
 </head>
 <body class="text-gray-800">
 
-    <!-- ================= MENÚ SUPERIOR ================= -->
+    <!-- ================= MENÚ SUPERIOR (W-FULL) ================= -->
     <header class="bg-brand-800 text-white shadow-md sticky top-0 z-40 w-full">
         <div class="w-full px-4 h-16 flex items-center justify-between gap-4">
             
             <div class="flex items-center gap-4 shrink-0">
+                <!-- Botón de Menú Lateral (Hamburguesa) -->
                 <button onclick="window.toggleMenu()" class="text-white hover:text-brand-200 text-2xl focus:outline-none transition p-2">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -110,12 +112,17 @@
             </div>
             
             <div class="flex bg-brand-900 rounded-lg p-1 text-sm items-center overflow-x-auto hide-scrollbar flex-nowrap justify-end">
-                <div id="connection-status" class="flex items-center gap-2 mr-3 px-2 border-r border-brand-800 transition-opacity" title="Conectando...">
+                <!-- Spinner de Conexión Inicial -->
+                <div id="connection-status" class="flex items-center gap-2 mr-3 px-2 border-r border-brand-800 transition-opacity" title="Conectando a Base de Datos...">
                     <i class="fas fa-circle-notch fa-spin text-gray-400"></i>
                 </div>
                 
+                <!-- Radar de Usuarios Online 🟢 -->
                 <div id="online-status" class="force-hidden flex items-center gap-2 mr-3 px-2 border-r border-brand-800" title="Usuarios en línea viendo la app">
-                    <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
                     <span id="online-count" class="text-sm font-bold text-green-400">0</span>
                 </div>
                 
@@ -125,6 +132,7 @@
                 
                 <div class="w-px h-4 bg-brand-800 mx-1"></div>
                 
+                <!-- Selector F11/F7 Desbloqueado -->
                 <select id="modality-filter" onchange="window.setFilter(this.value)" class="pointer-events-auto bg-brand-900 text-brand-100 hover:text-white border border-transparent hover:border-brand-700 rounded-md px-2 py-1 text-xs sm:text-sm outline-none font-medium cursor-pointer">
                     <option value="all">F11 / F7</option>
                     <option value="f11">F11</option>
@@ -133,6 +141,7 @@
                 
                 <div class="w-px h-4 bg-brand-800 mx-1"></div>
                 
+                <!-- Selector Temporada Desbloqueado -->
                 <select id="season-filter" onchange="window.setSeasonFilter(this.value)" class="pointer-events-auto bg-brand-900 text-brand-100 hover:text-white border border-transparent hover:border-brand-700 rounded-md px-2 py-1 text-xs sm:text-sm outline-none font-medium cursor-pointer max-w-[90px] sm:max-w-[110px] truncate">
                     <option value="all">Temp.</option>
                 </select>
@@ -169,8 +178,9 @@
                 <i class="fas fa-wallet w-5 text-center"></i> Finanzas
             </button>
         </nav>
+        
         <div class="p-4 border-t border-brand-800 text-center">
-            <p class="text-[10px] text-brand-400 font-medium">NISUS FC CLOUD v2.5</p>
+            <p class="text-[10px] text-brand-400 font-medium">NISUS FC CLOUD v3.0</p>
         </div>
     </div>
     
@@ -516,17 +526,27 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Modalidad *</label>
-                            <select id="m-modality" onchange="window.handleTournamentChange()" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm"><option value="f11">F11</option><option value="f7">F7</option></select>
+                            <select id="m-modality" onchange="window.handleModalityChange()" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm">
+                                <option value="f11">Fútbol 11</option>
+                                <option value="f7">Fútbol 7</option>
+                            </select>
                         </div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Temporada</label><input type="text" id="m-season" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm"></div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Indumentaria Nisus</label>
+                            <select id="m-kit" onchange="window.renderKitsPreview()" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm">
+                                <option value="white_blue">Blanca y Azul</option>
+                                <option value="black">Toda Negra</option>
+                            </select>
+                        </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Temporada</label><input type="text" id="m-season" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm"></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Jornada/Fase</label><input type="text" id="m-matchday" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none text-sm"></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Estado</label><select id="m-status" onchange="window.toggleScoreFields()" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm"><option value="pending">Por Jugar</option><option value="finished">Finalizado</option></select></div>
                     </div>
 
-                    <!-- Panel de Vestuario y Kits -->
+                    <!-- Panel de Vestuario y Kits 100% Personalizable -->
                     <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
                         <h3 class="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide text-center">Indumentarias del Partido</h3>
                         <div class="admin-only mb-4">
@@ -752,7 +772,7 @@
         window.showToast = (msg, isError = false) => {
             const t = document.getElementById('toast'); if(!t) return;
             document.getElementById('toast-msg').textContent = msg;
-            t.className = `fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600' : 'bg-gray-800'} text-white`;
+            t.className = `fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'}`;
             setTimeout(() => t.classList.remove('translate-x-[150%]'), 10); setTimeout(() => t.classList.add('translate-x-[150%]'), 3000);
         };
 
@@ -794,9 +814,15 @@
         };
 
         window.renderKitsPreview = function() {
-            const nisusShirt = '#ffffff'; const nisusAccent = '#0284c7'; const nisusShorts = '#111827'; const nisusSocks = '#111827';
-            const gkNisusShirt = '#eab308'; const gkNisusAccent = '#111827'; const gkNisusShorts = '#111827'; const gkNisusSocks = '#111827';
+            // Kit Nisus Seleccionado
+            const kitChoice = document.getElementById('m-kit')?.value || 'white_blue';
+            let nisusShirt = '#ffffff', nisusAccent = '#0284c7', nisusShorts = '#111827', nisusSocks = '#111827';
+            if (kitChoice === 'black') { nisusShirt = '#111827'; nisusAccent = '#111827'; }
             
+            // Kit Portero Nisus Fijo
+            const gkNisusShirt = '#eab308', gkNisusAccent = '#111827', gkNisusShorts = '#111827', gkNisusSocks = '#111827';
+            
+            // Kit Rival Personalizable
             const oppColor = document.getElementById('m-opponent-color')?.value || '#ff0000';
             const oppShorts = document.getElementById('m-opponent-shorts')?.value || '#ff0000';
             const oppSocks = document.getElementById('m-opponent-socks')?.value || '#ff0000';
@@ -806,6 +832,7 @@
             if(document.getElementById('kit-nisus-gk')) document.getElementById('kit-nisus-gk').innerHTML = window.generateKitSVG(gkNisusShirt, gkNisusAccent, gkNisusShorts, gkNisusSocks);
             if(document.getElementById('kit-opp-outfield')) document.getElementById('kit-opp-outfield').innerHTML = window.generateKitSVG(oppColor, oppColor, oppShorts, oppSocks);
             if(document.getElementById('kit-opp-gk')) document.getElementById('kit-opp-gk').innerHTML = window.generateKitSVG(oppGk, oppGk, oppGk, oppGk);
+            
             if(document.getElementById('label-opp-kit')) document.getElementById('label-opp-kit').textContent = document.getElementById('m-opponent')?.value || 'Rival';
         };
 
@@ -813,19 +840,25 @@
         window.getPlayerStat = function(player, statKey) {
             if(!player) return 0;
             if (player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalties', 'freekicks', 'saved'].includes(statKey)) return 0;
+            
             if (window.currentSeason === 'all') {
                 if(window.currentFilter === 'all') return (player.stats?.f11?.[statKey] || 0) + (player.stats?.f7?.[statKey] || 0);
                 return player.stats?.[window.currentFilter]?.[statKey] || 0;
             } 
+            
             let count = 0;
             window.matches.forEach(m => {
                 if (m.status !== 'finished' || m.season !== window.currentSeason || (window.currentFilter !== 'all' && m.modality !== window.currentFilter)) return;
+                
                 const played = (m.lineup && m.lineup.some(l => l.playerId === player.id)) || (m.events && m.events.some(e => e.type === 'sub' && e.playerId === player.id));
                 if (statKey === 'games' && played && !player.isStaff) count++;
+                
                 if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0") && !player.isStaff) {
                     if ((Array.isArray(player.positions) && player.positions.includes('Portero')) || player.position === 'Portero') count++;
                 }
+                
                 if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
+                
                 if (m.events) {
                     m.events.forEach(ev => {
                         if (ev.playerId === player.id) {
@@ -853,7 +886,9 @@
             if (window.isAdmin) { window.isAdmin = false; localStorage.removeItem('nisus_admin'); window.updateAdminUI(); window.showToast("Modo Solo Lectura activado"); }
             else { document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('admin-pin').value = ''; document.getElementById('admin-pin').focus(); }
         };
+        
         window.closePinModal = () => document.getElementById('pinModal').classList.add('hidden');
+        
         window.verifyPin = () => {
             if (document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin = true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("¡Edición desbloqueada!"); } 
             else window.showToast("PIN incorrecto", true);
@@ -1043,110 +1078,6 @@
             });
         };
 
-        window.openPlayerCard = function(playerId) {
-            const p = window.players.find(x => x.id === playerId);
-            if (!p) return;
-
-            const container = document.getElementById('card-render-container');
-            const safeName = p.name || 'N/A';
-            const displayAlias = p.alias ? `<p class="text-sm font-medium italic text-gray-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
-            const initials = p.name ? p.name.charAt(0).toUpperCase() : '?';
-            
-            let posString = "N/A";
-            if (p.positions && Array.isArray(p.positions) && p.positions.length > 0) posString = p.positions[0];
-            else if (p.position && typeof p.position === 'string') posString = p.position;
-            
-            let posStr = p.isStaff ? 'CT' : String(posString).substring(0, 3).toUpperCase();
-            
-            const games = window.getPlayerStat(p, 'games');
-            const goals = window.getPlayerStat(p, 'goals');
-            const assists = window.getPlayerStat(p, 'assists');
-            const mvps = window.getPlayerStat(p, 'mvps');
-            
-            let filterLabel = window.currentFilter === 'all' ? 'GLOBAL' : window.currentFilter.toUpperCase();
-            let seasonLabel = window.currentSeason === 'all' ? 'HISTÓRICO' : `TEMP. ${window.currentSeason}`;
-
-            let ageStr = '--';
-            if (p.birthdate) {
-                const birthYear = new Date(p.birthdate).getFullYear();
-                const currentYear = new Date().getFullYear();
-                ageStr = (currentYear - birthYear) + ' Años';
-            }
-            
-            let footStr = p.foot ? p.foot.toUpperCase() : 'N/E';
-
-            let matchesPlayed = 0, matchesWon = 0;
-            window.matches.forEach(m => {
-                if (m.status !== 'finished') return;
-                if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return;
-                if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
-                
-                const played = (m.lineup && m.lineup.some(l => l.playerId === p.id)) || (m.events && m.events.some(e => e.type === 'sub' && e.playerId === p.id));
-                if (played) {
-                    matchesPlayed++;
-                    if (parseInt(m.goalsUs) > parseInt(m.goalsThem)) matchesWon++;
-                }
-            });
-            const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) + '%' : '0%';
-
-            let statsHtml = '';
-            if (p.isStaff) {
-                const yellows = window.getPlayerStat(p, 'yellows'); 
-                const reds = window.getPlayerStat(p, 'reds');
-                statsHtml = `<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-yellow-400 uppercase">Amarillas</p><p class="text-lg font-bold text-yellow-400">${yellows}</p></div><div><p class="text-xs text-red-400 uppercase">Rojas</p><p class="text-lg font-bold text-red-400">${reds}</p></div></div>`;
-            } else {
-                statsHtml = `<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-gray-400 uppercase">Partidos</p><p class="text-lg font-bold">${games}</p></div><div><p class="text-xs text-gray-400 uppercase">Goles</p><p class="text-lg font-bold">${goals}</p></div><div><p class="text-xs text-gray-400 uppercase">Asist.</p><p class="text-lg font-bold">${assists}</p></div></div>`;
-            }
-            
-            const imgHtml = p.image 
-                ? `<img src="${p.image}" class="w-full h-full object-cover">`
-                : `<span class="text-4xl font-bold text-gray-400">${initials}</span>`;
-
-            container.innerHTML = `
-                <div id="player-card-node" class="player-card-export">
-                    <div class="absolute top-4 left-4 text-center"><p class="text-2xl font-bold text-yellow-400">${p.number || '--'}</p><p class="text-sm font-semibold uppercase tracking-wider">${posStr}</p></div>
-                    <div class="absolute top-4 right-4 opacity-50"><img src="escudo.png" class="w-10 h-10 object-contain" onerror="this.style.display='none'"></div>
-                    
-                    <div class="w-32 h-32 rounded-full border-4 border-gray-600 bg-gray-800 flex items-center justify-center mt-6 mb-3 overflow-hidden shadow-lg">
-                        ${imgHtml}
-                    </div>
-                    
-                    <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-gray-700 pb-1" style="font-size: ${safeName.length > 15 ? '1.25rem' : '1.5rem'}">${safeName}</h2>
-                    ${displayAlias}
-                    
-                    <div class="flex justify-center gap-3 mt-1 text-[9px] font-medium text-gray-400">
-                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">EDAD: ${ageStr}</span>
-                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">PIE: ${footStr}</span>
-                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700" title="Victorias con el equipo">VIC: ${winRate}</span>
-                    </div>
-
-                    <p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest font-bold">ESTADÍSTICAS ${filterLabel} - ${seasonLabel}</p>
-                    ${statsHtml}
-                    ${mvps > 0 ? `<div class="mt-2 bg-yellow-900/50 border border-yellow-500/50 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold shadow-inner flex items-center gap-1"><i class="fas fa-star"></i> ${mvps} MVP</div>` : ''}
-                    <div class="absolute bottom-2 text-[8px] text-gray-600">NISUS FC CLOUD</div>
-                </div>`;
-
-            document.getElementById('modalPlayerCard').classList.remove('hidden');
-
-            document.getElementById('btn-download-card').onclick = function() {
-                const node = document.getElementById('player-card-node');
-                const btn = this; 
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-                
-                html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true }).then(canvas => {
-                    const link = document.createElement('a'); 
-                    link.download = `Ficha_${safeName.replace(/\s+/g, '_')}_${filterLabel}.png`;
-                    link.href = canvas.toDataURL('image/png'); 
-                    link.click();
-                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
-                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar Imagen', 2000);
-                }).catch(err => { 
-                    window.showToast("Error al generar imagen", true); 
-                    btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar Imagen'; 
-                });
-            };
-        };
-
         // ================= PARTIDOS =================
         window.newMatch = function() {
             document.getElementById('match-form').reset(); document.getElementById('m-id').value = '';
@@ -1155,6 +1086,7 @@
             document.getElementById('m-mvp').value = ''; document.getElementById('m-captain').value = '';
             document.getElementById('m-opponent-color').value = '#ff0000'; document.getElementById('m-opponent-shorts').value = '#ff0000';
             document.getElementById('m-opponent-socks').value = '#ff0000'; document.getElementById('m-opponent-gk').value = '#00ff00';
+            document.getElementById('m-kit').value = 'white_blue'; document.getElementById('m-modality').value = 'f11';
             window.currentLineup = []; window.currentEvents = [];
             window.toggleScoreFields(); window.renderCallupList(); window.updateFormationOptions(); window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview();
             window.showSection('matchForm');
@@ -1167,6 +1099,7 @@
             document.getElementById('m-tournament').value = m.tournament || ''; document.getElementById('m-modality').value = m.modality || 'f11';
             document.getElementById('m-season').value = m.season || ''; document.getElementById('m-matchday').value = m.matchday || ''; 
             document.getElementById('m-status').value = m.status; 
+            document.getElementById('m-kit').value = m.kit || 'white_blue';
             document.getElementById('m-opponent-color').value = m.oppColor || '#ff0000';
             document.getElementById('m-opponent-shorts').value = m.oppShorts || m.oppColor || '#ff0000';
             document.getElementById('m-opponent-socks').value = m.oppSocks || m.oppColor || '#ff0000';
@@ -1202,6 +1135,7 @@
                 id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value,
                 location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value,
                 modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: status,
+                kit: document.getElementById('m-kit').value,
                 oppColor: document.getElementById('m-opponent-color').value, oppShorts: document.getElementById('m-opponent-shorts').value,
                 oppSocks: document.getElementById('m-opponent-socks').value, oppGk: document.getElementById('m-opponent-gk').value,
                 goalsUs: status === 'finished' ? (document.getElementById('m-goals-us').value || 0) : null,
@@ -1281,14 +1215,14 @@
         window.updateCaptainSelect = () => { const sel = document.getElementById('m-captain'); if(!sel) return; const cur = sel.value; let html = '<option value="">Ninguno</option>'; window.players.filter(p=>window.currentLineup.some(l=>l.playerId===p.id)&&!p.isStaff).forEach(p=> html+=`<option value="${p.id}">${p.name}</option>`); sel.innerHTML = html; if(window.players.find(p=>p.id===cur)) sel.value=cur; };
         window.updateMvpSelect = () => { const sel = document.getElementById('m-mvp'); if(!sel) return; const cur = sel.value; let html = '<option value="">Ninguno</option>'; const ids = [...new Set([...window.currentLineup.map(l=>l.playerId), ...window.currentEvents.filter(e=>e.type==='sub').map(e=>e.playerId)])]; window.players.filter(p=>ids.includes(p.id)&&!p.isStaff).forEach(p=> html+=`<option value="${p.id}">${p.name}</option>`); sel.innerHTML = html; if(window.players.find(p=>p.id===cur)) sel.value=cur; };
         
-        window.handleTournamentChange = () => { window.updateFormationOptions(); const t = document.getElementById('m-modality').value; const max = t === 'f11' ? 11 : 7; window.currentLineup = window.currentLineup.filter(l => { const p = window.players.find(x => x.id === l.playerId); return p && (t === 'f11' ? p.availableF11 : p.availableF7); }); let c=0; window.currentLineup.forEach(p=>{ const isS=window.players.find(x=>x.id===p.playerId)?.isStaff; if(!isS&&p.x!==null&&p.y!==null){ c++; if(c>max){p.x=null;p.y=null;} } }); window.renderCallupList(); window.drawTacticalBoard(); };
+        window.handleModalityChange = () => { window.updateFormationOptions(); const t = document.getElementById('m-modality').value; const max = t === 'f11' ? 11 : 7; window.currentLineup = window.currentLineup.filter(l => { const p = window.players.find(x => x.id === l.playerId); return p && (t === 'f11' ? p.availableF11 : p.availableF7); }); let c=0; window.currentLineup.forEach(p=>{ const isS=window.players.find(x=>x.id===p.playerId)?.isStaff; if(!isS&&p.x!==null&&p.y!==null){ c++; if(c>max){p.x=null;p.y=null;} } }); window.renderCallupList(); window.drawTacticalBoard(); };
         window.updateFormationOptions = () => { const t = document.getElementById('m-modality').value; const sel = document.getElementById('m-formation'); if(!sel) return; let html = '<option value="">Formación Libre</option>'; for(let key in formations[t]) html += `<option value="${key}">${key}</option>`; sel.innerHTML = html; };
 
         window.applyFormation = function() {
-            const tournament = document.getElementById('m-modality').value;
+            const mod = document.getElementById('m-modality').value;
             const formationKey = document.getElementById('m-formation').value;
             if(!formationKey) { window.drawTacticalBoard(); return; }
-            const coords = formations[tournament][formationKey];
+            const coords = formations[mod][formationKey];
             window.currentLineup.forEach(p => { const pObj = window.players.find(x => x.id === p.playerId); if(pObj && !pObj.isStaff) { p.x = null; p.y = null; } });
             let unassigned = window.currentLineup.filter(l => { const pObj = window.players.find(x => x.id === l.playerId); return pObj && !pObj.isStaff; });
             coords.forEach(slot => {
@@ -1330,7 +1264,21 @@
             if(!window.draggedElement) return; const p=document.getElementById('tactical-pitch'); const r=p.getBoundingClientRect(); let cy=(e.type.includes('touch')?e.changedTouches[0].clientY:e.clientY); let cx=(e.type.includes('touch')?e.changedTouches[0].clientX:e.clientX);
             const pid = window.draggedElement.dataset.id; const idx = window.currentLineup.findIndex(l=>l.playerId===pid);
             if(cy>r.bottom+10) { if(idx>=0){window.currentLineup[idx].x=null;window.currentLineup[idx].y=null;} }
-            else { if(idx>=0){ window.currentLineup[idx].x = ((cx-r.left)/r.width)*100; window.currentLineup[idx].y = ((cy-r.top)/r.height)*100; } }
+            else { 
+                if(idx>=0){ 
+                    let nx = ((cx-r.left)/r.width)*100; let ny = ((cy-r.top)/r.height)*100;
+                    const mod = document.getElementById('m-modality').value;
+                    const formKey = document.getElementById('m-formation').value;
+                    if (formKey && formations[mod] && formations[mod][formKey]) {
+                        const coords = formations[mod][formKey];
+                        let nearest = coords[0]; let minDist = Infinity;
+                        coords.forEach(c => { const dist = Math.sqrt(Math.pow(nx-c.x,2) + Math.pow(ny-c.y,2)); if(dist<minDist){minDist=dist;nearest=c;} });
+                        window.currentLineup[idx].x = nearest.x; window.currentLineup[idx].y = nearest.y;
+                    } else {
+                        window.currentLineup[idx].x = nx; window.currentLineup[idx].y = ny;
+                    }
+                } 
+            }
             window.draggedElement = null; window.drawTacticalBoard();
         };
 
@@ -1372,8 +1320,7 @@
             const m = window.matches.find(x => x.id === matchId);
             if(!m) return;
             const container = document.getElementById('result-render-container');
-            const isF11 = m.modality === 'f11';
-            const tournLabel = m.tournament || `FÚTBOL ${isF11 ? '11' : '7'}`;
+            const tournLabel = m.tournament || `FÚTBOL ${m.modality === 'f11' ? '11' : '7'}`;
             const dateObj = new Date(m.date + 'T12:00:00');
             const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
             
@@ -1400,7 +1347,9 @@
                 if (mvpP) mvpHtml = `<div class="mt-3 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Mejor Jugador</p><p class="text-sm text-yellow-400 font-bold"><i class="fas fa-star mr-1"></i> ${(mvpP.name||'').split(' ')[0]}</p></div>`;
             }
 
-            const kitNisus = window.generateKitSVG('#ffffff', '#0284c7', '#111827', '#111827');
+            let nisusShirt = '#ffffff', nisusAccent = '#0284c7', nisusShorts = '#111827', nisusSocks = '#111827';
+            if (m.kit === 'black') { nisusShirt = '#111827'; nisusAccent = '#111827'; }
+            const kitNisus = window.generateKitSVG(nisusShirt, nisusAccent, nisusShorts, nisusSocks);
             const kitOpp = window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000');
 
             container.innerHTML = `
@@ -1464,7 +1413,11 @@
                     else locationHtml = `<p class="text-gray-500 text-[11px] font-medium truncate w-32"><i class="fas fa-map-marker-alt"></i> ${m.location}</p>`;
                 }
                 
-                let scoreHtml, kitHtml = window.generateKitSVG('#ffffff', '#0284c7', '#111827', '#111827');
+                let nisusShirt = '#ffffff', nisusAccent = '#0284c7', nisusShorts = '#111827', nisusSocks = '#111827';
+                if (m.kit === 'black') { nisusShirt = '#111827'; nisusAccent = '#111827'; }
+                let kitHtml = window.generateKitSVG(nisusShirt, nisusAccent, nisusShorts, nisusSocks);
+                
+                let scoreHtml;
                 if(m.status === 'pending') scoreHtml = `<div class="text-xl font-black text-gray-300">VS</div>`;
                 else scoreHtml = `<div class="flex gap-3"><span class="text-2xl font-black ${m.goalsUs>m.goalsThem?'text-green-600':m.goalsUs<m.goalsThem?'text-red-500':'text-gray-500'}">${m.goalsUs}</span><span class="text-gray-300 font-bold">-</span><span class="text-2xl font-black">${m.goalsThem}</span></div>`;
 
