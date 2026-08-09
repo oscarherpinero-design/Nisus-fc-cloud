@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NISUS FC - Gestión y Estadísticas</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -30,6 +31,7 @@
         body.read-only .admin-only { display: none !important; }
         .force-hidden { display: none !important; }
         
+        /* Pizarra Táctica */
         .pitch-container {
             width: 100%; max-width: 320px; height: 480px; margin: 0 auto;
             background-color: #4ade80; position: relative; border-radius: 8px; overflow: hidden;
@@ -100,21 +102,17 @@
     <header class="bg-brand-800 text-white shadow-md sticky top-0 z-40">
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-6">
-                <button onclick="window.toggleMenu()" class="md:hidden text-white hover:text-brand-200 text-xl transition">
+                <!-- Botón Menú Lateral SIEMPRE visible -->
+                <button onclick="window.toggleMenu()" class="text-white hover:text-brand-200 text-xl transition flex items-center justify-center w-10 h-10 rounded-lg bg-brand-700/50">
                     <i class="fas fa-bars"></i>
                 </button>
-                <button type="button" class="flex items-center gap-2 transition hover:text-brand-100" onclick="window.showSection('dashboard')">
-                    <img src="escudo.png" onerror="this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-8 h-8 rounded-full bg-white object-cover shadow-sm" alt="Escudo">
-                    <h1 class="text-xl font-bold tracking-tight hidden sm:block">NISUS FC</h1>
-                </button>
                 
-                <nav class="hidden md:flex gap-1">
-                    <button onclick="window.showSection('dashboard')" id="nav-desktop-dashboard" class="px-3 py-2 rounded-lg text-white bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-chart-pie"></i> Inicio</button>
-                    <button onclick="window.showSection('players')" id="nav-desktop-players" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-users"></i> Plantilla</button>
-                    <button onclick="window.showSection('attendance')" id="nav-desktop-attendance" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-clipboard-check"></i> Entrenamientos</button>
-                    <button onclick="window.showSection('matches')" id="nav-desktop-matches" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Partidos</button>
-                    <button onclick="window.showSection('finances')" id="nav-desktop-finances" class="px-3 py-2 rounded-lg text-brand-100 hover:text-white hover:bg-brand-700 transition font-medium text-sm flex items-center gap-2"><i class="fas fa-wallet"></i> Finanzas</button>
-                </nav>
+                <button type="button" class="flex items-center gap-2 transition hover:text-brand-100" onclick="window.showSection('dashboard')">
+                    <!-- Mejora en el renderizado de la imagen y su fallback -->
+                    <img src="escudo.png" onerror="this.src='https://ui-avatars.com/api/?name=NFC&background=0ea5e9&color=fff&rounded=true&bold=true'" class="w-8 h-8 rounded-full bg-white object-cover shadow-sm" alt="Escudo">
+                    <h1 class="text-xl font-bold tracking-tight">NISUS FC</h1>
+                </button>
+                <!-- Menú Horizontal de PC Eliminado según petición -->
             </div>
             
             <div class="flex bg-brand-900 rounded-lg p-1 text-sm items-center">
@@ -130,8 +128,8 @@
                 <div class="w-px h-4 bg-brand-800 mx-1"></div>
                 
                 <button onclick="window.setFilter('all')" id="btn-filter-all" class="px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition hidden sm:inline-block">GRL</button>
-                <button onclick="window.setFilter('f11')" id="btn-filter-f11" class="px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium">F11</button>
-                <button onclick="window.setFilter('f7')" id="btn-filter-f7" class="px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium">F7</button>
+                <button onclick="window.setFilter('f11')" id="btn-filter-f11" class="px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium hidden sm:inline-block">F11</button>
+                <button onclick="window.setFilter('f7')" id="btn-filter-f7" class="px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium hidden sm:inline-block">F7</button>
                 
                 <div class="w-px h-4 bg-brand-800 mx-1"></div>
                 <select id="season-filter" onchange="window.setSeasonFilter(this.value)" class="bg-brand-900 text-brand-100 hover:text-white border border-transparent hover:border-brand-700 rounded-md px-2 py-1 text-sm outline-none font-medium cursor-pointer max-w-[100px] truncate">
@@ -145,7 +143,7 @@
     <div id="side-menu" class="fixed top-0 left-0 h-full w-64 bg-brand-900 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col border-r border-brand-700">
         <div class="h-16 flex items-center justify-between px-4 bg-brand-950 border-b border-brand-800">
             <div class="flex items-center gap-2">
-                <img src="escudo.png" onerror="this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-8 h-8 rounded-full bg-white object-cover">
+                <img src="escudo.png" onerror="this.src='https://ui-avatars.com/api/?name=NFC&background=0ea5e9&color=fff&rounded=true&bold=true'" class="w-8 h-8 rounded-full bg-white object-cover">
                 <span class="text-white font-bold text-lg tracking-tight">NISUS FC</span>
             </div>
             <button onclick="window.toggleMenu()" class="text-brand-300 hover:text-white text-xl p-2 focus:outline-none"><i class="fas fa-times"></i></button>
@@ -198,7 +196,7 @@
             </div>
             
             <!-- Contadores Globales -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 gap-4">
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xl"><i class="fas fa-futbol"></i></div>
                     <div>
@@ -551,38 +549,95 @@
             </div>
         </section>
 
-        <div id="modalPlayerCard" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Ficha</h3><button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div><div id="card-render-container" class="flex justify-center mb-6"></div><button id="btn-download-card" class="w-full bg-brand-600 text-white py-2 rounded-lg font-medium"><i class="fas fa-download mr-2"></i>Descargar</button></div></div>
+        <div id="modalPlayerCard" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Ficha</h3><button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div>
+                <div id="card-render-container" class="flex justify-center mb-6"></div>
+                <button id="btn-download-card" class="w-full bg-brand-600 text-white py-2 rounded-lg font-medium"><i class="fas fa-download mr-2"></i>Descargar</button>
+            </div>
+        </div>
         
-        <div id="modalMatchResult" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Resultado</h3><button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div><div id="result-render-container" class="flex justify-center mb-6"></div><button id="btn-download-result" class="w-full bg-blue-600 text-white py-2 rounded-lg font-medium"><i class="fas fa-download mr-2"></i>Descargar</button></div></div>
+        <div id="modalMatchResult" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Resultado</h3><button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button></div>
+                <div id="result-render-container" class="flex justify-center mb-6"></div>
+                <button id="btn-download-result" class="w-full bg-blue-600 text-white py-2 rounded-lg font-medium"><i class="fas fa-download mr-2"></i>Descargar</button>
+            </div>
+        </div>
         
-        <div id="toast" class="fixed top-20 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 translate-x-[150%] z-50 flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-medium text-sm"></span></div>
+        <div id="toast" class="fixed top-20 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 translate-x-[150%] z-50 flex items-center gap-3">
+            <i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-medium text-sm"></span>
+        </div>
         
-        <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div id="confirmModalContent" class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200"><div class="p-6 text-center"><div class="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-exclamation-triangle"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">¿Seguro?</h3><p id="confirm-msg" class="text-sm text-gray-500 mb-6"></p><div class="flex gap-3 justify-center"><button onclick="window.closeConfirm()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-1 font-bold">Cancelar</button><button onclick="window.executeConfirm()" class="px-4 py-2 bg-red-600 text-white rounded-lg flex-1 font-bold">Confirmar</button></div></div></div></div>
+        <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+            <div id="confirmModalContent" class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200">
+                <div class="p-6 text-center"><div class="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-exclamation-triangle"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">¿Seguro?</h3><p id="confirm-msg" class="text-sm text-gray-500 mb-6"></p><div class="flex gap-3 justify-center"><button onclick="window.closeConfirm()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-1 font-bold">Cancelar</button><button onclick="window.executeConfirm()" class="px-4 py-2 bg-red-600 text-white rounded-lg flex-1 font-bold">Confirmar</button></div></div>
+            </div>
+        </div>
         
-        <div id="pinModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center"><div class="w-16 h-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-lock"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">Acceso</h3><p class="text-sm text-gray-500 mb-4">Ingresa el PIN de edición.</p><input type="password" id="admin-pin" class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-center mb-6 text-xl tracking-[0.5em] font-bold" maxlength="4"><div class="flex gap-3 justify-center"><button onclick="window.closePinModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-1 font-medium">Cancelar</button><button onclick="window.verifyPin()" class="px-4 py-2 bg-brand-600 text-white rounded-lg flex-1 font-medium">Desbloquear</button></div></div></div>
+        <div id="pinModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center">
+                <div class="w-16 h-16 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-lock"></i></div><h3 class="text-lg font-bold text-gray-800 mb-2">Acceso</h3><p class="text-sm text-gray-500 mb-4">Ingresa el PIN de edición.</p><input type="password" id="admin-pin" class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-center mb-6 text-xl tracking-[0.5em] font-bold" maxlength="4"><div class="flex gap-3 justify-center"><button onclick="window.closePinModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg flex-1 font-medium">Cancelar</button><button onclick="window.verifyPin()" class="px-4 py-2 bg-brand-600 text-white rounded-lg flex-1 font-medium">Desbloquear</button></div>
+            </div>
+        </div>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyCXssxxTsyNBrp6x08dCX9QAPts6mon_1U", authDomain: "nisus-fc.firebaseapp.com", projectId: "nisus-fc", storageBucket: "nisus-fc.firebasestorage.app", messagingSenderId: "1095183265565", appId: "1:1095183265565:web:019161bbd603bba7ccfbf4" };
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCXssxxTsyNBrp6x08dCX9QAPts6mon_1U", 
+            authDomain: "nisus-fc.firebaseapp.com", 
+            projectId: "nisus-fc", 
+            storageBucket: "nisus-fc.firebasestorage.app", 
+            messagingSenderId: "1095183265565", 
+            appId: "1:1095183265565:web:019161bbd603bba7ccfbf4" 
+        };
         
-        window.playersPath = `jugadores`; window.matchesPath = `partidos`; window.trainingsPath = `entrenamientos`; window.financesPath = `finanzas`;
+        window.playersPath = `jugadores`; 
+        window.matchesPath = `partidos`; 
+        window.trainingsPath = `entrenamientos`; 
+        window.financesPath = `finanzas`;
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        window.players = []; window.matches = []; window.trainings = []; window.finances = []; window.isReady = false;
+        
+        window.players = []; 
+        window.matches = []; 
+        window.trainings = []; 
+        window.finances = []; 
+        window.isReady = false;
 
         window.SECRET_PIN = "2024";
         window.isAdmin = localStorage.getItem('nisus_admin') === 'true';
-        window.currentSeason = 'all'; window.currentFilter = 'all';
+        window.currentSeason = 'all'; 
+        window.currentFilter = 'all';
 
-        // Generador de ID Limpio
-        window.generateId = function() { return crypto.randomUUID ? crypto.randomUUID() : 'x-x-4-y-x'.replace(/[xy]/g, c => { var r = Math.random()*16|0; return (c==='x'?r:r&0x3|0x8).toString(16); }); };
+        // Generador de ID Únicos
+        window.generateId = function() { 
+            return crypto.randomUUID ? crypto.randomUUID() : 'x-x-4-y-x'.replace(/[xy]/g, function(c) { 
+                var r = Math.random() * 16 | 0; 
+                return (c === 'x' ? r : r & 0x3 | 0x8).toString(16); 
+            }); 
+        };
 
-        // Diccionarios de Posiciones y Formaciones
-        const posValid = { POR: ['Portero'], DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'], LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'], LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'], CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'], MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'], MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'], MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'], MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'], MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'], ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'], EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'], DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta'] };
+        const posValid = { 
+            POR: ['Portero'], 
+            DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'], 
+            LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'], 
+            LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'], 
+            CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'], 
+            MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'], 
+            MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'], 
+            MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'], 
+            MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'], 
+            MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'], 
+            ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'], 
+            EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'], 
+            DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta'] 
+        };
+        
         const formations = {
             f11: {
                 "4-4-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:20,y:75,label:'LI',valid:posValid.LI},{x:40,y:75,label:'DFC',valid:posValid.DFC},{x:60,y:75,label:'DFC',valid:posValid.DFC},{x:80,y:75,label:'LD',valid:posValid.LD},{x:20,y:50,label:'MI',valid:posValid.MI},{x:40,y:50,label:'MC',valid:posValid.MC},{x:60,y:50,label:'MC',valid:posValid.MC},{x:80,y:50,label:'MD',valid:posValid.MD},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}],
@@ -610,29 +665,39 @@
             
             let count = 0;
             window.matches.forEach(m => {
-                // Solo cuenta si está finalizado y no es forfait
+                // Filtramos por estado de partido y por temporada/filtro general actual
                 if (m.status !== 'finished') return;
                 if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return;
                 if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
                 
-                const inLineup = m.lineup && m.lineup.some(l => l.playerId === player.id && l.x !== null); // Considera solo titulares
+                const inLineup = m.lineup && m.lineup.some(l => l.playerId === player.id && l.x !== null); 
                 const subIn = m.events && m.events.some(e => e.type === 'sub' && e.playerId === player.id);
                 const played = inLineup || subIn;
                 
+                // Estadística: Partidos Jugados
                 if (statKey === 'games' && played && !player.isStaff) count++;
                 
+                // Estadística: Vallas Invictas
                 if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) {
                     const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero');
                     if (isGK && !player.isStaff) count++;
                 }
                 
+                // Estadística: MVPs
                 if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
                 
+                // Estadística: Eventos específicos (Goles, Tarjetas, Asistencias)
                 if (m.events) {
                     m.events.forEach(ev => {
                         if (ev.playerId === player.id) {
-                            if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++;
-                            if (statKey === ev.type) count++; 
+                            // Corrección matemática: Goles, penales y tiros libres suman de manera exclusiva bajo "goals"
+                            if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) {
+                                count++;
+                            }
+                            // Las demás estadísticas (amarillas, rojas, asistencias) se suman normalmente sin solaparse
+                            else if (statKey !== 'goals' && statKey === ev.type) {
+                                count++; 
+                            }
                         }
                     });
                 }
@@ -641,28 +706,38 @@
         };
 
         window.showToast = function(msg, isError = false) {
-            const toast = document.getElementById('toast'); if(!toast) return;
+            const toast = document.getElementById('toast'); 
+            if(!toast) return;
             document.getElementById('toast-msg').textContent = msg;
             toast.className = `fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'}`;
-            setTimeout(() => toast.classList.remove('translate-x-[150%]'), 10);
-            setTimeout(() => toast.classList.add('translate-x-[150%]'), 3000);
+            setTimeout(() => { toast.classList.remove('translate-x-[150%]'); }, 10);
+            setTimeout(() => { toast.classList.add('translate-x-[150%]'); }, 3000);
         };
 
         function setupRealtimeListeners() {
             const sessionId = window.generateId();
             const presenceRef = doc(db, 'sistema', 'presencia_' + sessionId);
-            setInterval(() => { setDoc(presenceRef, { lastSeen: Date.now() }).catch(e => console.log(e)); }, 30000);
+            
+            setInterval(() => { 
+                setDoc(presenceRef, { lastSeen: Date.now() }).catch(e => console.log(e)); 
+            }, 30000);
+            
             setDoc(presenceRef, { lastSeen: Date.now() });
             window.addEventListener('beforeunload', () => deleteDoc(presenceRef));
             
             onSnapshot(collection(db, 'sistema'), (snapshot) => {
-                let online = 0; const now = Date.now();
-                snapshot.forEach(doc => { if(doc.id.startsWith('presencia_') && (now - doc.data().lastSeen < 60000)) online++; });
-                const oc = document.getElementById('online-count'); if(oc) oc.textContent = online;
+                let online = 0; 
+                const now = Date.now();
+                snapshot.forEach(doc => { 
+                    if(doc.id.startsWith('presencia_') && (now - doc.data().lastSeen < 60000)) online++; 
+                });
+                const oc = document.getElementById('online-count'); 
+                if(oc) oc.textContent = online;
             });
 
             onSnapshot(collection(db, window.playersPath), (snapshot) => {
-                window.players = []; snapshot.forEach(doc => window.players.push({ ...doc.data(), id: doc.id }));
+                window.players = []; 
+                snapshot.forEach(doc => window.players.push({ ...doc.data(), id: doc.id }));
                 if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers();
                 if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard();
                 if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList();
@@ -670,7 +745,8 @@
             });
 
             onSnapshot(collection(db, window.matchesPath), (snapshot) => {
-                window.matches = []; snapshot.forEach(doc => window.matches.push({ ...doc.data(), id: doc.id }));
+                window.matches = []; 
+                snapshot.forEach(doc => window.matches.push({ ...doc.data(), id: doc.id }));
                 window.updateSeasonDropdown(); 
                 if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches();
                 if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard();
@@ -678,95 +754,230 @@
             });
 
             onSnapshot(collection(db, window.trainingsPath), (snapshot) => {
-                window.trainings = []; snapshot.forEach(doc => window.trainings.push({ ...doc.data(), id: doc.id }));
+                window.trainings = []; 
+                snapshot.forEach(doc => window.trainings.push({ ...doc.data(), id: doc.id }));
                 if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings();
                 if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers();
             });
 
             onSnapshot(collection(db, window.financesPath), (snapshot) => {
-                window.finances = []; snapshot.forEach(doc => window.finances.push({ ...doc.data(), id: doc.id }));
+                window.finances = []; 
+                snapshot.forEach(doc => window.finances.push({ ...doc.data(), id: doc.id }));
                 if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances();
             });
         }
 
         window.onload = function() {
-            window.isReady = true; setupRealtimeListeners();
-            window.showSection('dashboard'); window.setFilter('all'); window.updateAdminUI();
+            window.isReady = true; 
+            setupRealtimeListeners();
+            window.showSection('dashboard'); 
+            window.setFilter('all'); 
+            window.updateAdminUI();
             
             // Sensores globales de arrastre para la Pizarra
             document.addEventListener('mousemove', window.dragMove); 
             document.addEventListener('mouseup', window.dragEnd);
             const pitch = document.getElementById('tactical-pitch');
-            if(pitch) { pitch.addEventListener('touchmove', window.dragMove, {passive: false}); pitch.addEventListener('touchend', window.dragEnd); }
+            if(pitch) { 
+                pitch.addEventListener('touchmove', window.dragMove, {passive: false}); 
+                pitch.addEventListener('touchend', window.dragEnd); 
+            }
         };
 
         window.toggleMenu = function() {
-            const menu = document.getElementById('side-menu'); const overlay = document.getElementById('side-menu-overlay');
-            if(menu.classList.contains('-translate-x-full')) { menu.classList.remove('-translate-x-full'); overlay.classList.remove('force-hidden'); } 
-            else { menu.classList.add('-translate-x-full'); overlay.classList.add('force-hidden'); }
+            const menu = document.getElementById('side-menu'); 
+            const overlay = document.getElementById('side-menu-overlay');
+            if(menu.classList.contains('-translate-x-full')) { 
+                menu.classList.remove('-translate-x-full'); 
+                overlay.classList.remove('force-hidden'); 
+            } else { 
+                menu.classList.add('-translate-x-full'); 
+                overlay.classList.add('force-hidden'); 
+            }
         };
 
         window.showSection = function(sectionId) {
-            ['dashboard', 'players', 'matches', 'attendance', 'finances', 'playerForm', 'matchForm', 'attendanceForm', 'financesForm'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); });
-            const sec = document.getElementById(sectionId); if(sec) sec.classList.remove('hidden');
-            
-            ['dashboard', 'players', 'matches', 'attendance', 'finances'].forEach(id => {
-                const desk = document.getElementById('nav-desktop-' + id);
-                if(desk) { desk.classList.remove('bg-brand-700', 'text-white'); desk.classList.add('text-brand-100'); }
-                const side = document.getElementById('nav-side-' + id);
-                if(side) { side.classList.remove('bg-brand-800', 'text-white', 'border-brand-400'); side.classList.add('text-brand-100', 'border-transparent'); }
+            const sections = ['dashboard', 'players', 'matches', 'attendance', 'finances', 'playerForm', 'matchForm', 'attendanceForm', 'financesForm'];
+            sections.forEach(id => { 
+                const el = document.getElementById(id); 
+                if(el) el.classList.add('hidden'); 
             });
-            const activeDesk = document.getElementById('nav-desktop-' + sectionId); if(activeDesk) { activeDesk.classList.add('bg-brand-700', 'text-white'); activeDesk.classList.remove('text-brand-100'); }
-            const activeSide = document.getElementById('nav-side-' + sectionId); if(activeSide) { activeSide.classList.add('bg-brand-800', 'text-white', 'border-brand-400'); activeSide.classList.remove('text-brand-100', 'border-transparent'); }
             
-            const menu = document.getElementById('side-menu'); if(menu && !menu.classList.contains('-translate-x-full')) window.toggleMenu();
+            const sec = document.getElementById(sectionId); 
+            if(sec) sec.classList.remove('hidden');
+            
+            const menuSections = ['dashboard', 'players', 'matches', 'attendance', 'finances'];
+            menuSections.forEach(id => {
+                const side = document.getElementById('nav-side-' + id);
+                if(side) { 
+                    side.classList.remove('bg-brand-800', 'text-white', 'border-brand-400'); 
+                    side.classList.add('text-brand-100', 'border-transparent'); 
+                }
+            });
+            
+            const activeSide = document.getElementById('nav-side-' + sectionId); 
+            if(activeSide) { 
+                activeSide.classList.add('bg-brand-800', 'text-white', 'border-brand-400'); 
+                activeSide.classList.remove('text-brand-100', 'border-transparent'); 
+            }
+            
+            const menu = document.getElementById('side-menu'); 
+            if(menu && !menu.classList.contains('-translate-x-full')) window.toggleMenu();
 
             if(sectionId === 'players') window.renderPlayers();
             if(sectionId === 'matches') window.renderMatches();
             if(sectionId === 'attendance') window.renderTrainings();
             if(sectionId === 'dashboard') window.updateDashboard();
             if(sectionId === 'finances') window.renderFinances();
+            
             window.scrollTo(0,0);
         };
 
         window.updateAdminUI = function() {
             const btn = document.getElementById('btn-admin');
-            if (window.isAdmin) { document.body.classList.remove('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>'; } 
-            else { document.body.classList.add('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-lock text-gray-400"></i>'; }
+            if (window.isAdmin) { 
+                document.body.classList.remove('read-only'); 
+                if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>'; 
+            } else { 
+                document.body.classList.add('read-only'); 
+                if(btn) btn.innerHTML = '<i class="fas fa-lock text-gray-400"></i>'; 
+            }
         };
 
-        window.toggleAdmin = function() { if(window.isAdmin) { window.isAdmin=false; localStorage.removeItem('nisus_admin'); window.updateAdminUI(); window.showToast("Modo lectura"); } else { document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('admin-pin').value=''; document.getElementById('admin-pin').focus(); } };
-        window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
-        window.verifyPin = function() { if(document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin=true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("Edición desbloqueada"); } else window.showToast("PIN incorrecto", true); };
+        window.toggleAdmin = function() { 
+            if(window.isAdmin) { 
+                window.isAdmin = false; 
+                localStorage.removeItem('nisus_admin'); 
+                window.updateAdminUI(); 
+                window.showToast("Modo lectura"); 
+            } else { 
+                document.getElementById('pinModal').classList.remove('hidden'); 
+                document.getElementById('admin-pin').value = ''; 
+                document.getElementById('admin-pin').focus(); 
+            } 
+        };
+        
+        window.closePinModal = function() { 
+            document.getElementById('pinModal').classList.add('hidden'); 
+        };
+        
+        window.verifyPin = function() { 
+            if(document.getElementById('admin-pin').value === window.SECRET_PIN) { 
+                window.isAdmin = true; 
+                localStorage.setItem('nisus_admin', 'true'); 
+                window.closePinModal(); 
+                window.updateAdminUI(); 
+                window.showToast("Edición desbloqueada"); 
+            } else {
+                window.showToast("PIN incorrecto", true); 
+            }
+        };
 
         window.pendingConfirm = null;
-        window.showConfirm = function(msg, action) { document.getElementById('confirm-msg').textContent = msg; window.pendingConfirm = action; const modal = document.getElementById('confirmModal'); const content = document.getElementById('confirmModalContent'); modal.classList.remove('hidden'); setTimeout(() => { content.classList.remove('scale-95', 'opacity-0'); content.classList.add('scale-100', 'opacity-100'); }, 10); };
-        window.closeConfirm = function() { const modal = document.getElementById('confirmModal'); const content = document.getElementById('confirmModalContent'); content.classList.remove('scale-100', 'opacity-100'); content.classList.add('scale-95', 'opacity-0'); setTimeout(() => { modal.classList.add('hidden'); window.pendingConfirm = null; }, 200); };
-        window.executeConfirm = function() { if(window.pendingConfirm) window.pendingConfirm(); window.closeConfirm(); };
+        window.showConfirm = function(msg, action) { 
+            document.getElementById('confirm-msg').textContent = msg; 
+            window.pendingConfirm = action; 
+            const modal = document.getElementById('confirmModal'); 
+            const content = document.getElementById('confirmModalContent'); 
+            
+            modal.classList.remove('hidden'); 
+            setTimeout(() => { 
+                content.classList.remove('scale-95', 'opacity-0'); 
+                content.classList.add('scale-100', 'opacity-100'); 
+            }, 10); 
+        };
+        
+        window.closeConfirm = function() { 
+            const modal = document.getElementById('confirmModal'); 
+            const content = document.getElementById('confirmModalContent'); 
+            
+            content.classList.remove('scale-100', 'opacity-100'); 
+            content.classList.add('scale-95', 'opacity-0'); 
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                window.pendingConfirm = null; 
+            }, 200); 
+        };
+        
+        window.executeConfirm = function() { 
+            if(window.pendingConfirm) window.pendingConfirm(); 
+            window.closeConfirm(); 
+        };
 
-        window.setFilter = function(f) { window.currentFilter = f; ['all','f11','f7'].forEach(x=>{ const b = document.getElementById(`btn-filter-${x}`); if(b) b.className = x===f?"px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition hidden sm:inline-block":"px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium hidden sm:inline-block"; }); const d = document.getElementById('dashboard'); if(d && !d.classList.contains('hidden')) window.updateDashboard(); const p = document.getElementById('players'); if(p && !p.classList.contains('hidden')) window.renderPlayers(); const m = document.getElementById('matches'); if(m && !m.classList.contains('hidden')) window.renderMatches(); };
-        window.setSeasonFilter = function(s) { window.currentSeason = s; const d = document.getElementById('dash-season-label'); if(d) { if(s==='all') d.classList.add('hidden'); else { d.textContent=`(T. ${s})`; d.classList.remove('hidden'); } } window.setFilter(window.currentFilter); };
-        window.updateSeasonDropdown = function() { const sel = document.getElementById('season-filter'); const cur = sel.value; const unique = [...new Set(window.matches.map(m => String(m.season||'')).filter(s=>s.trim()!==''))].sort((a,b)=>b.localeCompare(a)); sel.innerHTML = '<option value="all">Todas Temp.</option>'; unique.forEach(s => sel.innerHTML += `<option value="${s}">T. ${s}</option>`); if(cur==='all'||unique.includes(cur)) sel.value = cur; else { window.currentSeason='all'; sel.value='all'; } };
+        window.setFilter = function(f) { 
+            window.currentFilter = f; 
+            ['all','f11','f7'].forEach(x => { 
+                const b = document.getElementById(`btn-filter-${x}`); 
+                if(b) {
+                    if (x === f) {
+                        b.className = "px-3 py-1 rounded-md bg-white text-brand-900 font-bold shadow-sm transition hidden sm:inline-block";
+                    } else {
+                        b.className = "px-3 py-1 rounded-md text-brand-100 hover:text-white transition font-medium hidden sm:inline-block";
+                    }
+                } 
+            }); 
+            
+            const d = document.getElementById('dashboard'); 
+            if(d && !d.classList.contains('hidden')) window.updateDashboard(); 
+            
+            const p = document.getElementById('players'); 
+            if(p && !p.classList.contains('hidden')) window.renderPlayers(); 
+            
+            const m = document.getElementById('matches'); 
+            if(m && !m.classList.contains('hidden')) window.renderMatches(); 
+        };
+        
+        window.setSeasonFilter = function(s) { 
+            window.currentSeason = s; 
+            const d = document.getElementById('dash-season-label'); 
+            if(d) { 
+                if(s === 'all') {
+                    d.classList.add('hidden'); 
+                } else { 
+                    d.textContent = `(T. ${s})`; 
+                    d.classList.remove('hidden'); 
+                } 
+            } 
+            window.setFilter(window.currentFilter); 
+        };
+        
+        window.updateSeasonDropdown = function() { 
+            const sel = document.getElementById('season-filter'); 
+            const cur = sel.value; 
+            const unique = [...new Set(window.matches.map(m => String(m.season||'')).filter(s=>s.trim()!==''))].sort((a,b)=>b.localeCompare(a)); 
+            
+            sel.innerHTML = '<option value="all">Todas Temp.</option>'; 
+            unique.forEach(s => {
+                sel.innerHTML += `<option value="${s}">T. ${s}</option>`;
+            }); 
+            
+            if(cur === 'all' || unique.includes(cur)) {
+                sel.value = cur; 
+            } else { 
+                window.currentSeason = 'all'; 
+                sel.value = 'all'; 
+            } 
+        };
 
         window.generateKitSVG = function(shirt, accent, short, sock, accent2 = null) {
             const cid = 'clip-' + Math.random().toString(36).substr(2, 9);
             let extraPaths = '';
             
             if (accent2) {
-                // Nuevo Diseño Tricolor de NISUS FC
-                extraPaths += `<rect x="35" y="0" width="30" height="100" fill="${accent}"/>`; // Franja central azul gruesa
+                // Diseño Tricolor Institucional NISUS FC
+                extraPaths += `<rect x="35" y="0" width="30" height="100" fill="${accent}"/>`; // Franja central
                 extraPaths += `<rect x="33" y="0" width="2" height="100" fill="${accent2}"/>`; // Borde negro izquierdo de franja
                 extraPaths += `<rect x="65" y="0" width="2" height="100" fill="${accent2}"/>`; // Borde negro derecho de franja
                 
-                extraPaths += `<polygon points="0,0 25,0 25,50 0,50" fill="${accent}"/>`; // Manga Izq Azul
-                extraPaths += `<polygon points="75,0 100,0 100,50 75,50" fill="${accent}"/>`; // Manga Der Azul
+                extraPaths += `<polygon points="0,0 25,0 25,50 0,50" fill="${accent}"/>`; // Manga Izq
+                extraPaths += `<polygon points="75,0 100,0 100,50 75,50" fill="${accent}"/>`; // Manga Der
                 
-                extraPaths += `<path d="M35 15 Q50 35 65 15 Z" fill="${accent2}"/>`; // Cuello V Negro
-                extraPaths += `<polygon points="0,35 25,45 25,55 0,45" fill="${accent2}"/>`; // Puño Izq Negro
-                extraPaths += `<polygon points="100,35 75,45 75,55 100,45" fill="${accent2}"/>`; // Puño Der Negro
-                extraPaths += `<rect x="20" y="75" width="60" height="5" fill="${accent2}"/>`; // Borde inferior Negro
+                extraPaths += `<path d="M35 15 Q50 35 65 15 Z" fill="${accent2}"/>`; // Cuello
+                extraPaths += `<polygon points="0,35 25,45 25,55 0,45" fill="${accent2}"/>`; // Puño Izq
+                extraPaths += `<polygon points="100,35 75,45 75,55 100,45" fill="${accent2}"/>`; // Puño Der
+                extraPaths += `<rect x="20" y="75" width="60" height="5" fill="${accent2}"/>`; // Borde inferior
             } else {
-                // Genérico / Rivales
+                // Diseño Genérico para Rivales
                 extraPaths += `<path d="M40 15 C45 25, 55 25, 60 15 Z" fill="${accent}"/>`;
             }
 
@@ -788,128 +999,373 @@
         window.renderKitsPreview = function() {
             const kitChoice = document.getElementById('m-kit')?.value || 'white_blue';
             let nShirt='#ffffff', nAcc='#0284c7', nShort='#111827', nSock='#111827', nAcc2='#111827'; 
-            if (kitChoice === 'black') { nShirt='#111827'; nAcc='#111827'; nAcc2=null; }
+            
+            if (kitChoice === 'black') { 
+                nShirt='#111827'; nAcc='#111827'; nAcc2=null; 
+            }
             
             const oppShirt = document.getElementById('m-opp-shirt')?.value || '#ff0000';
             const oppShort = document.getElementById('m-opp-shorts')?.value || '#ff0000';
             const oppSock = document.getElementById('m-opp-socks')?.value || '#ff0000';
             const oppGk = document.getElementById('m-opp-gk')?.value || '#00ff00';
 
-            const dNOut = document.getElementById('kit-nisus-outfield'); if(dNOut) dNOut.innerHTML = window.generateKitSVG(nShirt, nAcc, nShort, nSock, nAcc2);
-            const dNGk = document.getElementById('kit-nisus-gk'); if(dNGk) dNGk.innerHTML = window.generateKitSVG('#eab308', '#111827', '#111827', '#111827');
-            const dOOut = document.getElementById('kit-opp-outfield'); if(dOOut) dOOut.innerHTML = window.generateKitSVG(oppShirt, oppShirt, oppShort, oppSock);
-            const dOGk = document.getElementById('kit-opp-gk'); if(dOGk) dOGk.innerHTML = window.generateKitSVG(oppGk, oppGk, oppGk, oppGk);
-            const lbl = document.getElementById('label-opp-kit'); if(lbl) lbl.textContent = document.getElementById('m-opponent')?.value || 'Rival';
+            const dNOut = document.getElementById('kit-nisus-outfield'); 
+            if(dNOut) dNOut.innerHTML = window.generateKitSVG(nShirt, nAcc, nShort, nSock, nAcc2);
+            
+            const dNGk = document.getElementById('kit-nisus-gk'); 
+            if(dNGk) dNGk.innerHTML = window.generateKitSVG('#eab308', '#111827', '#111827', '#111827');
+            
+            const dOOut = document.getElementById('kit-opp-outfield'); 
+            if(dOOut) dOOut.innerHTML = window.generateKitSVG(oppShirt, oppShirt, oppShort, oppSock);
+            
+            const dOGk = document.getElementById('kit-opp-gk'); 
+            if(dOGk) dOGk.innerHTML = window.generateKitSVG(oppGk, oppGk, oppGk, oppGk);
+            
+            const lbl = document.getElementById('label-opp-kit'); 
+            if(lbl) lbl.textContent = document.getElementById('m-opponent')?.value || 'Rival';
         };
 
-        window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').textContent = 'Añadir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.showSection('playerForm'); };
-        window.handleImageUpload = function(e) { const f = e.target.files[0]; if(!f)return; const r = new FileReader(); r.onload=function(ev){ const img=new Image(); img.onload=function(){ const cv=document.createElement('canvas'); const ct=cv.getContext('2d'); let w=img.width,h=img.height; if(w>h&&w>150){h*=150/w;w=150;}else if(h>150){w*=150/h;h=150;} cv.width=w;cv.height=h;ct.drawImage(img,0,0,w,h); const url=cv.toDataURL('image/jpeg',0.8); document.getElementById('p-image-base64').value=url; document.getElementById('p-image-preview').src=url; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); }; img.src=ev.target.result; }; r.readAsDataURL(f); };
+        window.newPlayer = function() { 
+            document.getElementById('player-form').reset(); 
+            document.getElementById('p-id').value = ''; 
+            document.getElementById('form-title').textContent = 'Añadir Miembro'; 
+            document.getElementById('p-image-preview').classList.add('hidden'); 
+            document.getElementById('p-image-placeholder').classList.remove('hidden'); 
+            document.getElementById('p-image-base64').value = ''; 
+            
+            const sel = document.getElementById('p-position'); 
+            for(let i=0; i<sel.options.length; i++) {
+                sel.options[i].selected = false;
+            }
+            
+            window.showSection('playerForm'); 
+        };
+        
+        window.handleImageUpload = function(e) { 
+            const f = e.target.files[0]; 
+            if(!f) return; 
+            
+            const r = new FileReader(); 
+            r.onload = function(ev){ 
+                const img = new Image(); 
+                img.onload = function(){ 
+                    const cv = document.createElement('canvas'); 
+                    const ct = cv.getContext('2d'); 
+                    let w = img.width, h = img.height; 
+                    
+                    if(w>h && w>150){ 
+                        h *= 150/w; w = 150; 
+                    } else if(h>150){ 
+                        w *= 150/h; h = 150; 
+                    } 
+                    
+                    cv.width = w; cv.height = h; 
+                    ct.drawImage(img,0,0,w,h); 
+                    const url = cv.toDataURL('image/jpeg', 0.8); 
+                    
+                    document.getElementById('p-image-base64').value = url; 
+                    document.getElementById('p-image-preview').src = url; 
+                    document.getElementById('p-image-preview').classList.remove('hidden'); 
+                    document.getElementById('p-image-placeholder').classList.add('hidden'); 
+                }; 
+                img.src = ev.target.result; 
+            }; 
+            r.readAsDataURL(f); 
+        };
         
         window.savePlayer = async function(e) {
-            e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
-            const btn = document.getElementById('btn-save-player'); btn.disabled=true; btn.textContent="Guardando...";
-            const id = document.getElementById('p-id').value; const docId = id || window.generateId();
+            e.preventDefault(); 
+            if(!window.isAdmin) return window.showToast('Solo Lectura', true);
+            
+            const btn = document.getElementById('btn-save-player'); 
+            btn.disabled = true; 
+            btn.textContent = "Guardando...";
+            
+            const id = document.getElementById('p-id').value; 
+            const docId = id || window.generateId();
             const positions = Array.from(document.getElementById('p-position').selectedOptions).map(o=>o.value);
             
             const oldP = window.players.find(x => x.id === id);
-            const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: document.getElementById('p-image-base64').value, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: document.getElementById('p-status').value||'active', availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
             
-            if(oldP && oldP.debtAmount) pData.debtAmount = oldP.debtAmount;
+            const pData = { 
+                id: docId, 
+                name: document.getElementById('p-name').value, 
+                alias: document.getElementById('p-alias').value, 
+                showAlias: document.getElementById('p-show-alias').checked, 
+                number: document.getElementById('p-number').value, 
+                positions: positions, 
+                image: document.getElementById('p-image-base64').value, 
+                birthdate: document.getElementById('p-birthdate').value, 
+                foot: document.getElementById('p-foot').value, 
+                status: document.getElementById('p-status').value || 'active', 
+                availableF11: document.getElementById('p-avail-f11').checked, 
+                availableF7: document.getElementById('p-avail-f7').checked, 
+                isStaff: document.getElementById('p-is-staff').checked, 
+                isPaidUp: document.getElementById('p-is-paid-up').checked 
+            };
+            
+            if(oldP && oldP.debtAmount) {
+                pData.debtAmount = oldP.debtAmount;
+            }
 
-            try { await setDoc(doc(db, window.playersPath, docId), pData); window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar"; }
+            try { 
+                await setDoc(doc(db, window.playersPath, docId), pData); 
+                window.showToast('Guardado'); 
+                window.showSection('players'); 
+            } catch(err) { 
+                window.showToast('Error', true); 
+            } finally { 
+                btn.disabled = false; 
+                btn.textContent = "Guardar"; 
+            }
         };
 
         window.editPlayer = function(id) {
-            const p = window.players.find(x => x.id === id); if(!p) return;
-            document.getElementById('p-id').value = p.id; document.getElementById('p-name').value = p.name; document.getElementById('p-alias').value = p.alias||''; document.getElementById('p-show-alias').checked = p.showAlias||false; document.getElementById('p-number').value = p.number||''; document.getElementById('p-image-base64').value = p.image||''; document.getElementById('p-birthdate').value = p.birthdate||''; document.getElementById('p-foot').value = p.foot||''; document.getElementById('p-status').value = p.status||'active'; document.getElementById('p-avail-f11').checked = p.availableF11; document.getElementById('p-avail-f7').checked = p.availableF7; document.getElementById('p-is-staff').checked = p.isStaff||false; document.getElementById('p-is-paid-up').checked = p.isPaidUp!==false;
-            const sel = document.getElementById('p-position'); const pos = p.positions||(p.position?[p.position]:[]); for(let i=0;i<sel.options.length;i++) sel.options[i].selected = pos.includes(sel.options[i].value);
-            if(p.image){ document.getElementById('p-image-preview').src=p.image; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); } else { document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); }
+            const p = window.players.find(x => x.id === id); 
+            if(!p) return;
+            
+            document.getElementById('p-id').value = p.id; 
+            document.getElementById('p-name').value = p.name; 
+            document.getElementById('p-alias').value = p.alias || ''; 
+            document.getElementById('p-show-alias').checked = p.showAlias || false; 
+            document.getElementById('p-number').value = p.number || ''; 
+            document.getElementById('p-image-base64').value = p.image || ''; 
+            document.getElementById('p-birthdate').value = p.birthdate || ''; 
+            document.getElementById('p-foot').value = p.foot || ''; 
+            document.getElementById('p-status').value = p.status || 'active'; 
+            document.getElementById('p-avail-f11').checked = p.availableF11; 
+            document.getElementById('p-avail-f7').checked = p.availableF7; 
+            document.getElementById('p-is-staff').checked = p.isStaff || false; 
+            document.getElementById('p-is-paid-up').checked = p.isPaidUp !== false;
+            
+            const sel = document.getElementById('p-position'); 
+            const pos = p.positions || (p.position ? [p.position] : []); 
+            for(let i=0; i<sel.options.length; i++) {
+                sel.options[i].selected = pos.includes(sel.options[i].value);
+            }
+            
+            if(p.image){ 
+                document.getElementById('p-image-preview').src = p.image; 
+                document.getElementById('p-image-preview').classList.remove('hidden'); 
+                document.getElementById('p-image-placeholder').classList.add('hidden'); 
+            } else { 
+                document.getElementById('p-image-preview').classList.add('hidden'); 
+                document.getElementById('p-image-placeholder').classList.remove('hidden'); 
+            }
             window.showSection('playerForm');
         };
 
-        window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador?', async () => { try { await deleteDoc(doc(db, window.playersPath, id)); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
+        window.deletePlayer = function(id) { 
+            window.showConfirm('¿Eliminar jugador?', async () => { 
+                try { 
+                    await deleteDoc(doc(db, window.playersPath, id)); 
+                    window.showToast('Eliminado'); 
+                } catch(e) { 
+                    window.showToast('Error', true); 
+                } 
+            }); 
+        };
 
         window.renderPlayers = function() {
-            const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
+            const grid = document.getElementById('players-grid'); 
+            if(!grid) return; 
+            grid.innerHTML = '';
+            
             let list = window.players;
-            if(window.currentFilter==='f11') list = list.filter(p=>p.availableF11); else if(window.currentFilter==='f7') list = list.filter(p=>p.availableF7);
+            if(window.currentFilter === 'f11') list = list.filter(p => p.availableF11); 
+            else if(window.currentFilter === 'f7') list = list.filter(p => p.availableF7);
             
             list.sort((a,b) => {
-                if (a.isStaff && !b.isStaff) return 1; if (!a.isStaff && b.isStaff) return -1;
-                const numA = parseInt(a.number) || 9999; const numB = parseInt(b.number) || 9999;
+                if (a.isStaff && !b.isStaff) return 1; 
+                if (!a.isStaff && b.isStaff) return -1;
+                const numA = parseInt(a.number) || 9999; 
+                const numB = parseInt(b.number) || 9999;
                 if(numA !== numB) return numA - numB;
                 return (a.name||'').localeCompare(b.name||'');
             });
 
-            if(list.length===0){ grid.innerHTML='<div class="col-span-full text-center text-gray-500 py-10 bg-white rounded border">No hay registros</div>'; return; }
+            if(list.length === 0){ 
+                grid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10 bg-white rounded border">No hay registros</div>'; 
+                return; 
+            }
 
             list.forEach(p => {
-                const games = window.getPlayerStat(p, 'games'); const goals = window.getPlayerStat(p, 'goals'); const assists = window.getPlayerStat(p, 'assists'); const yellows = window.getPlayerStat(p, 'yellows'); const reds = window.getPlayerStat(p, 'reds'); const mvps = window.getPlayerStat(p, 'mvps'); const cleanSheets = window.getPlayerStat(p, 'cleanSheets');
-                const attendance = window.trainings?window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length:0;
+                const games = window.getPlayerStat(p, 'games'); 
+                const goals = window.getPlayerStat(p, 'goals'); 
+                const assists = window.getPlayerStat(p, 'assists'); 
+                const yellows = window.getPlayerStat(p, 'yellows'); 
+                const reds = window.getPlayerStat(p, 'reds'); 
+                const mvps = window.getPlayerStat(p, 'mvps'); 
+                const cleanSheets = window.getPlayerStat(p, 'cleanSheets');
+                const attendance = window.trainings ? window.trainings.filter(t => t.attendees && t.attendees.includes(p.id)).length : 0;
 
-                let b='';
-                if(p.availableF11) b+='<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded border border-blue-200">F11</span> ';
-                if(p.availableF7) b+='<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-200">F7</span> ';
-                if(mvps>0) b+=`<span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded border border-yellow-200"><i class="fas fa-star"></i> ${mvps}</span> `;
-                const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position==='Portero');
-                if(isGK && cleanSheets>0) b+=`<span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded border border-teal-200">🛡️ ${cleanSheets}</span> `;
-                if(p.isPaidUp===false || (p.debtAmount && p.debtAmount>0)) b+='<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200"><i class="fas fa-exclamation-circle"></i> Deuda</span> ';
-                else b+='<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200"><i class="fas fa-check-circle"></i> Al Día</span> ';
-
-                let sb='', oc='opacity-100';
-                if(p.status==='injured'){ sb='<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px]"><i class="fas fa-briefcase-medical"></i> Lesión</span>'; oc='opacity-70'; }
-                else if(p.status==='suspended'){ sb='<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px]"><i class="fas fa-ban"></i> Sanción</span>'; oc='opacity-70'; }
-                else if(p.status==='absent'){ sb='<span class="bg-gray-200 text-gray-800 px-2 py-0.5 rounded text-[10px]"><i class="fas fa-plane"></i> Ausente</span>'; oc='opacity-70'; }
-
-                let pb='', sh='';
-                if(p.isStaff){
-                    pb = `<span class="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-xs font-bold"><i class="fas fa-user-tie"></i> CT</span>`;
-                    sh = `<div class="flex justify-between items-center bg-purple-50 p-2 rounded-lg mb-4 border border-purple-100"><div class="flex-1"><p class="text-[10px] text-gray-500 font-bold ml-2">ASIST. ENT</p><p class="text-lg font-bold text-purple-700 ml-2">${attendance}</p></div><div class="flex gap-4 pr-4"><div class="text-center"><p class="text-[10px]">🟨</p><p class="font-bold text-yellow-600">${yellows}</p></div><div class="text-center"><p class="text-[10px]">🟥</p><p class="font-bold text-red-600">${reds}</p></div></div></div>`;
-                } else {
-                    const pos = p.positions||(p.position?[p.position]:[]);
-                    pb = `<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold">#${p.number||'-'}</span>` + pos.map(x=>`<span class="bg-brand-50 text-brand-700 px-2 py-1 rounded border">${x}</span>`).join('');
-                    sh = `<div class="grid grid-cols-6 gap-1 text-center bg-gray-50 p-2 rounded-lg mb-4 border"><div class="border-r"><p class="text-[9px] text-gray-500 font-bold">PJ</p><p class="font-bold text-gray-800">${games}</p></div><div class="border-r"><p class="text-[9px] text-brand-600 font-bold">ENT</p><p class="font-bold text-brand-700">${attendance}</p></div><div class="border-r"><p class="text-[9px] text-gray-500 font-bold">G</p><p class="font-bold text-green-600">${goals}</p></div><div class="border-r"><p class="text-[9px] text-gray-500 font-bold">A</p><p class="font-bold text-blue-600">${assists}</p></div><div class="border-r"><p class="text-[9px]">🟨</p><p class="font-bold text-yellow-600">${yellows}</p></div><div><p class="text-[9px]">🟥</p><p class="font-bold text-red-600">${reds}</p></div></div>`;
+                let b = '';
+                if(p.availableF11) b += '<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded border border-blue-200">F11</span> ';
+                if(p.availableF7) b += '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-200">F7</span> ';
+                if(mvps > 0) b += `<span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded border border-yellow-200"><i class="fas fa-star"></i> ${mvps}</span> `;
+                
+                const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position === 'Portero');
+                if(isGK && cleanSheets > 0) b += `<span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded border border-teal-200">🛡️ ${cleanSheets}</span> `;
+                
+                if(p.isPaidUp === false || (p.debtAmount && p.debtAmount > 0)) {
+                    b += '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200"><i class="fas fa-exclamation-circle"></i> Deuda</span> ';
+                } else { 
+                    b += '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200"><i class="fas fa-check-circle"></i> Al Día</span> ';
                 }
 
-                const img = p.image?`<img src="${p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white shadow">`:`<div class="w-16 h-16 rounded-full ${p.isStaff?'bg-purple-100 text-purple-700':'bg-brand-100 text-brand-700'} font-bold flex items-center justify-center text-2xl border-2 border-white">${p.name.charAt(0)}</div>`;
+                let sb = '', oc = 'opacity-100';
+                if(p.status === 'injured'){ 
+                    sb = '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px]"><i class="fas fa-briefcase-medical"></i> Lesión</span>'; 
+                    oc = 'opacity-70'; 
+                } else if(p.status === 'suspended'){ 
+                    sb = '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px]"><i class="fas fa-ban"></i> Sanción</span>'; 
+                    oc = 'opacity-70'; 
+                } else if(p.status === 'absent'){ 
+                    sb = '<span class="bg-gray-200 text-gray-800 px-2 py-0.5 rounded text-[10px]"><i class="fas fa-plane"></i> Ausente</span>'; 
+                    oc = 'opacity-70'; 
+                }
+
+                let pb = '', sh = '';
+                if(p.isStaff){
+                    pb = `<span class="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-xs font-bold"><i class="fas fa-user-tie"></i> CT</span>`;
+                    sh = `
+                        <div class="flex justify-between items-center bg-purple-50 p-2 rounded-lg mb-4 border border-purple-100">
+                            <div class="flex-1"><p class="text-[10px] text-gray-500 font-bold ml-2">ASIST. ENT</p><p class="text-lg font-bold text-purple-700 ml-2">${attendance}</p></div>
+                            <div class="flex gap-4 pr-4">
+                                <div class="text-center"><p class="text-[10px]">🟨</p><p class="font-bold text-yellow-600">${yellows}</p></div>
+                                <div class="text-center"><p class="text-[10px]">🟥</p><p class="font-bold text-red-600">${reds}</p></div>
+                            </div>
+                        </div>`;
+                } else {
+                    const pos = p.positions || (p.position ? [p.position] : []);
+                    pb = `<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold">#${p.number||'-'}</span>` + pos.map(x=>`<span class="bg-brand-50 text-brand-700 px-2 py-1 rounded border">${x}</span>`).join('');
+                    sh = `
+                        <div class="grid grid-cols-6 gap-1 text-center bg-gray-50 p-2 rounded-lg mb-4 border">
+                            <div class="border-r"><p class="text-[9px] text-gray-500 font-bold">PJ</p><p class="font-bold text-gray-800">${games}</p></div>
+                            <div class="border-r"><p class="text-[9px] text-brand-600 font-bold">ENT</p><p class="font-bold text-brand-700">${attendance}</p></div>
+                            <div class="border-r"><p class="text-[9px] text-gray-500 font-bold">G</p><p class="font-bold text-green-600">${goals}</p></div>
+                            <div class="border-r"><p class="text-[9px] text-gray-500 font-bold">A</p><p class="font-bold text-blue-600">${assists}</p></div>
+                            <div class="border-r"><p class="text-[9px]">🟨</p><p class="font-bold text-yellow-600">${yellows}</p></div>
+                            <div><p class="text-[9px]">🟥</p><p class="font-bold text-red-600">${reds}</p></div>
+                        </div>`;
+                }
+
+                const img = p.image 
+                    ? `<img src="${p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white shadow">`
+                    : `<div class="w-16 h-16 rounded-full ${p.isStaff?'bg-purple-100 text-purple-700':'bg-brand-100 text-brand-700'} font-bold flex items-center justify-center text-2xl border-2 border-white">${p.name.charAt(0)}</div>`;
                 
-                grid.innerHTML += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col ${oc} relative hover:shadow transition"><div class="admin-only absolute top-3 right-3 flex gap-2 z-20"><button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100"><i class="fas fa-edit"></i></button><button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100"><i class="fas fa-trash"></i></button></div><div class="flex items-center gap-4 mb-4 mt-2 cursor-pointer" onclick="window.openPlayerCard('${p.id}')">${img}<div class="overflow-hidden"><h3 class="font-bold text-gray-800 text-lg truncate">${p.name} ${p.alias?`<span class="italic text-gray-400 text-sm">"${p.alias}"</span>`:''}</h3><div class="flex flex-wrap gap-2 text-[10px] font-bold mt-1">${b}${sb}</div><div class="flex flex-wrap gap-1 text-xs mt-2">${pb}</div></div></div>${sh}<button onclick="window.openPlayerCard('${p.id}')" class="${p.isStaff?'mt-auto':''} w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"><i class="fas fa-id-card"></i> Ver Perfil</button></div>`;
+                grid.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col ${oc} relative hover:shadow transition">
+                        <div class="admin-only absolute top-3 right-3 flex gap-2 z-20">
+                            <button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100"><i class="fas fa-edit"></i></button>
+                            <button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <div class="flex items-center gap-4 mb-4 mt-2 cursor-pointer" onclick="window.openPlayerCard('${p.id}')">
+                            ${img}
+                            <div class="overflow-hidden">
+                                <h3 class="font-bold text-gray-800 text-lg truncate">${p.name} ${p.alias?`<span class="italic text-gray-400 text-sm">"${p.alias}"</span>`:''}</h3>
+                                <div class="flex flex-wrap gap-2 text-[10px] font-bold mt-1">${b}${sb}</div>
+                                <div class="flex flex-wrap gap-1 text-xs mt-2">${pb}</div>
+                            </div>
+                        </div>
+                        ${sh}
+                        <button onclick="window.openPlayerCard('${p.id}')" class="${p.isStaff?'mt-auto':''} w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                            <i class="fas fa-id-card"></i> Ver Perfil
+                        </button>
+                    </div>`;
             });
         };
 
         window.newMatch = function() {
-            document.getElementById('match-form').reset(); document.getElementById('m-id').value = '';
+            document.getElementById('match-form').reset(); 
+            document.getElementById('m-id').value = '';
             document.getElementById('match-form-title').textContent = 'Registrar Partido';
-            document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = '';
-            document.getElementById('m-mvp').value = ''; document.getElementById('m-captain').value = '';
-            document.getElementById('m-opp-shirt').value = '#ff0000'; document.getElementById('m-opp-shorts').value = '#ff0000';
-            document.getElementById('m-opp-socks').value = '#ff0000'; document.getElementById('m-opp-gk').value = '#00ff00';
-            document.getElementById('m-kit').value = 'white_blue'; document.getElementById('m-modality').value = 'f11';
-            window.currentLineup = []; window.currentEvents = [];
-            window.toggleScoreFields(); window.renderCallupList(); window.updateFormationOptions(); window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview();
+            document.getElementById('m-goals-us').value = ''; 
+            document.getElementById('m-goals-them').value = '';
+            document.getElementById('m-mvp').value = ''; 
+            document.getElementById('m-captain').value = '';
+            document.getElementById('m-opp-shirt').value = '#ff0000'; 
+            document.getElementById('m-opp-shorts').value = '#ff0000';
+            document.getElementById('m-opp-socks').value = '#ff0000'; 
+            document.getElementById('m-opp-gk').value = '#00ff00';
+            document.getElementById('m-kit').value = 'white_blue'; 
+            document.getElementById('m-modality').value = 'f11';
+            
+            window.currentLineup = []; 
+            window.currentEvents = [];
+            
+            window.toggleScoreFields(); 
+            window.renderCallupList(); 
+            window.updateFormationOptions(); 
+            window.drawTacticalBoard(); 
+            window.renderMatchEvents(); 
+            window.renderKitsPreview();
+            
             window.showSection('matchForm');
         };
 
         window.editMatch = function(id) {
-            const m = window.matches.find(x => x.id === id); if(!m) return;
-            document.getElementById('m-id').value = m.id; document.getElementById('m-opponent').value = m.opponent; document.getElementById('m-date').value = m.date; document.getElementById('m-location').value = m.location||''; document.getElementById('m-tournament').value = m.tournament||''; document.getElementById('m-modality').value = m.modality||'f11'; document.getElementById('m-season').value = m.season||''; document.getElementById('m-matchday').value = m.matchday||''; document.getElementById('m-status').value = m.status; document.getElementById('m-kit').value = m.kit||'white_blue'; document.getElementById('m-opp-shirt').value = m.oppColor||'#ff0000'; document.getElementById('m-opp-shorts').value = m.oppShorts||m.oppColor||'#ff0000'; document.getElementById('m-opp-socks').value = m.oppSocks||m.oppColor||'#ff0000'; document.getElementById('m-opp-gk').value = m.oppGk||'#00ff00'; document.getElementById('m-notes').value = m.notes||'';
+            const m = window.matches.find(x => x.id === id); 
+            if(!m) return;
             
-            if(m.status === 'finished') { document.getElementById('m-goals-us').value = m.goalsUs; document.getElementById('m-goals-them').value = m.goalsThem; }
-            else { document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = ''; }
+            document.getElementById('m-id').value = m.id; 
+            document.getElementById('m-opponent').value = m.opponent; 
+            document.getElementById('m-date').value = m.date; 
+            document.getElementById('m-location').value = m.location || ''; 
+            document.getElementById('m-tournament').value = m.tournament || ''; 
+            document.getElementById('m-modality').value = m.modality || 'f11'; 
+            document.getElementById('m-season').value = m.season || ''; 
+            document.getElementById('m-matchday').value = m.matchday || ''; 
+            document.getElementById('m-status').value = m.status; 
+            document.getElementById('m-kit').value = m.kit || 'white_blue'; 
+            document.getElementById('m-opp-shirt').value = m.oppColor || '#ff0000'; 
+            document.getElementById('m-opp-shorts').value = m.oppShorts || m.oppColor || '#ff0000'; 
+            document.getElementById('m-opp-socks').value = m.oppSocks || m.oppColor || '#ff0000'; 
+            document.getElementById('m-opp-gk').value = m.oppGk || '#00ff00'; 
+            document.getElementById('m-notes').value = m.notes || '';
             
-            window.currentLineup = JSON.parse(JSON.stringify(m.lineup || [])); window.currentEvents = m.events ? JSON.parse(JSON.stringify(m.events)) : [];
+            if(m.status === 'finished') { 
+                document.getElementById('m-goals-us').value = m.goalsUs; 
+                document.getElementById('m-goals-them').value = m.goalsThem; 
+            } else { 
+                document.getElementById('m-goals-us').value = ''; 
+                document.getElementById('m-goals-them').value = ''; 
+            }
+            
+            window.currentLineup = JSON.parse(JSON.stringify(m.lineup || [])); 
+            window.currentEvents = m.events ? JSON.parse(JSON.stringify(m.events)) : [];
+            
             document.getElementById('match-form-title').textContent = 'Editar Partido';
-            window.renderCallupList(); window.toggleScoreFields(); window.updateFormationOptions();
-            if(m.status==='finished' && m.mvp) document.getElementById('m-mvp').value = m.mvp;
-            if(m.captain) { const capSelect = document.getElementById('m-captain'); if(capSelect) capSelect.value = m.captain; }
-            window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview();
+            
+            window.renderCallupList(); 
+            window.toggleScoreFields(); 
+            window.updateFormationOptions();
+            
+            if(m.status === 'finished' && m.mvp) {
+                document.getElementById('m-mvp').value = m.mvp;
+            }
+            if(m.captain) { 
+                const capSelect = document.getElementById('m-captain'); 
+                if(capSelect) capSelect.value = m.captain; 
+            }
+            
+            window.drawTacticalBoard(); 
+            window.renderMatchEvents(); 
+            window.renderKitsPreview();
+            
             window.showSection('matchForm');
         };
 
         window.saveMatch = async function(e) {
-            e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
-            const btn = document.getElementById('btn-save-match'); btn.disabled=true; btn.textContent="Guardando...";
-            const id = document.getElementById('m-id').value; const docId = id || window.generateId();
+            e.preventDefault(); 
+            if(!window.isAdmin) return window.showToast('Solo Lectura', true);
+            
+            const btn = document.getElementById('btn-save-match'); 
+            btn.disabled = true; 
+            btn.textContent = "Guardando...";
+            
+            const id = document.getElementById('m-id').value; 
+            const docId = id || window.generateId();
             const status = document.getElementById('m-status').value;
             
             let goalsUs = null, goalsThem = null, mvp = null;
@@ -918,108 +1374,354 @@
                 goalsThem = document.getElementById('m-goals-them').value || 0;
                 mvp = document.getElementById('m-mvp') ? document.getElementById('m-mvp').value : null;
             } else if (status === 'forfait') {
-                goalsUs = 3; goalsThem = 0; mvp = null;
+                goalsUs = 3; 
+                goalsThem = 0; 
+                mvp = null;
             }
             
-            const newMatch = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: status, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: goalsUs, goalsThem: goalsThem, mvp: mvp, captain: document.getElementById('m-captain')?document.getElementById('m-captain').value:null, notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: JSON.parse(JSON.stringify(window.currentEvents)) };
+            const newMatch = { 
+                id: docId, 
+                opponent: document.getElementById('m-opponent').value, 
+                date: document.getElementById('m-date').value, 
+                location: document.getElementById('m-location').value, 
+                tournament: document.getElementById('m-tournament').value, 
+                modality: document.getElementById('m-modality').value, 
+                season: document.getElementById('m-season').value, 
+                matchday: document.getElementById('m-matchday').value, 
+                status: status, 
+                kit: document.getElementById('m-kit').value, 
+                oppColor: document.getElementById('m-opp-shirt').value, 
+                oppShorts: document.getElementById('m-opp-shorts').value, 
+                oppSocks: document.getElementById('m-opp-socks').value, 
+                oppGk: document.getElementById('m-opp-gk').value, 
+                goalsUs: goalsUs, 
+                goalsThem: goalsThem, 
+                mvp: mvp, 
+                captain: document.getElementById('m-captain') ? document.getElementById('m-captain').value : null, 
+                notes: document.getElementById('m-notes').value, 
+                lineup: JSON.parse(JSON.stringify(window.currentLineup)), 
+                events: JSON.parse(JSON.stringify(window.currentEvents)) 
+            };
 
-            try { await setDoc(doc(db, window.matchesPath, docId), newMatch); window.showToast('Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
+            try { 
+                await setDoc(doc(db, window.matchesPath, docId), newMatch); 
+                window.showToast('Guardado'); 
+                window.showSection('matches'); 
+            } catch(err) { 
+                window.showToast('Error', true); 
+            } finally { 
+                btn.disabled = false; 
+                btn.textContent = "Guardar Partido"; 
+            }
         };
 
-        window.deleteMatch = function(id) { window.showConfirm('¿Borrar partido?', async () => { try { await deleteDoc(doc(db, window.matchesPath, id)); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
+        window.deleteMatch = function(id) { 
+            window.showConfirm('¿Borrar partido?', async () => { 
+                try { 
+                    await deleteDoc(doc(db, window.matchesPath, id)); 
+                    window.showToast('Eliminado'); 
+                } catch(e) { 
+                    window.showToast('Error', true); 
+                } 
+            }); 
+        };
 
         window.toggleScoreFields = () => { 
             const s = document.getElementById('m-status').value; 
             const c = document.getElementById('m-score-container'); 
             const lbl = document.getElementById('label-opponent'); 
+            
             if(lbl) lbl.textContent = document.getElementById('m-opponent').value || 'Rival'; 
             
-            if(s==='finished') { c.classList.remove('hidden'); window.updateMvpSelect(); } 
-            else { c.classList.add('hidden'); } 
+            if(s === 'finished') { 
+                c.classList.remove('hidden'); 
+                window.updateMvpSelect(); 
+            } else { 
+                c.classList.add('hidden'); 
+            } 
         };
         
-        window.handleModalityChange = () => { window.updateFormationOptions(); const mod = document.getElementById('m-modality').value; const max = mod==='f11'?11:7; window.currentLineup = window.currentLineup.filter(l => { const p = window.players.find(x=>x.id===l.playerId); return p && (mod==='f11'?p.availableF11:p.availableF7); }); let c=0; window.currentLineup.forEach(p => { const s = window.players.find(x=>x.id===p.playerId)?.isStaff; if(!s && p.x!==null && p.y!==null) { c++; if(c>max) {p.x=null;p.y=null;} } }); window.renderCallupList(); window.drawTacticalBoard(); };
+        window.handleModalityChange = () => { 
+            window.updateFormationOptions(); 
+            const mod = document.getElementById('m-modality').value; 
+            const max = mod === 'f11' ? 11 : 7; 
+            
+            window.currentLineup = window.currentLineup.filter(l => { 
+                const p = window.players.find(x => x.id === l.playerId); 
+                return p && (mod === 'f11' ? p.availableF11 : p.availableF7); 
+            }); 
+            
+            let c = 0; 
+            window.currentLineup.forEach(p => { 
+                const s = window.players.find(x => x.id === p.playerId)?.isStaff; 
+                if(!s && p.x !== null && p.y !== null) { 
+                    c++; 
+                    if(c > max) { p.x = null; p.y = null; } 
+                } 
+            }); 
+            
+            window.renderCallupList(); 
+            window.drawTacticalBoard(); 
+        };
         
-        window.updateFormationOptions = () => { const m = document.getElementById('m-modality').value; const s = document.getElementById('m-formation'); if(!s)return; let h='<option value="">Formación Libre</option>'; for(let k in formations[m]) h+=`<option value="${k}">${k}</option>`; s.innerHTML=h; };
+        window.updateFormationOptions = () => { 
+            const m = document.getElementById('m-modality').value; 
+            const s = document.getElementById('m-formation'); 
+            if(!s) return; 
+            
+            let h = '<option value="">Formación Libre</option>'; 
+            for(let k in formations[m]) {
+                h += `<option value="${k}">${k}</option>`; 
+            }
+            s.innerHTML = h; 
+        };
 
         window.renderCallupList = function() {
-            const list = document.getElementById('m-callup-list'); if(!list) return; list.innerHTML = '';
+            const list = document.getElementById('m-callup-list'); 
+            if(!list) return; 
+            list.innerHTML = '';
+            
             const mod = document.getElementById('m-modality').value;
-            window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
-                if(mod==='f11' && !p.availableF11) return; if(mod==='f7' && !p.availableF7) return;
-                const isC = window.currentLineup.some(l=>l.playerId===p.id);
-                list.innerHTML += `<div class="flex items-center gap-2"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4"><label for="cb-${p.id}" class="truncate text-gray-700 text-xs cursor-pointer">${p.isStaff?'(CT) ':''}${p.number?p.number+'-':''}${p.name}</label></div>`;
+            
+            window.players.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+                if(mod === 'f11' && !p.availableF11) return; 
+                if(mod === 'f7' && !p.availableF7) return;
+                
+                const isC = window.currentLineup.some(l => l.playerId === p.id);
+                list.innerHTML += `
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="cb-${p.id}" ${isC ? 'checked' : ''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4">
+                        <label for="cb-${p.id}" class="truncate text-gray-700 text-xs cursor-pointer">${p.isStaff ? '(CT) ' : ''}${p.number ? p.number+'-' : ''}${p.name}</label>
+                    </div>`;
             });
-            window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
+            window.updateEventPlayerSelect(); 
+            window.updateMvpSelect(); 
+            window.updateCaptainSelect();
         };
 
-        window.handleCallupChange = (id, chk) => { if(chk) { if(!window.currentLineup.some(l=>l.playerId===id)) window.currentLineup.push({playerId:id,x:null,y:null}); } else { window.currentLineup = window.currentLineup.filter(l=>l.playerId!==id); const c = document.getElementById('m-captain'); if(c&&c.value===id) c.value=''; } window.drawTacticalBoard(); window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect(); };
-        window.updateCaptainSelect = () => { const s = document.getElementById('m-captain'); if(!s)return; const cur = s.value; let h='<option value="">Ninguno</option>'; window.players.filter(p=>window.currentLineup.some(l=>l.playerId===p.id)&&!p.isStaff).forEach(p=>h+=`<option value="${p.id}">${p.name}</option>`); s.innerHTML=h; if(window.players.find(p=>p.id===cur)) s.value=cur; };
-        window.updateMvpSelect = () => { const s = document.getElementById('m-mvp'); if(!s)return; const cur = s.value; let h='<option value="">Ninguno</option>'; const ids=[...new Set([...window.currentLineup.map(l=>l.playerId), ...window.currentEvents.filter(e=>e.type==='sub').map(e=>e.playerId)])]; window.players.filter(p=>ids.includes(p.id)&&!p.isStaff).forEach(p=>h+=`<option value="${p.id}">${p.name}</option>`); s.innerHTML=h; if(window.players.find(p=>p.id===cur)) s.value=cur; };
+        window.handleCallupChange = (id, chk) => { 
+            if(chk) { 
+                if(!window.currentLineup.some(l => l.playerId === id)) {
+                    window.currentLineup.push({ playerId: id, x: null, y: null }); 
+                }
+            } else { 
+                window.currentLineup = window.currentLineup.filter(l => l.playerId !== id); 
+                const c = document.getElementById('m-captain'); 
+                if(c && c.value === id) c.value = ''; 
+            } 
+            window.drawTacticalBoard(); 
+            window.updateEventPlayerSelect(); 
+            window.updateMvpSelect(); 
+            window.updateCaptainSelect(); 
+        };
+        
+        window.updateCaptainSelect = () => { 
+            const s = document.getElementById('m-captain'); 
+            if(!s) return; 
+            
+            const cur = s.value; 
+            let h = '<option value="">Ninguno</option>'; 
+            
+            window.players.filter(p => window.currentLineup.some(l => l.playerId === p.id) && !p.isStaff).forEach(p => {
+                h += `<option value="${p.id}">${p.name}</option>`;
+            }); 
+            
+            s.innerHTML = h; 
+            if(window.players.find(p => p.id === cur)) s.value = cur; 
+        };
+        
+        window.updateMvpSelect = () => { 
+            const s = document.getElementById('m-mvp'); 
+            if(!s) return; 
+            
+            const cur = s.value; 
+            let h = '<option value="">Ninguno</option>'; 
+            const ids = [...new Set([...window.currentLineup.map(l => l.playerId), ...window.currentEvents.filter(e => e.type === 'sub').map(e => e.playerId)])]; 
+            
+            window.players.filter(p => ids.includes(p.id) && !p.isStaff).forEach(p => {
+                h += `<option value="${p.id}">${p.name}</option>`;
+            }); 
+            
+            s.innerHTML = h; 
+            if(window.players.find(p => p.id === cur)) s.value = cur; 
+        };
         
         window.updateEventPlayerSelect = function() {
-            const si = document.getElementById('m-event-player'), so = document.getElementById('m-event-player-out'); if(!si||so===null) return;
-            let hi='<option value="">Jugador/Entra...</option>', ho='<option value="">Sale...</option>';
-            window.currentLineup.forEach(l => { const p = window.players.find(x=>x.id===l.playerId); if(p){ hi+=`<option value="${p.id}">${p.isStaff?'(CT) ':''}${p.name}</option>`; if(!p.isStaff) ho+=`<option value="${p.id}">${p.name}</option>`; } });
-            si.innerHTML=hi; so.innerHTML=ho;
+            const si = document.getElementById('m-event-player');
+            const so = document.getElementById('m-event-player-out'); 
+            if(!si || so === null) return;
+            
+            let hi = '<option value="">Jugador/Entra...</option>'; 
+            let ho = '<option value="">Sale...</option>';
+            
+            window.currentLineup.forEach(l => { 
+                const p = window.players.find(x => x.id === l.playerId); 
+                if(p) { 
+                    hi += `<option value="${p.id}">${p.isStaff ? '(CT) ' : ''}${p.name}</option>`; 
+                    if(!p.isStaff) ho += `<option value="${p.id}">${p.name}</option>`; 
+                } 
+            });
+            
+            si.innerHTML = hi; 
+            so.innerHTML = ho;
         };
 
-        window.toggleSubField = () => { const t = document.getElementById('m-event-type').value, o = document.getElementById('m-event-player-out'); if(t==='sub') o.classList.remove('hidden'); else { o.classList.add('hidden'); o.value=''; } };
+        window.toggleSubField = () => { 
+            const t = document.getElementById('m-event-type').value; 
+            const o = document.getElementById('m-event-player-out'); 
+            
+            if(t === 'sub') {
+                o.classList.remove('hidden'); 
+            } else { 
+                o.classList.add('hidden'); 
+                o.value = ''; 
+            } 
+        };
         
         window.addMatchEvent = function() {
             if(!window.isAdmin) return window.showToast('Solo edición', true);
-            const m = document.getElementById('m-event-minute').value, pId = document.getElementById('m-event-player').value, type = document.getElementById('m-event-type').value, pOut = document.getElementById('m-event-player-out').value;
+            
+            const m = document.getElementById('m-event-minute').value; 
+            const pId = document.getElementById('m-event-player').value; 
+            const type = document.getElementById('m-event-type').value; 
+            const pOut = document.getElementById('m-event-player-out').value;
+            
             if(!pId) return window.showToast('Selecciona jugador', true);
-            if(window.players.find(x=>x.id===pId)?.isStaff && ['goals','assists','penalty','freekick','sub','saved'].includes(type)) return window.showToast('CT solo amarillas/rojas', true);
-            if(type==='sub' && (!pOut || pId===pOut)) return window.showToast('Cambio inválido', true);
-            window.currentEvents.push({ minute:m, playerId:pId, type:type, playerOutId:pOut }); window.renderMatchEvents(); window.updateMvpSelect(); document.getElementById('m-event-minute').value = ''; window.drawTacticalBoard();
+            
+            if(window.players.find(x => x.id === pId)?.isStaff && ['goals', 'assists', 'penalty', 'freekick', 'sub', 'saved'].includes(type)) {
+                return window.showToast('CT solo amarillas/rojas', true);
+            }
+            
+            if(type === 'sub' && (!pOut || pId === pOut)) {
+                return window.showToast('Cambio inválido', true);
+            }
+            
+            window.currentEvents.push({ minute: m, playerId: pId, type: type, playerOutId: pOut }); 
+            window.renderMatchEvents(); 
+            window.updateMvpSelect(); 
+            document.getElementById('m-event-minute').value = ''; 
+            window.drawTacticalBoard();
         };
-        window.removeMatchEvent = (idx) => { if(!window.isAdmin) return window.showToast('Solo edición', true); window.currentEvents.splice(idx,1); window.renderMatchEvents(); window.updateMvpSelect(); window.drawTacticalBoard(); };
+        
+        window.removeMatchEvent = (idx) => { 
+            if(!window.isAdmin) return window.showToast('Solo edición', true); 
+            window.currentEvents.splice(idx, 1); 
+            window.renderMatchEvents(); 
+            window.updateMvpSelect(); 
+            window.drawTacticalBoard(); 
+        };
         
         window.renderMatchEvents = function() {
-            const list = document.getElementById('m-events-list'); if(!list) return; list.innerHTML = '';
-            if(window.currentEvents.length===0){ list.innerHTML='<p class="text-xs text-gray-400">Sin eventos</p>'; return; }
+            const list = document.getElementById('m-events-list'); 
+            if(!list) return; 
+            list.innerHTML = '';
+            
+            if(window.currentEvents.length === 0){ 
+                list.innerHTML = '<p class="text-xs text-gray-400">Sin eventos</p>'; 
+                return; 
+            }
+            
             const lbl = { goals:'Gol ⚽', penalty:'Penal 🎯', freekick:'Tiro Libre 👟', assists:'Asist. 👟', saved:'Atajado 🧤', yellows:'Amarilla 🟨', reds:'Roja 🟥', sub:'Cambio 🔄' };
             const col = { goals:'bg-green-100 text-green-800', penalty:'bg-teal-100 text-teal-800', freekick:'bg-emerald-100 text-emerald-800', assists:'bg-blue-100 text-blue-800', saved:'bg-purple-100 text-purple-800', yellows:'bg-yellow-100 text-yellow-800', reds:'bg-red-100 text-red-800', sub:'bg-gray-200 text-gray-800' };
-            window.currentEvents.sort((a,b)=>(parseInt(a.minute)||999)-(parseInt(b.minute)||999)).forEach((ev,idx)=>{
-                const pIn = window.players.find(x=>x.id===ev.playerId); if(!pIn) return;
-                let det = ev.type==='sub' ? `<span class="text-green-600 font-bold text-xs"><i class="fas fa-arrow-up"></i> ${(pIn.name||'').split(' ')[0]}</span> <span class="text-red-500 font-bold text-xs ml-1"><i class="fas fa-arrow-down"></i> ${(window.players.find(x=>x.id===ev.playerOutId)?.name||'?').split(' ')[0]}</span>` : `<span class="font-bold text-gray-700 text-sm">${pIn.name}</span>`;
-                list.innerHTML += `<div class="flex justify-between items-center bg-gray-50 p-2 rounded border"><div class="flex items-center gap-1">${ev.minute?`<span class="font-mono text-gray-500 mr-2 text-xs">${ev.minute}'</span>`:''} ${det} <span class="${col[ev.type]} text-[10px] font-bold px-2 py-0.5 rounded ml-2">${lbl[ev.type]}</span></div><button type="button" onclick="window.removeMatchEvent(${idx})" class="admin-only text-gray-400 hover:text-red-500 ml-2"><i class="fas fa-times"></i></button></div>`;
+            
+            window.currentEvents.sort((a,b) => (parseInt(a.minute)||999) - (parseInt(b.minute)||999)).forEach((ev, idx) => {
+                const pIn = window.players.find(x => x.id === ev.playerId); 
+                if(!pIn) return;
+                
+                let det = ev.type === 'sub' 
+                    ? `<span class="text-green-600 font-bold text-xs"><i class="fas fa-arrow-up"></i> ${(pIn.name||'').split(' ')[0]}</span> <span class="text-red-500 font-bold text-xs ml-1"><i class="fas fa-arrow-down"></i> ${(window.players.find(x=>x.id===ev.playerOutId)?.name||'?').split(' ')[0]}</span>` 
+                    : `<span class="font-bold text-gray-700 text-sm">${pIn.name}</span>`;
+                
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                        <div class="flex items-center gap-1">
+                            ${ev.minute ? `<span class="font-mono text-gray-500 mr-2 text-xs">${ev.minute}'</span>` : ''} 
+                            ${det} 
+                            <span class="${col[ev.type]} text-[10px] font-bold px-2 py-0.5 rounded ml-2">${lbl[ev.type]}</span>
+                        </div>
+                        <button type="button" onclick="window.removeMatchEvent(${idx})" class="admin-only text-gray-400 hover:text-red-500 ml-2">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>`;
             });
         };
 
         window.applyFormation = function() {
-            const mod = document.getElementById('m-modality').value; const fk = document.getElementById('m-formation').value;
-            if(!fk) { window.drawTacticalBoard(); return; }
+            const mod = document.getElementById('m-modality').value; 
+            const fk = document.getElementById('m-formation').value;
+            
+            if(!fk) { 
+                window.drawTacticalBoard(); 
+                return; 
+            }
+            
             const coords = formations[mod][fk];
-            window.currentLineup.forEach(p => { const pObj = window.players.find(x=>x.id===p.playerId); if(pObj && !pObj.isStaff) { p.x=null; p.y=null; } });
-            let unassigned = window.currentLineup.filter(l => { const pObj = window.players.find(x=>x.id===l.playerId); return pObj && !pObj.isStaff; });
-            coords.forEach(slot => {
-                const matchIdx = unassigned.findIndex(l => { const pObj = window.players.find(x=>x.id===l.playerId); const pos = Array.isArray(pObj.positions)?pObj.positions:(pObj.position?[pObj.position]:[]); return pos.some(p=>slot.valid.includes(p)); });
-                if(matchIdx !== -1) { const l = unassigned[matchIdx]; l.x=slot.x; l.y=slot.y; unassigned.splice(matchIdx, 1); }
+            window.currentLineup.forEach(p => { 
+                const pObj = window.players.find(x => x.id === p.playerId); 
+                if(pObj && !pObj.isStaff) { p.x = null; p.y = null; } 
             });
-            window.drawTacticalBoard(); window.showToast(`Formación ${fk} aplicada`);
+            
+            let unassigned = window.currentLineup.filter(l => { 
+                const pObj = window.players.find(x => x.id === l.playerId); 
+                return pObj && !pObj.isStaff; 
+            });
+            
+            coords.forEach(slot => {
+                const matchIdx = unassigned.findIndex(l => { 
+                    const pObj = window.players.find(x => x.id === l.playerId); 
+                    const pos = Array.isArray(pObj.positions) ? pObj.positions : (pObj.position ? [pObj.position] : []); 
+                    return pos.some(p => slot.valid.includes(p)); 
+                });
+                
+                if(matchIdx !== -1) { 
+                    const l = unassigned[matchIdx]; 
+                    l.x = slot.x; 
+                    l.y = slot.y; 
+                    unassigned.splice(matchIdx, 1); 
+                }
+            });
+            
+            window.drawTacticalBoard(); 
+            window.showToast(`Formación ${fk} aplicada`);
         };
 
         window.drawTacticalBoard = function() {
-            const pitch = document.getElementById('tactical-pitch'), bench = document.getElementById('tactical-bench'), staff = document.getElementById('tactical-staff');
-            if(!pitch||!bench||!staff) return;
-            document.querySelectorAll('.player-token, .formation-slot').forEach(t=>t.remove());
-            const mod = document.getElementById('m-modality').value, max = mod==='f11'?11:7, fk = document.getElementById('m-formation').value;
-            let onPitch=0;
+            const pitch = document.getElementById('tactical-pitch'); 
+            const bench = document.getElementById('tactical-bench'); 
+            const staff = document.getElementById('tactical-staff');
+            
+            if(!pitch || !bench || !staff) return;
+            
+            document.querySelectorAll('.player-token, .formation-slot').forEach(t => t.remove());
+            
+            const mod = document.getElementById('m-modality').value; 
+            const max = mod === 'f11' ? 11 : 7; 
+            const fk = document.getElementById('m-formation').value;
+            let onPitch = 0;
             
             if(fk && formations[mod] && formations[mod][fk]) { 
-                formations[mod][fk].forEach(c => { const s = document.createElement('div'); s.className="formation-slot"; s.style.left=c.x+'%'; s.style.top=c.y+'%'; s.innerHTML=c.label; pitch.appendChild(s); }); 
+                formations[mod][fk].forEach(c => { 
+                    const s = document.createElement('div'); 
+                    s.className = "formation-slot"; 
+                    s.style.left = c.x + '%'; 
+                    s.style.top = c.y + '%'; 
+                    s.innerHTML = c.label; 
+                    pitch.appendChild(s); 
+                }); 
             }
             
             window.currentLineup.forEach(l => {
-                const p = window.players.find(x=>x.id===l.playerId); if(!p) return;
-                const tok = document.createElement('div'); tok.className="player-token"; tok.dataset.id=l.playerId;
+                const p = window.players.find(x => x.id === l.playerId); 
+                if(!p) return;
                 
-                let cap = (p.id===document.getElementById('m-captain')?.value)?`<div class="captain-armband">C</div>`:'';
-                let dor = (!p.isStaff&&p.number)?`<div class="dorsal-badge">${p.number}</div>`:'';
+                const tok = document.createElement('div'); 
+                tok.className = "player-token"; 
+                tok.dataset.id = l.playerId;
                 
-                let evGoals=0, evAssists=0, evCards='', evSaved=0;
+                let cap = (p.id === document.getElementById('m-captain')?.value) ? `<div class="captain-armband">C</div>` : '';
+                let dor = (!p.isStaff && p.number) ? `<div class="dorsal-badge">${p.number}</div>` : '';
+                
+                let evGoals = 0, evAssists = 0, evCards = '', evSaved = 0;
                 window.currentEvents.forEach(e => {
                     if(e.playerId === p.id) {
                         if(['goals', 'penalty', 'freekick'].includes(e.type)) evGoals++;
@@ -1039,6 +1741,7 @@
                 
                 const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position === 'Portero');
                 const gkIcon = isGK ? ' 🧤' : '';
+                
                 let displayLabel = (p.name || 'N/A').split(' ')[0];
                 if (p.showAlias && p.alias) displayLabel = p.alias;
                 const initial = (p.name || '?').charAt(0).toUpperCase();
@@ -1047,121 +1750,291 @@
                     tok.style.borderColor = '#9333ea';
                     tok.innerHTML = (p.image ? `<img src="${p.image}" alt="">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f3e8ff; border-radius:50%;"><i class="fas fa-user-tie text-purple-600"></i></div>`) + `<span class="name-label" style="background: rgba(107, 33, 168, 0.9);">${displayLabel}</span>` + iconHtml;
                 } else {
-                    if (p.image) tok.innerHTML = `${dor}${cap}<img src="${p.image}" alt=""><span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`;
-                    else tok.innerHTML = `${dor}${cap}${initial}<span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`;
+                    if (p.image) {
+                        tok.innerHTML = `${dor}${cap}<img src="${p.image}" alt=""><span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`;
+                    } else {
+                        tok.innerHTML = `${dor}${cap}${initial}<span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`;
+                    }
                 }
 
-                tok.onmousedown = window.dragStart; tok.addEventListener('touchstart', window.dragStart, {passive: false});
+                tok.onmousedown = window.dragStart; 
+                tok.addEventListener('touchstart', window.dragStart, {passive: false});
 
-                if(l.x!==null && l.y!==null) { tok.style.left=l.x+'%'; tok.style.top=l.y+'%'; pitch.appendChild(tok); if(!p.isStaff) onPitch++; }
-                else { tok.style.position='relative'; tok.style.transform='none'; tok.style.left='auto'; tok.style.top='auto'; (p.isStaff?staff:bench).appendChild(tok); }
+                if(l.x !== null && l.y !== null) { 
+                    tok.style.left = l.x + '%'; 
+                    tok.style.top = l.y + '%'; 
+                    pitch.appendChild(tok); 
+                    if(!p.isStaff) onPitch++; 
+                } else { 
+                    tok.style.position = 'relative'; 
+                    tok.style.transform = 'none'; 
+                    tok.style.left = 'auto'; 
+                    tok.style.top = 'auto'; 
+                    (p.isStaff ? staff : bench).appendChild(tok); 
+                }
             });
-            const bdg = document.getElementById('pitch-count-badge'); if(bdg) { bdg.textContent=`${onPitch}/${max} en cancha`; bdg.className=`px-2 py-1 text-xs font-bold rounded ${onPitch>max?'bg-red-100 text-red-800':onPitch===max?'bg-green-100 text-green-800':'bg-brand-100 text-brand-800'}`; }
+            
+            const bdg = document.getElementById('pitch-count-badge'); 
+            if(bdg) { 
+                bdg.textContent = `${onPitch}/${max} en cancha`; 
+                bdg.className = `px-2 py-1 text-xs font-bold rounded ${onPitch > max ? 'bg-red-100 text-red-800' : onPitch === max ? 'bg-green-100 text-green-800' : 'bg-brand-100 text-brand-800'}`; 
+            }
         };
 
-        window.dragStart = function(e) { if(!window.isAdmin) return window.showToast("Solo edición", true); window.draggedElement = e.target.closest('.player-token'); if(!window.draggedElement) return; const p = document.getElementById('tactical-pitch'); if(window.draggedElement.parentElement !== p) { window.draggedElement.style.position='absolute'; window.draggedElement.style.transform='translate(-50%, -50%)'; p.appendChild(window.draggedElement); } };
-        window.dragMove = function(e) { if(!window.draggedElement) return; if(e.type==='touchmove' && e.cancelable) e.preventDefault(); const p = document.getElementById('tactical-pitch'); const r = p.getBoundingClientRect(); let cx = e.type.includes('touch')?e.touches[0].clientX:e.clientX; let cy = e.type.includes('touch')?e.touches[0].clientY:e.clientY; window.draggedElement.style.left = (((cx - r.left)/r.width)*100)+'%'; window.draggedElement.style.top = (((cy - r.top)/r.height)*100)+'%'; };
+        window.dragStart = function(e) { 
+            if(!window.isAdmin) return window.showToast("Solo edición", true); 
+            
+            window.draggedElement = e.target.closest('.player-token'); 
+            if(!window.draggedElement) return; 
+            
+            const p = document.getElementById('tactical-pitch'); 
+            if(window.draggedElement.parentElement !== p) { 
+                window.draggedElement.style.position = 'absolute'; 
+                window.draggedElement.style.transform = 'translate(-50%, -50%)'; 
+                p.appendChild(window.draggedElement); 
+            } 
+        };
+        
+        window.dragMove = function(e) { 
+            if(!window.draggedElement) return; 
+            if(e.type === 'touchmove' && e.cancelable) e.preventDefault(); 
+            
+            const p = document.getElementById('tactical-pitch'); 
+            const r = p.getBoundingClientRect(); 
+            
+            let cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX; 
+            let cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY; 
+            
+            window.draggedElement.style.left = (((cx - r.left) / r.width) * 100) + '%'; 
+            window.draggedElement.style.top = (((cy - r.top) / r.height) * 100) + '%'; 
+        };
         
         window.dragEnd = function(e) {
             if(!window.draggedElement) return;
-            const p = document.getElementById('tactical-pitch'), r = p.getBoundingClientRect();
-            let cy = e.type.includes('touch')?e.changedTouches[0].clientY:e.clientY, cx = e.type.includes('touch')?e.changedTouches[0].clientX:e.clientX;
-            const pid = window.draggedElement.dataset.id, idx = window.currentLineup.findIndex(l=>l.playerId===pid);
-            const mod = document.getElementById('m-modality').value, fk = document.getElementById('m-formation').value;
             
-            if(cy > r.bottom + 10) { if(idx>=0) { window.currentLineup[idx].x=null; window.currentLineup[idx].y=null; } } 
-            else {
-                let nx = ((cx - r.left)/r.width)*100, ny = ((cy - r.top)/r.height)*100;
-                if(idx>=0) {
-                    const ox = window.currentLineup[idx].x, oy = window.currentLineup[idx].y;
+            const p = document.getElementById('tactical-pitch');
+            const r = p.getBoundingClientRect();
+            
+            let cy = e.type.includes('touch') ? e.changedTouches[0].clientY : e.clientY;
+            let cx = e.type.includes('touch') ? e.changedTouches[0].clientX : e.clientX;
+            
+            const pid = window.draggedElement.dataset.id;
+            const idx = window.currentLineup.findIndex(l => l.playerId === pid);
+            const mod = document.getElementById('m-modality').value;
+            const fk = document.getElementById('m-formation').value;
+            
+            if(cy > r.bottom + 10) { 
+                if(idx >= 0) { 
+                    window.currentLineup[idx].x = null; 
+                    window.currentLineup[idx].y = null; 
+                } 
+            } else {
+                let nx = ((cx - r.left) / r.width) * 100;
+                let ny = ((cy - r.top) / r.height) * 100;
+                
+                if(idx >= 0) {
+                    const ox = window.currentLineup[idx].x;
+                    const oy = window.currentLineup[idx].y;
+                    
                     if(fk && formations[mod][fk]) {
-                        const coords = formations[mod][fk]; let nrst = coords[0], mD = Infinity;
-                        coords.forEach(c => { const d = Math.sqrt(Math.pow(nx-c.x,2)+Math.pow(ny-c.y,2)); if(d<mD){mD=d; nrst=c;} });
-                        const occIdx = window.currentLineup.findIndex(l=>l.x===nrst.x && l.y===nrst.y && l.playerId!==pid);
-                        if(occIdx>=0) {
-                            if(ox===null) { window.currentLineup[occIdx].x=null; window.currentLineup[occIdx].y=null; } 
-                            else { window.currentLineup[occIdx].x=ox; window.currentLineup[occIdx].y=oy; }
+                        const coords = formations[mod][fk]; 
+                        let nrst = coords[0], mD = Infinity;
+                        
+                        coords.forEach(c => { 
+                            const d = Math.sqrt(Math.pow(nx - c.x, 2) + Math.pow(ny - c.y, 2)); 
+                            if(d < mD) { mD = d; nrst = c; } 
+                        });
+                        
+                        const occIdx = window.currentLineup.findIndex(l => l.x === nrst.x && l.y === nrst.y && l.playerId !== pid);
+                        
+                        if(occIdx >= 0) {
+                            if(ox === null) { 
+                                window.currentLineup[occIdx].x = null; 
+                                window.currentLineup[occIdx].y = null; 
+                            } else { 
+                                window.currentLineup[occIdx].x = ox; 
+                                window.currentLineup[occIdx].y = oy; 
+                            }
                         }
-                        window.currentLineup[idx].x=nrst.x; window.currentLineup[idx].y=nrst.y;
-                    } else { window.currentLineup[idx].x=nx; window.currentLineup[idx].y=ny; }
+                        window.currentLineup[idx].x = nrst.x; 
+                        window.currentLineup[idx].y = nrst.y;
+                    } else { 
+                        window.currentLineup[idx].x = nx; 
+                        window.currentLineup[idx].y = ny; 
+                    }
                 }
             }
-            window.draggedElement=null; window.drawTacticalBoard();
+            window.draggedElement = null; 
+            window.drawTacticalBoard();
         };
 
-        window.exportPitchImage = function() { const p = document.getElementById('tactical-pitch'); if(!p)return; const ob = p.style.borderRadius; p.style.borderRadius='0px'; html2canvas(p, {backgroundColor:'#4ade80', scale:2}).then(c => { const a = document.createElement('a'); a.download = `Alineacion_NISUS_vs_${document.getElementById('m-opponent').value||'Partido'}.png`; a.href = c.toDataURL('image/png'); a.click(); p.style.borderRadius=ob; window.showToast("Alineación descargada"); }).catch(e => { p.style.borderRadius=ob; window.showToast("Error",true); }); };
+        window.exportPitchImage = function() { 
+            const p = document.getElementById('tactical-pitch'); 
+            if(!p) return; 
+            
+            const ob = p.style.borderRadius; 
+            p.style.borderRadius = '0px'; 
+            
+            html2canvas(p, {backgroundColor: '#4ade80', scale: 2}).then(c => { 
+                const a = document.createElement('a'); 
+                a.download = `Alineacion_NISUS_vs_${document.getElementById('m-opponent').value || 'Partido'}.png`; 
+                a.href = c.toDataURL('image/png'); 
+                a.click(); 
+                p.style.borderRadius = ob; 
+                window.showToast("Alineación descargada"); 
+            }).catch(e => { 
+                p.style.borderRadius = ob; 
+                window.showToast("Error al exportar", true); 
+            }); 
+        };
 
         window.renderMatches = function() {
-            const grid = document.getElementById('matches-grid'); if(!grid) return; grid.innerHTML = '';
+            const grid = document.getElementById('matches-grid'); 
+            if(!grid) return; 
+            grid.innerHTML = '';
+            
             let list = window.matches;
             if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter);
             if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
+            
             list.sort((a,b) => new Date(b.date) - new Date(a.date));
-            if(list.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border">No hay partidos</div>'; return; }
+            
+            if(list.length === 0) { 
+                grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border">No hay partidos</div>'; 
+                return; 
+            }
             
             list.forEach(m => {
-                const dateStr = new Date(m.date+'T12:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' });
+                const dateStr = new Date(m.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' });
                 const isF11 = m.modality === 'f11';
-                const tournBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded border ${isF11?'bg-blue-100 text-blue-800 border-blue-200':'bg-green-100 text-green-800 border-green-200'}">F${isF11?11:7}</span> <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border ml-1"><i class="fas fa-trophy mr-1"></i>${m.tournament||'Amistoso'}</span>`;
+                const tournBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded border ${isF11 ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-green-100 text-green-800 border-green-200'}">F${isF11 ? 11 : 7}</span> <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border ml-1"><i class="fas fa-trophy mr-1"></i>${m.tournament || 'Amistoso'}</span>`;
                 const seasonBadge = m.season ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 border ml-1">${m.season}</span>` : '';
-                const kitBadge = m.kit==='white_blue' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border ml-1"><i class="fas fa-tshirt"></i> B/A</span>` : `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-800 text-white ml-1"><i class="fas fa-tshirt"></i> Negro</span>`;
+                const kitBadge = m.kit === 'white_blue' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border ml-1"><i class="fas fa-tshirt"></i> B/A</span>` : `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-800 text-white ml-1"><i class="fas fa-tshirt"></i> Negro</span>`;
 
-                let stat='', scor='', btn='';
-                if(m.status==='pending') { 
-                    stat=`<span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full"><i class="far fa-clock mr-1"></i>Por Jugar</span>`; scor=`<div class="text-2xl font-black text-gray-300">VS</div>`; 
+                let stat = '', scor = '', btn = '';
+                if(m.status === 'pending') { 
+                    stat = `<span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full"><i class="far fa-clock mr-1"></i>Por Jugar</span>`; 
+                    scor = `<div class="text-2xl font-black text-gray-300">VS</div>`; 
                 } 
-                else if (m.status==='forfait') {
-                    stat=`<span class="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full border border-purple-200"><i class="fas fa-gavel mr-1"></i>Forfait (W.O.)</span>`; scor=`<div class="flex items-center gap-4"><span class="text-3xl font-black text-green-600">3</span><span class="text-gray-300 font-bold">-</span><span class="text-3xl font-black text-gray-800">0</span></div>`; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
+                else if (m.status === 'forfait') {
+                    stat = `<span class="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full border border-purple-200"><i class="fas fa-gavel mr-1"></i>Forfait (W.O.)</span>`; 
+                    scor = `<div class="flex items-center gap-4"><span class="text-3xl font-black text-green-600">3</span><span class="text-gray-300 font-bold">-</span><span class="text-3xl font-black text-gray-800">0</span></div>`; 
+                    btn = `<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
                 }
                 else {
-                    stat=`<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Finalizado</span>`; let col = 'text-gray-500'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) col='text-green-600'; else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)) col='text-red-500'; scor=`<div class="flex items-center gap-4"><span class="text-3xl font-black ${col}">${m.goalsUs}</span><span class="text-gray-300 font-bold">-</span><span class="text-3xl font-black text-gray-800">${m.goalsThem}</span></div>`; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
+                    stat = `<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Finalizado</span>`; 
+                    let col = 'text-gray-500'; 
+                    if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) col = 'text-green-600'; 
+                    else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) col = 'text-red-500'; 
+                    
+                    scor = `<div class="flex items-center gap-4"><span class="text-3xl font-black ${col}">${m.goalsUs}</span><span class="text-gray-300 font-bold">-</span><span class="text-3xl font-black text-gray-800">${m.goalsThem}</span></div>`; 
+                    btn = `<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
                 }
                 
-                let evs='';
-                if(m.events && m.events.length>0 && m.status !== 'forfait') {
-                    const g = m.events.filter(e=>['goals','penalty','freekick'].includes(e.type));
-                    if(g.length>0) evs += `<p class="text-[11px] text-gray-500 mt-2 text-center"><i class="fas fa-futbol text-green-600 mr-1"></i> ` + g.map(x=>{ const p = window.players.find(y=>y.id===x.playerId); return (p?(p.name||'').split(' ')[0]:'?') + (x.type==='penalty'?' 🎯':x.type==='freekick'?' 👟':''); }).join(', ') + `</p>`;
+                let evs = '';
+                if(m.events && m.events.length > 0 && m.status !== 'forfait') {
+                    const g = m.events.filter(e => ['goals', 'penalty', 'freekick'].includes(e.type));
+                    if(g.length > 0) {
+                        evs += `<p class="text-[11px] text-gray-500 mt-2 text-center"><i class="fas fa-futbol text-green-600 mr-1"></i> ` + 
+                               g.map(x => { 
+                                   const p = window.players.find(y => y.id === x.playerId); 
+                                   return (p ? (p.name||'').split(' ')[0] : '?') + (x.type === 'penalty' ? ' 🎯' : x.type === 'freekick' ? ' 👟' : ''); 
+                               }).join(', ') + `</p>`;
+                    }
                 }
-                if(m.status==='finished'&&m.mvp) { const p=window.players.find(x=>x.id===m.mvp); if(p) evs+=`<p class="text-[11px] font-bold text-yellow-600 mt-1 text-center"><i class="fas fa-star mr-1"></i>MVP: ${(p.name||'').split(' ')[0]}</p>`; }
+                if(m.status === 'finished' && m.mvp) { 
+                    const p = window.players.find(x => x.id === m.mvp); 
+                    if(p) evs += `<p class="text-[11px] font-bold text-yellow-600 mt-1 text-center"><i class="fas fa-star mr-1"></i>MVP: ${(p.name||'').split(' ')[0]}</p>`; 
+                }
                 
-                let loc=''; if(m.location) loc=m.location.startsWith('http')?`<a href="${m.location}" target="_blank" class="text-blue-500 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> Ver en Maps</a>`:`<p class="text-gray-500 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> ${m.location.substring(0,25)}</p>`;
+                let loc = ''; 
+                if(m.location) {
+                    loc = m.location.startsWith('http') 
+                        ? `<a href="${m.location}" target="_blank" class="text-blue-500 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> Ver en Maps</a>` 
+                        : `<p class="text-gray-500 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> ${m.location.substring(0,25)}</p>`;
+                }
                 
-                let nShirt='#ffffff', nAcc='#0284c7', nShort='#111827', nSock='#111827', nAcc2='#111827'; if (m.kit === 'black') { nShirt='#111827'; nAcc='#111827'; nAcc2=null; }
+                let nShirt = '#ffffff', nAcc = '#0284c7', nShort = '#111827', nSock = '#111827', nAcc2 = '#111827'; 
+                if (m.kit === 'black') { 
+                    nShirt = '#111827'; nAcc = '#111827'; nAcc2 = null; 
+                }
                 
                 grid.innerHTML += `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col">
-                        <div class="flex justify-between items-start mb-4"><div class="flex flex-wrap items-center gap-1">${stat} ${tournBadge} ${seasonBadge} ${kitBadge}</div><div class="admin-only flex gap-2"><button onclick="window.editMatch('${m.id}')" class="text-blue-400"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="text-red-400"><i class="fas fa-trash"></i></button></div></div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex flex-wrap items-center gap-1">${stat} ${tournBadge} ${seasonBadge} ${kitBadge}</div>
+                            <div class="admin-only flex gap-2">
+                                <button onclick="window.editMatch('${m.id}')" class="text-blue-400"><i class="fas fa-edit"></i></button>
+                                <button onclick="window.deleteMatch('${m.id}')" class="text-red-400"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
                         <div class="flex flex-col items-center justify-center py-2 mb-4 border-y border-dashed border-gray-200">
-                            <div class="text-center mb-3"><p class="text-xs text-gray-400 font-medium uppercase">${dateStr}</p>${loc}</div>
+                            <div class="text-center mb-3">
+                                <p class="text-xs text-gray-400 font-medium uppercase">${dateStr}</p>
+                                ${loc}
+                            </div>
                             <div class="flex items-center justify-between w-full px-2">
-                                <div class="text-center w-1/3"><div class="w-10 h-14 mx-auto">${window.generateKitSVG(nShirt,nAcc,nShort,nSock,nAcc2)}</div><p class="font-bold text-gray-800 text-[10px] mt-1">NISUS FC</p></div>
+                                <div class="text-center w-1/3">
+                                    <div class="w-10 h-14 mx-auto">${window.generateKitSVG(nShirt, nAcc, nShort, nSock, nAcc2)}</div>
+                                    <p class="font-bold text-gray-800 text-[10px] mt-1">NISUS FC</p>
+                                </div>
                                 <div class="w-1/3 flex justify-center">${scor}</div>
-                                <div class="text-center w-1/3"><div class="w-10 h-14 mx-auto">${window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000')}</div><p class="font-bold text-gray-800 text-[10px] mt-1 truncate max-w-[80px]" title="${m.opponent}">${m.opponent}</p></div>
+                                <div class="text-center w-1/3">
+                                    <div class="w-10 h-14 mx-auto">${window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000')}</div>
+                                    <p class="font-bold text-gray-800 text-[10px] mt-1 truncate max-w-[80px]" title="${m.opponent}">${m.opponent}</p>
+                                </div>
                             </div>
                             ${evs}
                         </div>
-                        ${btn}<button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2 bg-brand-50 text-brand-700 rounded-lg text-sm font-medium"><i class="fas fa-clipboard-list mr-1"></i> Ver Detalles</button>
+                        ${btn}
+                        <button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2 bg-brand-50 text-brand-700 rounded-lg text-sm font-medium">
+                            <i class="fas fa-clipboard-list mr-1"></i> Ver Detalles
+                        </button>
                     </div>`;
             });
         };
 
         window.exportMatchResult = function(matchId) {
-            const m = window.matches.find(x => x.id === matchId); if(!m) return;
+            const m = window.matches.find(x => x.id === matchId); 
+            if(!m) return;
+            
             const c = document.getElementById('result-render-container');
-            const tLbl = `FÚTBOL ${m.modality==='f11'?'11':'7'} | ${m.tournament}`;
-            const dStr = new Date(m.date+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'}).toUpperCase();
+            const tLbl = `FÚTBOL ${m.modality === 'f11' ? '11' : '7'} | ${m.tournament}`;
+            const dStr = new Date(m.date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+            
             let rCol = '#9ca3af', rTxt = 'EMPATE';
-            if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) { rCol='#4ade80'; rTxt='VICTORIA'; } else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)) { rCol='#f87171'; rTxt='DERROTA'; }
+            if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) { 
+                rCol = '#4ade80'; rTxt = 'VICTORIA'; 
+            } else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) { 
+                rCol = '#f87171'; rTxt = 'DERROTA'; 
+            }
             
             let evH = ''; 
             if(m.status === 'forfait') {
                 evH = `<div class="mt-6 bg-purple-900/40 border border-purple-500/30 px-6 py-3 rounded-xl text-center backdrop-blur-sm"><p class="text-sm text-purple-300 font-bold tracking-wide uppercase"><i class="fas fa-gavel mr-2"></i>Victoria Administrativa (Forfait)</p></div>`;
             } else {
-                if(m.events) { const g = m.events.filter(e=>['goals','penalty','freekick'].includes(e.type)); if(g.length>0) evH += `<div class="mt-4 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Goleadores</p><p class="text-sm text-white font-medium"><i class="fas fa-futbol text-green-400 mr-2"></i>` + g.map(x=>{ const p = window.players.find(y=>y.id===x.playerId); return (p?(p.name||'').split(' ')[0]:'?') + (x.type==='penalty'?' 🎯':x.type==='freekick'?' 👟':''); }).join(', ') + `</p></div>`; }
-                if(m.mvp) { const p=window.players.find(x=>x.id===m.mvp); if(p) evH+=`<div class="mt-3 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">MVP</p><p class="text-sm text-yellow-400 font-bold"><i class="fas fa-star mr-1"></i>${(p.name||'').split(' ')[0]}</p></div>`; }
+                if(m.events) { 
+                    const g = m.events.filter(e => ['goals', 'penalty', 'freekick'].includes(e.type)); 
+                    if(g.length > 0) {
+                        evH += `<div class="mt-4 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Goleadores</p><p class="text-sm text-white font-medium"><i class="fas fa-futbol text-green-400 mr-2"></i>` + 
+                               g.map(x => { 
+                                   const p = window.players.find(y => y.id === x.playerId); 
+                                   return (p ? (p.name||'').split(' ')[0] : '?') + (x.type === 'penalty' ? ' 🎯' : x.type === 'freekick' ? ' 👟' : ''); 
+                               }).join(', ') + `</p></div>`;
+                    }
+                }
+                if(m.mvp) { 
+                    const p = window.players.find(x => x.id === m.mvp); 
+                    if(p) {
+                        evH += `<div class="mt-3 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">MVP</p><p class="text-sm text-yellow-400 font-bold"><i class="fas fa-star mr-1"></i>${(p.name||'').split(' ')[0]}</p></div>`; 
+                    }
+                }
             }
             
-            let nS='#ffffff', nA='#0284c7', nSh='#111827', nSo='#111827', nAcc2='#111827'; if(m.kit==='black'){nS='#111827'; nA='#111827'; nAcc2=null;}
+            let nS = '#ffffff', nA = '#0284c7', nSh = '#111827', nSo = '#111827', nAcc2 = '#111827'; 
+            if(m.kit === 'black') { 
+                nS = '#111827'; nA = '#111827'; nAcc2 = null; 
+            }
             
             c.innerHTML = `
                 <div id="match-result-node" class="match-result-export">
@@ -1170,17 +2043,42 @@
                         <p class="text-[10px] font-bold tracking-widest text-brand-300 mb-1">${tLbl}</p><p class="text-xs font-medium text-gray-300 mb-6">${dStr}</p>
                         <p class="text-[10px] font-bold tracking-widest mb-2" style="color:${rCol}">${rTxt}</p>
                         <div class="flex items-center justify-center gap-4 mb-2 w-full">
-                            <div class="flex flex-col items-center flex-1"><div class="w-12 h-16 mb-2">${window.generateKitSVG(nS,nA,nSh,nSo,nAcc2)}</div><p class="text-lg font-black uppercase text-white w-full text-right">NISUS FC</p></div>
-                            <div class="flex items-center justify-center gap-3 bg-gray-900/80 px-4 py-2 rounded-xl border border-gray-700 shadow-lg shrink-0"><span class="text-4xl font-black text-white">${m.goalsUs}</span><span class="text-xl font-black text-gray-600">-</span><span class="text-4xl font-black text-white">${m.goalsThem}</span></div>
-                            <div class="flex flex-col items-center flex-1"><div class="w-12 h-16 mb-2">${window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000')}</div><p class="text-lg font-black uppercase text-gray-300 w-full text-left truncate max-w-[100px]">${m.opponent}</p></div>
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-12 h-16 mb-2">${window.generateKitSVG(nS, nA, nSh, nSo, nAcc2)}</div>
+                                <p class="text-lg font-black uppercase text-white w-full text-right">NISUS FC</p>
+                            </div>
+                            <div class="flex items-center justify-center gap-3 bg-gray-900/80 px-4 py-2 rounded-xl border border-gray-700 shadow-lg shrink-0">
+                                <span class="text-4xl font-black text-white">${m.goalsUs}</span>
+                                <span class="text-xl font-black text-gray-600">-</span>
+                                <span class="text-4xl font-black text-white">${m.goalsThem}</span>
+                            </div>
+                            <div class="flex flex-col items-center flex-1">
+                                <div class="w-12 h-16 mb-2">${window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000')}</div>
+                                <p class="text-lg font-black uppercase text-gray-300 w-full text-left truncate max-w-[100px]">${m.opponent}</p>
+                            </div>
                         </div>
                         ${evH}
                     </div>
                 </div>`;
+                
             document.getElementById('modalMatchResult').classList.remove('hidden');
+            
             document.getElementById('btn-download-result').onclick = function() {
-                const node = document.getElementById('match-result-node'); const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-                html2canvas(node, { backgroundColor:'#111827', scale:2, useCORS:true, allowTaint:true }).then(cv => { const a = document.createElement('a'); a.download=`Resultado_NISUS_vs_${m.opponent.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click(); btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download mr-2"></i>Descargar',2000); }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download mr-2"></i>Descargar'; });
+                const node = document.getElementById('match-result-node'); 
+                const btn = this; 
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+                
+                html2canvas(node, { backgroundColor: '#111827', scale: 2, useCORS: true, allowTaint: true }).then(cv => { 
+                    const a = document.createElement('a'); 
+                    a.download = `Resultado_NISUS_vs_${m.opponent.replace(/\s+/g,'_')}.png`; 
+                    a.href = cv.toDataURL('image/png'); 
+                    a.click(); 
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; 
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar', 2000); 
+                }).catch(e => { 
+                    window.showToast("Error", true); 
+                    btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar'; 
+                });
             };
         };
 
@@ -1188,136 +2086,482 @@
             let list = window.matches;
             if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter);
             if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
+            
             list.sort((a,b) => new Date(b.date) - new Date(a.date));
             
             const nextMatch = list.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date))[0];
             const btnNext = document.getElementById('btn-tactics-next');
+            
             if (nextMatch) {
                 document.getElementById('next-match-vs').textContent = nextMatch.opponent;
-                let loc=''; if(nextMatch.location) loc=nextMatch.location.startsWith('http')?`<a href="${nextMatch.location}" target="_blank" class="text-blue-500 flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-gray-400 flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> ${nextMatch.location}</p>`;
-                document.getElementById('next-match-date').innerHTML = new Date(nextMatch.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
+                let loc = ''; 
+                if(nextMatch.location) {
+                    loc = nextMatch.location.startsWith('http') 
+                        ? `<a href="${nextMatch.location}" target="_blank" class="text-blue-500 flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> Mapa</a>` 
+                        : `<p class="text-gray-400 flex items-center justify-center gap-1 mt-1 text-sm"><i class="fas fa-map-marker-alt"></i> ${nextMatch.location}</p>`;
+                }
+                
+                document.getElementById('next-match-date').innerHTML = new Date(nextMatch.date + 'T12:00:00').toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'}) + loc;
                 document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nextMatch.tournament}`;
-                btnNext.classList.remove('hidden'); btnNext.onclick = () => window.editMatch(nextMatch.id);
-            } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btnNext.classList.add('hidden'); }
+                btnNext.classList.remove('hidden'); 
+                btnNext.onclick = () => window.editMatch(nextMatch.id);
+            } else { 
+                document.getElementById('next-match-vs').textContent = "Sin partidos"; 
+                document.getElementById('next-match-date').textContent = "Programa un encuentro"; 
+                document.getElementById('next-match-type').innerHTML = `-`; 
+                btnNext.classList.add('hidden'); 
+            }
             
             const fin = list.filter(m => m.status === 'finished' || m.status === 'forfait').slice(0, 3);
             const rDiv = document.getElementById('latest-results');
+            
             if(rDiv) {
                 rDiv.innerHTML = '';
-                if(fin.length===0) rDiv.innerHTML='<p class="text-sm text-gray-500 italic">No hay resultados.</p>';
-                else fin.forEach(m => {
-                    let rC='E', col='bg-gray-200 text-gray-700'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)){rC='V'; col='bg-green-500 text-white';} else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){rC='D'; col='bg-red-500 text-white';}
-                    rDiv.innerHTML += `<div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer border hover:border-gray-200" onclick="window.editMatch('${m.id}')"><div class="flex items-center gap-3"><span class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${col}">${rC}</span><span class="text-sm font-medium">vs ${m.opponent} <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ml-1 ${m.modality==='f11'?'bg-blue-100 text-blue-800':'bg-green-100 text-green-800'}">F${m.modality==='f11'?11:7}</span></span></div><span class="font-bold">${m.goalsUs} - ${m.goalsThem}</span></div>`;
-                });
+                if(fin.length === 0) {
+                    rDiv.innerHTML = '<p class="text-sm text-gray-500 italic">No hay resultados.</p>';
+                } else {
+                    fin.forEach(m => {
+                        let rC = 'E', col = 'bg-gray-200 text-gray-700'; 
+                        if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) {
+                            rC = 'V'; col = 'bg-green-500 text-white';
+                        } else if(parseInt(m.goalsUs) < parseInt(m.goalsThem)) {
+                            rC = 'D'; col = 'bg-red-500 text-white';
+                        }
+                        
+                        rDiv.innerHTML += `
+                            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer border hover:border-gray-200" onclick="window.editMatch('${m.id}')">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold shadow-sm ${col}">${rC}</span>
+                                    <span class="text-sm font-medium">vs ${m.opponent} 
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ml-1 ${m.modality === 'f11' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">F${m.modality === 'f11' ? 11 : 7}</span>
+                                    </span>
+                                </div>
+                                <span class="font-bold">${m.goalsUs} - ${m.goalsThem}</span>
+                            </div>`;
+                    });
+                }
             }
             
-            let tG=0, tA=0, pList = window.players.filter(p=>!p.isStaff);
-            if(window.currentFilter==='f11') pList = pList.filter(p=>p.availableF11); if(window.currentFilter==='f7') pList = pList.filter(p=>p.availableF7);
+            let tG = 0, tA = 0; 
+            let pList = window.players.filter(p => !p.isStaff);
             
-            let adminGoals = 0; list.forEach(m => { if(m.status === 'forfait') adminGoals += 3; });
+            if(window.currentFilter === 'f11') pList = pList.filter(p => p.availableF11); 
+            if(window.currentFilter === 'f7') pList = pList.filter(p => p.availableF7);
             
-            pList.forEach(p => { tG+=window.getPlayerStat(p,'goals'); tA+=window.getPlayerStat(p,'assists'); });
+            let adminGoals = 0; 
+            list.forEach(m => { 
+                if(m.status === 'forfait') adminGoals += 3; 
+            });
+            
+            pList.forEach(p => { 
+                tG += window.getPlayerStat(p, 'goals'); 
+                tA += window.getPlayerStat(p, 'assists'); 
+            });
+            
             if(document.getElementById('stat-total-goals')) document.getElementById('stat-total-goals').textContent = tG + adminGoals;
             if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = tA;
             
             const rL = (arr, k, el) => {
-                const d = document.getElementById(el); if(!d)return; d.innerHTML='';
-                arr.forEach((p,i) => { const v=window.getPlayerStat(p,k); if(v===0)return; const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover">`:`<div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`; d.innerHTML+=`<tr class="border-b last:border-0 hover:bg-gray-50"><td class="px-5 py-3 w-10 text-gray-400 font-bold">${i+1}</td><td class="px-5 py-3 flex items-center gap-3">${img} <span class="font-medium text-sm">${p.name}</span></td><td class="px-5 py-3 text-right font-bold text-lg">${v}</td></tr>`; });
-                if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-5 py-4 text-center text-sm text-gray-500">Sin registros</td></tr>';
+                const d = document.getElementById(el); 
+                if(!d) return; 
+                d.innerHTML = '';
+                
+                arr.forEach((p, i) => { 
+                    const v = window.getPlayerStat(p, k); 
+                    if(v === 0) return; 
+                    
+                    const img = p.image 
+                        ? `<img src="${p.image}" class="w-8 h-8 rounded-full object-cover">` 
+                        : `<div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`; 
+                        
+                    d.innerHTML += `
+                        <tr class="border-b last:border-0 hover:bg-gray-50">
+                            <td class="px-5 py-3 w-10 text-gray-400 font-bold">${i+1}</td>
+                            <td class="px-5 py-3 flex items-center gap-3">${img} <span class="font-medium text-sm">${p.name}</span></td>
+                            <td class="px-5 py-3 text-right font-bold text-lg">${v}</td>
+                        </tr>`; 
+                });
+                
+                if(d.innerHTML === '') {
+                    d.innerHTML = '<tr><td colspan="3" class="px-5 py-4 text-center text-sm text-gray-500">Sin registros</td></tr>';
+                }
             };
-            rL([...pList].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'top-scorers-list');
-            rL([...pList].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,5), 'assists', 'top-assists-list');
+            
+            rL([...pList].sort((a,b) => window.getPlayerStat(b,'goals') - window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'top-scorers-list');
+            rL([...pList].sort((a,b) => window.getPlayerStat(b,'assists') - window.getPlayerStat(a,'assists')).slice(0,5), 'assists', 'top-assists-list');
         };
 
         window.openPlayerCard = function(id) {
-            const p = window.players.find(x => x.id === id); if (!p) return;
+            const p = window.players.find(x => x.id === id); 
+            if (!p) return;
+            
             const c = document.getElementById('card-render-container');
-            const n = p.name||'N/A', a = p.alias?`<p class="text-sm font-medium italic text-gray-400 mt-1 mb-2">"${p.alias}"</p>`:`<div class="mb-2"></div>`;
-            const pos = p.isStaff?'CT':String((p.positions&&p.positions.length>0)?p.positions[0]:(p.position||'N/A')).substring(0,3).toUpperCase();
+            const n = p.name || 'N/A';
+            const a = p.alias ? `<p class="text-sm font-medium italic text-gray-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
+            const pos = p.isStaff ? 'CT' : String((p.positions && p.positions.length > 0) ? p.positions[0] : (p.position || 'N/A')).substring(0,3).toUpperCase();
             
-            let fL = window.currentFilter==='all'?'GLOBAL':window.currentFilter.toUpperCase();
-            let sL = window.currentSeason==='all'?'HISTÓRICO':`T. ${window.currentSeason}`;
-            let age='--', ft=p.foot?p.foot.toUpperCase():'N/E'; if(p.birthdate) age=(new Date().getFullYear() - new Date(p.birthdate).getFullYear())+' Años';
+            let fL = window.currentFilter === 'all' ? 'GLOBAL' : window.currentFilter.toUpperCase();
+            let sL = window.currentSeason === 'all' ? 'HISTÓRICO' : `T. ${window.currentSeason}`;
+            let age = '--', ft = p.foot ? p.foot.toUpperCase() : 'N/E'; 
             
-            let mp=0, mw=0;
+            if(p.birthdate) {
+                age = (new Date().getFullYear() - new Date(p.birthdate).getFullYear()) + ' Años';
+            }
+            
+            let mp = 0, mw = 0;
             window.matches.forEach(m => {
-                if(m.status!=='finished')return; if(window.currentSeason!=='all'&&m.season!==window.currentSeason)return; if(window.currentFilter!=='all'&&m.modality!==window.currentFilter)return;
-                if((m.lineup&&m.lineup.some(l=>l.playerId===p.id)) || (m.events&&m.events.some(e=>e.type==='sub'&&e.playerId===p.id))) { mp++; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) mw++; }
+                if(m.status !== 'finished') return; 
+                if(window.currentSeason !== 'all' && m.season !== window.currentSeason) return; 
+                if(window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
+                
+                if((m.lineup && m.lineup.some(l => l.playerId === p.id)) || (m.events && m.events.some(e => e.type === 'sub' && e.playerId === p.id))) { 
+                    mp++; 
+                    if(parseInt(m.goalsUs) > parseInt(m.goalsThem)) mw++; 
+                }
             });
-            const wr = mp>0?Math.round((mw/mp)*100)+'%':'0%';
+            const wr = mp > 0 ? Math.round((mw/mp) * 100) + '%' : '0%';
             
-            let sH='';
-            if(p.isStaff) sH=`<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-yellow-400 uppercase">Amarillas</p><p class="text-lg font-bold text-yellow-400">${window.getPlayerStat(p,'yellows')}</p></div><div><p class="text-xs text-red-400 uppercase">Rojas</p><p class="text-lg font-bold text-red-400">${window.getPlayerStat(p,'reds')}</p></div></div>`;
-            else sH=`<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-gray-400 uppercase">Partidos</p><p class="text-lg font-bold">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-xs text-gray-400 uppercase">Goles</p><p class="text-lg font-bold">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-xs text-gray-400 uppercase">Asist.</p><p class="text-lg font-bold">${window.getPlayerStat(p,'assists')}</p></div></div>`;
+            let sH = '';
+            if(p.isStaff) {
+                sH = `
+                    <div class="flex justify-around w-full mt-3 text-center">
+                        <div><p class="text-xs text-yellow-400 uppercase">Amarillas</p><p class="text-lg font-bold text-yellow-400">${window.getPlayerStat(p,'yellows')}</p></div>
+                        <div><p class="text-xs text-red-400 uppercase">Rojas</p><p class="text-lg font-bold text-red-400">${window.getPlayerStat(p,'reds')}</p></div>
+                    </div>`;
+            } else {
+                sH = `
+                    <div class="flex justify-around w-full mt-3 text-center">
+                        <div><p class="text-xs text-gray-400 uppercase">Partidos</p><p class="text-lg font-bold">${window.getPlayerStat(p,'games')}</p></div>
+                        <div><p class="text-xs text-gray-400 uppercase">Goles</p><p class="text-lg font-bold">${window.getPlayerStat(p,'goals')}</p></div>
+                        <div><p class="text-xs text-gray-400 uppercase">Asist.</p><p class="text-lg font-bold">${window.getPlayerStat(p,'assists')}</p></div>
+                    </div>`;
+            }
             
-            const mvps = window.getPlayerStat(p,'mvps');
+            const mvps = window.getPlayerStat(p, 'mvps');
             
             c.innerHTML = `
                 <div id="player-card-node" class="player-card-export">
-                    <div class="absolute top-4 left-4 text-center"><p class="text-2xl font-bold text-yellow-400">${p.number||'--'}</p><p class="text-sm font-semibold uppercase tracking-wider">${pos}</p></div>
-                    <div class="absolute top-4 right-4 opacity-50"><img src="escudo.png" class="w-10 h-10 object-contain" onerror="this.style.display='none'"></div>
-                    <div class="w-32 h-32 rounded-full border-4 border-gray-600 bg-gray-800 flex items-center justify-center mt-6 mb-3 overflow-hidden shadow-lg">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-bold">${n.charAt(0)}</span>`}</div>
-                    <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-gray-700 pb-1" style="font-size:${n.length>15?'1.25rem':'1.5rem'}">${n}</h2>${a}
-                    <div class="flex justify-center gap-2 mt-1 text-[9px] font-medium text-gray-400"><span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">EDAD: ${age}</span><span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">PIE: ${ft}</span><span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">VIC: ${wr}</span></div>
+                    <div class="absolute top-4 left-4 text-center">
+                        <p class="text-2xl font-bold text-yellow-400">${p.number||'--'}</p>
+                        <p class="text-sm font-semibold uppercase tracking-wider">${pos}</p>
+                    </div>
+                    <div class="absolute top-4 right-4 opacity-50">
+                        <img src="escudo.png" class="w-10 h-10 object-contain" onerror="this.style.display='none'">
+                    </div>
+                    <div class="w-32 h-32 rounded-full border-4 border-gray-600 bg-gray-800 flex items-center justify-center mt-6 mb-3 overflow-hidden shadow-lg">
+                        ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<span class="text-4xl font-bold">${n.charAt(0)}</span>`}
+                    </div>
+                    <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-gray-700 pb-1" style="font-size:${n.length>15 ? '1.25rem' : '1.5rem'}">${n}</h2>
+                    ${a}
+                    <div class="flex justify-center gap-2 mt-1 text-[9px] font-medium text-gray-400">
+                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">EDAD: ${age}</span>
+                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">PIE: ${ft}</span>
+                        <span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">VIC: ${wr}</span>
+                    </div>
                     <p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest font-bold">ESTADÍSTICAS ${fL} - ${sL}</p>
-                    ${sH} ${mvps>0?`<div class="mt-2 bg-yellow-900/50 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/50"><i class="fas fa-star"></i> ${mvps} MVP</div>`:''}
+                    ${sH} 
+                    ${mvps > 0 ? `<div class="mt-2 bg-yellow-900/50 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/50"><i class="fas fa-star"></i> ${mvps} MVP</div>` : ''}
                     <div class="absolute bottom-2 text-[8px] text-gray-600">NISUS FC CLOUD</div>
                 </div>`;
+                
             document.getElementById('modalPlayerCard').classList.remove('hidden');
+            
             document.getElementById('btn-download-card').onclick = function() {
-                const node = document.getElementById('player-card-node'); const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-                html2canvas(node, { backgroundColor:null, scale:3, useCORS:true, allowTaint:true }).then(cv => { const a = document.createElement('a'); a.download=`Ficha_${n.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click(); btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download mr-2"></i>Descargar',2000); }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download mr-2"></i>Descargar'; });
+                const node = document.getElementById('player-card-node'); 
+                const btn = this; 
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+                
+                html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true }).then(cv => { 
+                    const a = document.createElement('a'); 
+                    a.download = `Ficha_${n.replace(/\s+/g,'_')}.png`; 
+                    a.href = cv.toDataURL('image/png'); 
+                    a.click(); 
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; 
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar', 2000); 
+                }).catch(e => { 
+                    window.showToast("Error", true); 
+                    btn.innerHTML = '<i class="fas fa-download mr-2"></i>Descargar'; 
+                });
             };
         };
 
-        window.newAttendance = function() { document.getElementById('attendance-form').reset(); document.getElementById('a-id').value = ''; document.getElementById('a-date').value = new Date().toISOString().split('T')[0]; window.currentAttendees=[]; window.renderAttendanceChecklist(); window.showSection('attendanceForm'); };
-        window.renderAttendanceChecklist = function() { const c = document.getElementById('a-players-list'); if(!c)return; c.innerHTML=''; window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ const ch = window.currentAttendees.includes(p.id)?'checked':''; c.innerHTML+=`<div class="flex items-center gap-2 bg-white p-2 rounded border"><input type="checkbox" id="att-${p.id}" ${ch} onchange="window.handleAttChange('${p.id}',this.checked)" class="rounded"><label for="att-${p.id}" class="text-sm font-medium flex-1 cursor-pointer">${p.isStaff?'(CT) ':''}${p.name}</label></div>`; }); };
-        window.handleAttChange = (id,chk) => { if(chk){if(!window.currentAttendees.includes(id))window.currentAttendees.push(id);}else window.currentAttendees=window.currentAttendees.filter(x=>x!==id); };
-        window.saveAttendance = async function(e) { e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); const id = document.getElementById('a-id').value; const docId = id||window.generateId(); try { await setDoc(doc(db, window.trainingsPath, docId), { id:docId, date:document.getElementById('a-date').value, location:document.getElementById('a-location').value, notes:document.getElementById('a-notes').value, attendees:window.currentAttendees }); window.showToast('Guardado'); window.showSection('attendance'); } catch(er){window.showToast('Error',true);} };
-        window.editAttendance = function(id) { const t = window.trainings.find(x=>x.id===id); if(!t)return; document.getElementById('a-id').value=t.id; document.getElementById('a-date').value=t.date; document.getElementById('a-location').value=t.location||''; document.getElementById('a-notes').value=t.notes||''; window.currentAttendees=[...(t.attendees||[])]; window.renderAttendanceChecklist(); window.showSection('attendanceForm'); };
-        window.deleteAttendance = function(id) { window.showConfirm('¿Borrar entreno?', async()=>{ try{ await deleteDoc(doc(db, window.trainingsPath, id)); window.showToast('Eliminado'); }catch(e){window.showToast('Error',true);} }); };
-        window.renderTrainings = function() { const u=document.getElementById('attendance-grid-upcoming'), p=document.getElementById('attendance-grid-past'); if(!u||!p)return; u.innerHTML=''; p.innerHTML=''; const td=new Date().toISOString().split('T')[0]; const s=[...window.trainings].sort((a,b)=>new Date(b.date)-new Date(a.date)); s.forEach(t=>{ const up=t.date>=td; let loc=''; if(t.location) loc=t.location.startsWith('http')?`<a href="${t.location}" target="_blank" class="text-blue-500 text-[11px]"><i class="fas fa-map-marker-alt"></i> Maps</a>`:`<p class="text-gray-500 text-[11px]"><i class="fas fa-map-marker-alt"></i> ${t.location}</p>`; const html=`<div class="bg-white rounded-xl shadow-sm border p-5"><div class="flex justify-between mb-3"><span class="${up?'bg-yellow-100 text-yellow-800':'bg-brand-100 text-brand-800'} text-[10px] font-bold px-2 py-1 rounded"><i class="fas ${up?'fa-clock':'fa-check'}"></i> ${up?'Pronto':'Realizado'}</span><div class="admin-only"><button onclick="window.editAttendance('${t.id}')" class="text-blue-400 mr-2"><i class="fas fa-edit"></i></button><button onclick="window.deleteAttendance('${t.id}')" class="text-red-400"><i class="fas fa-trash"></i></button></div></div><h3 class="text-lg font-bold">${t.date}</h3>${loc}<p class="text-sm font-medium mt-2"><i class="fas fa-users text-gray-400"></i> ${t.attendees?t.attendees.length:0} asistentes</p></div>`; if(up) u.innerHTML+=html; else p.innerHTML+=html; }); if(!u.innerHTML) u.innerHTML='<p class="text-gray-500 text-sm italic">Sin programar</p>'; if(!p.innerHTML) p.innerHTML='<p class="text-gray-500 text-sm italic">Sin historial</p>'; };
+        window.newAttendance = function() { 
+            document.getElementById('attendance-form').reset(); 
+            document.getElementById('a-id').value = ''; 
+            document.getElementById('a-date').value = new Date().toISOString().split('T')[0]; 
+            window.currentAttendees = []; 
+            window.renderAttendanceChecklist(); 
+            window.showSection('attendanceForm'); 
+        };
+        
+        window.renderAttendanceChecklist = function() { 
+            const c = document.getElementById('a-players-list'); 
+            if(!c) return; 
+            c.innerHTML = ''; 
+            
+            window.players.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { 
+                const ch = window.currentAttendees.includes(p.id) ? 'checked' : ''; 
+                c.innerHTML += `
+                    <div class="flex items-center gap-2 bg-white p-2 rounded border">
+                        <input type="checkbox" id="att-${p.id}" ${ch} onchange="window.handleAttChange('${p.id}',this.checked)" class="rounded">
+                        <label for="att-${p.id}" class="text-sm font-medium flex-1 cursor-pointer">${p.isStaff ? '(CT) ' : ''}${p.name}</label>
+                    </div>`; 
+            }); 
+        };
+        
+        window.handleAttChange = (id, chk) => { 
+            if(chk) {
+                if(!window.currentAttendees.includes(id)) {
+                    window.currentAttendees.push(id);
+                }
+            } else {
+                window.currentAttendees = window.currentAttendees.filter(x => x !== id); 
+            }
+        };
+        
+        window.saveAttendance = async function(e) { 
+            e.preventDefault(); 
+            if(!window.isAdmin) return window.showToast('Solo edición', true); 
+            
+            const id = document.getElementById('a-id').value; 
+            const docId = id || window.generateId(); 
+            
+            try { 
+                await setDoc(doc(db, window.trainingsPath, docId), { 
+                    id: docId, 
+                    date: document.getElementById('a-date').value, 
+                    location: document.getElementById('a-location').value, 
+                    notes: document.getElementById('a-notes').value, 
+                    attendees: window.currentAttendees 
+                }); 
+                window.showToast('Guardado'); 
+                window.showSection('attendance'); 
+            } catch(er) {
+                window.showToast('Error', true);
+            } 
+        };
+        
+        window.editAttendance = function(id) { 
+            const t = window.trainings.find(x => x.id === id); 
+            if(!t) return; 
+            
+            document.getElementById('a-id').value = t.id; 
+            document.getElementById('a-date').value = t.date; 
+            document.getElementById('a-location').value = t.location || ''; 
+            document.getElementById('a-notes').value = t.notes || ''; 
+            window.currentAttendees = [...(t.attendees || [])]; 
+            
+            window.renderAttendanceChecklist(); 
+            window.showSection('attendanceForm'); 
+        };
+        
+        window.deleteAttendance = function(id) { 
+            window.showConfirm('¿Borrar entreno?', async () => { 
+                try { 
+                    await deleteDoc(doc(db, window.trainingsPath, id)); 
+                    window.showToast('Eliminado'); 
+                } catch(e) {
+                    window.showToast('Error', true);
+                } 
+            }); 
+        };
+        
+        window.renderTrainings = function() { 
+            const u = document.getElementById('attendance-grid-upcoming');
+            const p = document.getElementById('attendance-grid-past'); 
+            if(!u || !p) return; 
+            
+            u.innerHTML = ''; 
+            p.innerHTML = ''; 
+            
+            const td = new Date().toISOString().split('T')[0]; 
+            const s = [...window.trainings].sort((a,b) => new Date(b.date) - new Date(a.date)); 
+            
+            s.forEach(t => { 
+                const up = t.date >= td; 
+                let loc = ''; 
+                if(t.location) {
+                    loc = t.location.startsWith('http') 
+                        ? `<a href="${t.location}" target="_blank" class="text-blue-500 text-[11px]"><i class="fas fa-map-marker-alt"></i> Maps</a>` 
+                        : `<p class="text-gray-500 text-[11px]"><i class="fas fa-map-marker-alt"></i> ${t.location}</p>`; 
+                }
+                
+                const html = `
+                    <div class="bg-white rounded-xl shadow-sm border p-5">
+                        <div class="flex justify-between mb-3">
+                            <span class="${up ? 'bg-yellow-100 text-yellow-800' : 'bg-brand-100 text-brand-800'} text-[10px] font-bold px-2 py-1 rounded">
+                                <i class="fas ${up ? 'fa-clock' : 'fa-check'}"></i> ${up ? 'Pronto' : 'Realizado'}
+                            </span>
+                            <div class="admin-only">
+                                <button onclick="window.editAttendance('${t.id}')" class="text-blue-400 mr-2"><i class="fas fa-edit"></i></button>
+                                <button onclick="window.deleteAttendance('${t.id}')" class="text-red-400"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-bold">${t.date}</h3>
+                        ${loc}
+                        <p class="text-sm font-medium mt-2"><i class="fas fa-users text-gray-400"></i> ${t.attendees ? t.attendees.length : 0} asistentes</p>
+                    </div>`; 
+                    
+                if(up) u.innerHTML += html; 
+                else p.innerHTML += html; 
+            }); 
+            
+            if(!u.innerHTML) u.innerHTML = '<p class="text-gray-500 text-sm italic">Sin programar</p>'; 
+            if(!p.innerHTML) p.innerHTML = '<p class="text-gray-500 text-sm italic">Sin historial</p>'; 
+        };
 
-        window.newTransaction = function(type) { document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; document.getElementById('fin-form-title').textContent = type === 'income' ? 'Ingreso Libre' : 'Pagar Arbitraje'; const cat = document.getElementById('f-category'); if(type === 'income') cat.innerHTML = '<option value="Ingreso Varios">Aporte Libre</option>'; else cat.innerHTML = '<option value="Arbitraje">Arbitraje (Divide entre convocados)</option>'; window.toggleMatchSelect(); window.showSection('financesForm'); };
-        window.toggleMatchSelect = function() { const cat = document.getElementById('f-category').value; const mc = document.getElementById('f-match-container'); const ms = document.getElementById('f-match'); if (cat === 'Arbitraje') { mc.classList.remove('hidden'); ms.required = true; let html = '<option value="">Selecciona Partido...</option>'; window.matches.filter(x => x.status === 'finished').slice(0,20).forEach(x => html += `<option value="${x.id}">${x.date} vs ${x.opponent}</option>`); ms.innerHTML = html; document.getElementById('f-arbitraje-calc').classList.remove('hidden'); } else { mc.classList.add('hidden'); ms.required = false; document.getElementById('f-arbitraje-calc').classList.add('hidden'); } };
-        window.calcArbitraje = function() { const mId = document.getElementById('f-match').value; const amt = parseFloat(document.getElementById('f-amount').value) || 0; const div = document.getElementById('f-arbitraje-calc'); if (!mId || amt <= 0) { div.innerHTML = 'Falta monto o partido'; return; } const m = window.matches.find(x => x.id === mId); if (!m || !m.lineup) return; let count = 0; m.lineup.forEach(l => { const p = window.players.find(x => x.id === l.playerId); if (p && !p.isStaff) count++; }); if (count === 0) { div.innerHTML = '<span class="text-red-500">Nadie convocado</span>'; return; } div.innerHTML = `<div class="flex justify-between mb-1"><span>Convocados a dividir:</span> <span class="font-bold">${count}</span></div><div class="flex justify-between text-brand-700"><span>Cuota C/U:</span> <span class="text-lg font-black">$${(amt/count).toFixed(2)}</span></div>`; };
+        window.newTransaction = function(type) { 
+            document.getElementById('finances-form').reset(); 
+            document.getElementById('f-id').value = ''; 
+            document.getElementById('f-type').value = type; 
+            document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; 
+            document.getElementById('fin-form-title').textContent = type === 'income' ? 'Ingreso Libre' : 'Pagar Arbitraje'; 
+            
+            const cat = document.getElementById('f-category'); 
+            if(type === 'income') {
+                cat.innerHTML = '<option value="Ingreso Varios">Aporte Libre</option>'; 
+            } else {
+                cat.innerHTML = '<option value="Arbitraje">Arbitraje (Divide entre convocados)</option>'; 
+            }
+            
+            window.toggleMatchSelect(); 
+            window.showSection('financesForm'); 
+        };
+        
+        window.toggleMatchSelect = function() { 
+            const cat = document.getElementById('f-category').value; 
+            const mc = document.getElementById('f-match-container'); 
+            const ms = document.getElementById('f-match'); 
+            
+            if (cat === 'Arbitraje') { 
+                mc.classList.remove('hidden'); 
+                ms.required = true; 
+                let html = '<option value="">Selecciona Partido...</option>'; 
+                // Añadimos la condición de que el status también pueda ser 'forfait'
+                window.matches.filter(x => x.status === 'finished' || x.status === 'forfait').slice(0,20).forEach(x => {
+                    html += `<option value="${x.id}">${x.date} vs ${x.opponent}</option>`;
+                }); 
+                ms.innerHTML = html; 
+                document.getElementById('f-arbitraje-calc').classList.remove('hidden'); 
+            } else { 
+                mc.classList.add('hidden'); 
+                ms.required = false; 
+                document.getElementById('f-arbitraje-calc').classList.add('hidden'); 
+            } 
+        };
+        
+        window.calcArbitraje = function() { 
+            const mId = document.getElementById('f-match').value; 
+            const amt = parseFloat(document.getElementById('f-amount').value) || 0; 
+            const div = document.getElementById('f-arbitraje-calc'); 
+            
+            if (!mId || amt <= 0) { 
+                div.innerHTML = 'Falta monto o partido'; 
+                return; 
+            } 
+            
+            const m = window.matches.find(x => x.id === mId); 
+            if (!m || !m.lineup) return; 
+            
+            let count = 0; 
+            m.lineup.forEach(l => { 
+                const p = window.players.find(x => x.id === l.playerId); 
+                if (p && !p.isStaff) count++; 
+            }); 
+            
+            if (count === 0) { 
+                div.innerHTML = '<span class="text-red-500">Nadie convocado</span>'; 
+                return; 
+            } 
+            
+            div.innerHTML = `<div class="flex justify-between mb-1"><span>Convocados a dividir:</span> <span class="font-bold">${count}</span></div><div class="flex justify-between text-brand-700"><span>Cuota C/U:</span> <span class="text-lg font-black">$${(amt/count).toFixed(2)}</span></div>`; 
+        };
 
         window.saveTransaction = async function(e) { 
-            e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); 
-            const btn = document.getElementById('btn-save-fin'); btn.disabled = true; btn.textContent = 'Guardando...';
-            const id = document.getElementById('f-id').value; const docId = id || window.generateId();
-            const cat = document.getElementById('f-category').value; const amt = parseFloat(document.getElementById('f-amount').value); const mId = document.getElementById('f-match').value; 
+            e.preventDefault(); 
+            if(!window.isAdmin) return window.showToast('Solo edición', true); 
+            
+            const btn = document.getElementById('btn-save-fin'); 
+            btn.disabled = true; 
+            btn.textContent = 'Guardando...';
+            
+            const id = document.getElementById('f-id').value; 
+            const docId = id || window.generateId();
+            const cat = document.getElementById('f-category').value; 
+            const amt = parseFloat(document.getElementById('f-amount').value); 
+            const mId = document.getElementById('f-match').value; 
+            
             try { 
                 if (cat === 'Arbitraje' && mId) { 
                     const m = window.matches.find(x => x.id === mId); 
                     if (m && m.lineup) { 
-                        const ids = m.lineup.map(l => l.playerId).filter(x => { const p = window.players.find(y => y.id === x); return p && !p.isStaff; }); 
+                        const ids = m.lineup.map(l => l.playerId).filter(x => { 
+                            const p = window.players.find(y => y.id === x); 
+                            return p && !p.isStaff; 
+                        }); 
+                        
                         if (ids.length > 0) { 
-                            const cuota = amt / ids.length; const updates = []; 
-                            ids.forEach(pid => { const p = window.players.find(x => x.id === pid); updates.push(setDoc(doc(db, window.playersPath, pid), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + cuota }, { merge: true })); }); 
+                            const cuota = amt / ids.length; 
+                            const updates = []; 
+                            ids.forEach(pid => { 
+                                const p = window.players.find(x => x.id === pid); 
+                                updates.push(setDoc(doc(db, window.playersPath, pid), { 
+                                    isPaidUp: false, 
+                                    debtAmount: (p.debtAmount || 0) + cuota 
+                                }, { merge: true })); 
+                            }); 
                             await Promise.all(updates); 
                         } 
                     } 
                 } 
-                await setDoc(doc(db, window.financesPath, docId), { id: docId, type: document.getElementById('f-type').value, amount: amt, date: document.getElementById('f-date').value, category: cat, description: document.getElementById('f-desc').value, matchId: cat === 'Arbitraje' ? mId : null }); 
-                window.showToast('Guardado'); window.showSection('finances'); 
-            } catch(er) { window.showToast('Error', true); } finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+                
+                await setDoc(doc(db, window.financesPath, docId), { 
+                    id: docId, 
+                    type: document.getElementById('f-type').value, 
+                    amount: amt, 
+                    date: document.getElementById('f-date').value, 
+                    category: cat, 
+                    description: document.getElementById('f-desc').value, 
+                    matchId: cat === 'Arbitraje' ? mId : null 
+                }); 
+                
+                window.showToast('Guardado'); 
+                window.showSection('finances'); 
+            } catch(er) { 
+                window.showToast('Error', true); 
+            } finally { 
+                btn.disabled = false; 
+                btn.textContent = 'Guardar'; 
+            }
         };
 
         window.deleteTransaction = function(id) { 
             if(!window.isAdmin) return window.showToast('Desbloquea el candado', true);
             if(!id) return window.showToast('Error: Registro corrupto', true);
-            window.showConfirm('¿Borrar este movimiento?', async () => { try { await deleteDoc(doc(db, window.financesPath, id)); window.showToast('Borrado exitoso'); } catch(e) { window.showToast('Error al borrar', true); } }); 
+            
+            window.showConfirm('¿Borrar este movimiento?', async () => { 
+                try { 
+                    await deleteDoc(doc(db, window.financesPath, id)); 
+                    window.showToast('Borrado exitoso'); 
+                } catch(e) { 
+                    window.showToast('Error al borrar', true); 
+                } 
+            }); 
         };
 
         window.clearFinancialHistory = function() {
             if(!window.isAdmin) return window.showToast('Desbloquea el candado', true);
             if(window.finances.length === 0) return window.showToast('El historial ya está vacío');
+            
             window.showConfirm('¿ELIMINAR TODO el historial financiero? La caja volverá a $0.00.', async () => {
-                window.showToast('Limpiando...', false); let c = 0;
+                window.showToast('Limpiando...', false); 
+                let c = 0;
                 for (let i = 0; i < window.finances.length; i++) {
                     const t = window.finances[i];
-                    if (t.id) { await deleteDoc(doc(db, window.financesPath, t.id)).catch(e=>console.log(e)); c++; }
+                    if (t.id) { 
+                        await deleteDoc(doc(db, window.financesPath, t.id)).catch(e => console.log(e)); 
+                        c++; 
+                    }
                 }
                 window.showToast(`Se borraron ${c} registros de caja`);
             });
@@ -1325,36 +2569,95 @@
 
         window.togglePaidUp = async function(id, isPaid) { 
             if(!window.isAdmin) return window.showToast('Solo edición', true); 
-            const p = window.players.find(x => x.id === id); if(!p) return; 
+            const p = window.players.find(x => x.id === id); 
+            if(!p) return; 
+            
             try { 
                 if(!isPaid) { 
                     let debt = p.debtAmount || 0;
                     if(debt > 0) { 
                         const newFinId = window.generateId();
-                        await setDoc(doc(db, window.financesPath, newFinId), { id: newFinId, type: 'income', amount: debt, date: new Date().toISOString().split('T')[0], category: 'Saldar Deuda', description: `Saldó deuda: ${p.name}` }); 
+                        await setDoc(doc(db, window.financesPath, newFinId), { 
+                            id: newFinId, 
+                            type: 'income', 
+                            amount: debt, 
+                            date: new Date().toISOString().split('T')[0], 
+                            category: 'Saldar Deuda', 
+                            description: `Saldó deuda: ${p.name}` 
+                        }); 
                     } 
-                    await setDoc(doc(db, window.playersPath, id), { isPaidUp: true, debtAmount: 0 }, { merge: true }); window.showToast('Deuda saldada e ingreso creado'); 
-                } else { await setDoc(doc(db, window.playersPath, id), { isPaidUp: false }, { merge: true }); window.showToast('Marcado deudor'); } 
-            } catch(e) { window.showToast('Error', true); } 
+                    await setDoc(doc(db, window.playersPath, id), { isPaidUp: true, debtAmount: 0 }, { merge: true }); 
+                    window.showToast('Deuda saldada e ingreso creado'); 
+                } else { 
+                    await setDoc(doc(db, window.playersPath, id), { isPaidUp: false }, { merge: true }); 
+                    window.showToast('Marcado deudor'); 
+                } 
+            } catch(e) { 
+                window.showToast('Error', true); 
+            } 
         };
         
         window.renderFinances = function() {
-            let bal = 0, inC = 0, outC = 0; const tl = document.getElementById('transactions-list'); if(tl) tl.innerHTML = '';
-            window.finances.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => { 
-                const isI = t.type === 'income'; if(isI) { bal += t.amount; inC += t.amount; } else { bal -= t.amount; outC += t.amount; } 
-                if(tl) tl.innerHTML += `<tr class="border-b last:border-0 hover:bg-gray-50 transition"><td class="px-5 py-3"><p class="text-sm font-bold">${t.description}</p><p class="text-[10px] text-gray-500 uppercase">${t.date} | ${t.category}</p></td><td class="px-5 py-3 text-right"><p class="text-lg font-black ${isI ? 'text-green-600' : 'text-red-600'}">${isI ? '+' : '-'}$${t.amount.toFixed(2)}</p><button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-red-400 hover:text-red-600 transition ml-2"><i class="fas fa-trash"></i></button></td></tr>`; 
-            }); 
-            if(tl && !tl.innerHTML) tl.innerHTML = '<tr><td colspan="2" class="px-5 py-4 text-center text-sm text-gray-500 italic">Sin movimientos</td></tr>';
+            let bal = 0, inC = 0, outC = 0; 
+            const tl = document.getElementById('transactions-list'); 
+            if(tl) tl.innerHTML = '';
             
-            const eBal = document.getElementById('fin-balance'); if(eBal) { eBal.textContent = `$${bal.toFixed(2)}`; eBal.className = `text-3xl font-black ${bal < 0 ? 'text-red-600' : 'text-gray-800'}`; }
-            const eIn = document.getElementById('fin-income'); if(eIn) eIn.textContent = `+$${inC.toFixed(2)}`; const eOut = document.getElementById('fin-expense'); if(eOut) eOut.textContent = `-$${outC.toFixed(2)}`;
+            window.finances.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => { 
+                const isI = t.type === 'income'; 
+                if(isI) { 
+                    bal += t.amount; inC += t.amount; 
+                } else { 
+                    bal -= t.amount; outC += t.amount; 
+                } 
+                
+                if(tl) {
+                    tl.innerHTML += `
+                        <tr class="border-b last:border-0 hover:bg-gray-50 transition">
+                            <td class="px-5 py-3">
+                                <p class="text-sm font-bold">${t.description}</p>
+                                <p class="text-[10px] text-gray-500 uppercase">${t.date} | ${t.category}</p>
+                            </td>
+                            <td class="px-5 py-3 text-right">
+                                <p class="text-lg font-black ${isI ? 'text-green-600' : 'text-red-600'}">${isI ? '+' : '-'}$${t.amount.toFixed(2)}</p>
+                                <button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-red-400 hover:text-red-600 transition ml-2"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`; 
+                }
+            }); 
+            
+            if(tl && !tl.innerHTML) {
+                tl.innerHTML = '<tr><td colspan="2" class="px-5 py-4 text-center text-sm text-gray-500 italic">Sin movimientos</td></tr>';
+            }
+            
+            const eBal = document.getElementById('fin-balance'); 
+            if(eBal) { 
+                eBal.textContent = `$${bal.toFixed(2)}`; 
+                eBal.className = `text-3xl font-black ${bal < 0 ? 'text-red-600' : 'text-gray-800'}`; 
+            }
+            
+            const eIn = document.getElementById('fin-income'); 
+            if(eIn) eIn.textContent = `+$${inC.toFixed(2)}`; 
+            
+            const eOut = document.getElementById('fin-expense'); 
+            if(eOut) eOut.textContent = `-$${outC.toFixed(2)}`;
             
             const dl = document.getElementById('debtors-list'); 
             if(dl) {
                 dl.innerHTML = '';
                 window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { 
                     const isP = p.isPaidUp !== false && (!p.debtAmount || p.debtAmount === 0); 
-                    dl.innerHTML += `<li class="px-5 py-3 flex justify-between items-center hover:bg-gray-50 border-b last:border-0 transition"><div class="flex items-center gap-3"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-lg"></i><div><p class="text-sm font-bold text-gray-800">${p.name}</p><p class="text-[10px] font-bold uppercase ${isP ? 'text-green-600' : 'text-red-600'}">${isP ? 'Al Día' : `Deuda: $${(p.debtAmount||0).toFixed(2)}`}</p></div></div><button onclick="window.togglePaidUp('${p.id}', ${isP})" class="admin-only text-[10px] px-3 py-1.5 rounded border font-bold shadow-sm ${isP ? 'bg-white text-gray-500 hover:text-gray-800 border-gray-300' : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200'} uppercase transition">${isP ? 'Hacer Deudor' : '💰 Saldar'}</button></li>`; 
+                    
+                    dl.innerHTML += `
+                        <li class="px-5 py-3 flex justify-between items-center hover:bg-gray-50 border-b last:border-0 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-lg"></i>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-800">${p.name}</p>
+                                    <p class="text-[10px] font-bold uppercase ${isP ? 'text-green-600' : 'text-red-600'}">${isP ? 'Al Día' : `Deuda: $${(p.debtAmount||0).toFixed(2)}`}</p>
+                                </div>
+                            </div>
+                            <button onclick="window.togglePaidUp('${p.id}', ${isP})" class="admin-only text-[10px] px-3 py-1.5 rounded border font-bold shadow-sm ${isP ? 'bg-white text-gray-500 hover:text-gray-800 border-gray-300' : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200'} uppercase transition">${isP ? 'Hacer Deudor' : '💰 Saldar'}</button>
+                        </li>`; 
                 });
             }
         };
