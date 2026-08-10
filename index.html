@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" class="light">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#075985">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NISUS FC">
@@ -456,7 +456,7 @@
                     </div>
                     
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2"><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Torneo *</label><input type="text" id="m-tournament" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg outline-none text-sm" placeholder="Ej. Liga Dominical"></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Torneo *</label><input type="text" id="m-tournament" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg outline-none text-sm" placeholder="Ej. Liga Dominical" onchange="window.renderCallupList()"></div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Modalidad *</label>
                             <select id="m-modality" onchange="window.handleModalityChange()" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg outline-none text-sm">
@@ -574,8 +574,16 @@
                         <div class="flex flex-col sm:flex-row gap-2 mb-4">
                             <input type="number" id="m-event-minute" placeholder="Min" class="w-full sm:w-16 px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded text-sm outline-none text-center">
                             <select id="m-event-player" class="flex-1 px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded text-sm outline-none"></select>
-                            <select id="m-event-type" onchange="window.toggleSubField()" class="w-full sm:w-36 px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded text-sm outline-none">
-                                <option value="goals">Gol ⚽</option><option value="penalty">Penal 🎯</option><option value="freekick">Tiro Libre 👟</option><option value="assists">Asist. 👟</option><option value="saved">Atajado 🧤</option><option value="yellows">Amarilla 🟨</option><option value="reds">Roja 🟥</option><option value="sub">Cambio 🔄</option>
+                            <select id="m-event-type" onchange="window.toggleSubField()" class="w-full sm:w-40 px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded text-sm outline-none">
+                                <option value="goals">Gol ⚽</option>
+                                <option value="penalty">Penal 🎯</option>
+                                <option value="freekick">Tiro Libre 👟</option>
+                                <option value="assists">Asist. 👟</option>
+                                <option value="saved">Atajado 🧤</option>
+                                <option value="yellows">Amarilla 🟨</option>
+                                <option value="double_yellow">Doble Amarilla 🟨🟥</option>
+                                <option value="reds">Roja 🟥</option>
+                                <option value="sub">Cambio 🔄</option>
                             </select>
                             <select id="m-event-player-out" class="hidden flex-1 px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded text-sm outline-none"></select>
                             <button type="button" onclick="window.addMatchEvent()" class="bg-slate-800 dark:bg-slate-600 text-white px-4 py-2 rounded font-medium hover:bg-slate-900 dark:hover:bg-slate-500 transition">Añadir</button>
@@ -695,6 +703,50 @@
             }
         };
 
+        window.getDiscipline = function(playerId, tournament) {
+            if (!tournament) return { suspended: false, yellows: 0, suspensionsLeft: 0 };
+            
+            const tourneyMatches = window.matches
+                .filter(m => (m.status === 'finished' || m.status === 'forfait') && (m.tournament || '').trim().toLowerCase() === tournament.trim().toLowerCase())
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+            let accYellows = 0;
+            let suspensions = 0;
+            
+            tourneyMatches.forEach(m => {
+                if (suspensions > 0) {
+                    suspensions--;
+                }
+                
+                if (m.events) {
+                    let y = 0, dy = 0, r = 0;
+                    m.events.forEach(e => {
+                        if (e.playerId === playerId) {
+                            if (e.type === 'yellows') y++;
+                            if (e.type === 'double_yellow') dy++;
+                            if (e.type === 'reds') r++;
+                        }
+                    });
+                    
+                    if (dy > 0) {
+                        suspensions += 1;
+                        // Double yellow invalidates single yellows in the same match
+                    } else {
+                        accYellows += y;
+                        if (accYellows >= 3) {
+                            suspensions += Math.floor(accYellows / 3);
+                            accYellows = accYellows % 3;
+                        }
+                        if (r > 0) {
+                            suspensions += 1;
+                        }
+                    }
+                }
+            });
+            
+            return { suspended: suspensions > 0, yellows: accYellows, suspensionsLeft: suspensions };
+        };
+
         window.getPlayerStat = function(player, statKey) {
             if(!player) return 0;
             if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
@@ -721,11 +773,10 @@
                 if (m.events) {
                     m.events.forEach(ev => {
                         if (ev.playerId === player.id) {
-                            if (statKey === 'goals') {
-                                if (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick') count++;
-                            } else {
-                                if (statKey === ev.type) count++;
-                            }
+                            // double_yellow now counts as a red card for statistical display purposes.
+                            if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++;
+                            else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++;
+                            else if (statKey === ev.type) count++;
                         }
                     });
                 }
@@ -1027,7 +1078,13 @@
             if(list.length===0){ grid.innerHTML='<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">No hay registros</div>'; return; }
 
             list.forEach(p => {
-                const games = window.getPlayerStat(p, 'games'); const goals = window.getPlayerStat(p, 'goals'); const assists = window.getPlayerStat(p, 'assists'); const yellows = window.getPlayerStat(p, 'yellows'); const reds = window.getPlayerStat(p, 'reds'); const mvps = window.getPlayerStat(p, 'mvps'); const cleanSheets = window.getPlayerStat(p, 'cleanSheets');
+                const games = window.getPlayerStat(p, 'games'); 
+                const goals = window.getPlayerStat(p, 'goals'); 
+                const assists = window.getPlayerStat(p, 'assists'); 
+                const yellows = window.getPlayerStat(p, 'yellows'); 
+                const reds = window.getPlayerStat(p, 'reds'); // Includes double_yellow internally
+                const mvps = window.getPlayerStat(p, 'mvps'); 
+                const cleanSheets = window.getPlayerStat(p, 'cleanSheets');
                 const attendance = window.trainings?window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length:0;
 
                 let b='';
@@ -1087,9 +1144,23 @@
             });
             const wr = mp>0?Math.round((mw/mp)*100)+'%':'0%';
             
+            let discHtml = '';
+            const uniqueTournaments = [...new Set(window.matches.filter(m => m.status === 'finished' || m.status === 'forfait').map(m => m.tournament))].filter(Boolean);
+            uniqueTournaments.forEach(t => {
+                const disc = window.getDiscipline(p.id, t);
+                if (disc.yellows > 0 || disc.suspended || window.matches.some(m => m.tournament === t && m.events && m.events.some(e => e.playerId === p.id && (e.type === 'reds' || e.type === 'double_yellow')))) {
+                    discHtml += `<div class="flex justify-between items-center bg-slate-800 dark:bg-slate-900 px-2 py-1 rounded mb-1 text-[9px] border border-slate-700">
+                        <span class="truncate w-1/2 text-left text-slate-300 font-bold">${t}</span>
+                        <span class="text-yellow-400 font-bold">🟨 ${disc.yellows}/3</span>
+                        ${disc.suspended ? '<span class="text-red-400 font-bold ml-1">SANCIONADO</span>' : '<span class="text-green-400 font-bold ml-1">HABILITADO</span>'}
+                    </div>`;
+                }
+            });
+            if(discHtml) discHtml = `<div class="mt-4 w-full text-center px-4"><p class="text-[9px] text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-700 pb-1">Control Disciplinario por Torneo</p>${discHtml}</div>`;
+
             let sH='';
-            if(p.isStaff) sH=`<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-yellow-400 uppercase">Amarillas</p><p class="text-lg font-bold text-yellow-400">${window.getPlayerStat(p,'yellows')}</p></div><div><p class="text-xs text-red-400 uppercase">Rojas</p><p class="text-lg font-bold text-red-400">${window.getPlayerStat(p,'reds')}</p></div></div>`;
-            else sH=`<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-xs text-slate-400 uppercase">Partidos</p><p class="text-lg font-bold">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-xs text-slate-400 uppercase">Goles</p><p class="text-lg font-bold">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-xs text-slate-400 uppercase">Asist.</p><p class="text-lg font-bold">${window.getPlayerStat(p,'assists')}</p></div></div>`;
+            if(p.isStaff) sH=`<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-[10px] text-slate-400 uppercase">Partidos CT</p><p class="text-lg font-bold">${window.getPlayerStat(p,'games')}</p></div></div>`;
+            else sH=`<div class="flex justify-around w-full mt-3 text-center"><div><p class="text-[10px] text-slate-400 uppercase">Partidos</p><p class="text-lg font-bold">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-[10px] text-slate-400 uppercase">Goles</p><p class="text-lg font-bold">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-[10px] text-slate-400 uppercase">Asist.</p><p class="text-lg font-bold">${window.getPlayerStat(p,'assists')}</p></div></div>`;
             
             const mvps = window.getPlayerStat(p,'mvps');
             
@@ -1102,6 +1173,7 @@
                     <div class="flex justify-center gap-2 mt-1 text-[9px] font-medium text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">EDAD: ${age}</span><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">PIE: ${ft}</span><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">VIC: ${wr}</span></div>
                     <p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest font-bold">ESTADÍSTICAS ${fL} - ${sL}</p>
                     ${sH} ${mvps>0?`<div class="mt-2 bg-yellow-900/50 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/50"><i class="fas fa-star"></i> ${mvps} MVP</div>`:''}
+                    ${discHtml}
                     <div class="absolute bottom-2 text-[8px] text-slate-600">NISUS FC CLOUD</div>
                 </div>`;
             document.getElementById('modalPlayerCard').classList.remove('hidden');
@@ -1179,10 +1251,15 @@
         window.renderCallupList = function() {
             const list = document.getElementById('m-callup-list'); if(!list) return; list.innerHTML = '';
             const mod = document.getElementById('m-modality').value;
+            const tourn = document.getElementById('m-tournament').value;
             window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
                 if(mod==='f11' && !p.availableF11) return; if(mod==='f7' && !p.availableF7) return;
                 const isC = window.currentLineup.some(l=>l.playerId===p.id);
-                list.innerHTML += `<div class="flex items-center gap-2"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"><label for="cb-${p.id}" class="truncate text-slate-700 dark:text-slate-300 text-xs cursor-pointer">${p.isStaff?'(CT) ':''}${p.number?p.number+'-':''}${p.name}</label></div>`;
+                const disc = window.getDiscipline(p.id, tourn);
+                const badge = disc.suspended ? `<span class="bg-red-600 text-white text-[9px] px-1 rounded ml-1 font-bold">SANCIONADO</span>` : (disc.yellows > 0 ? `<span class="text-yellow-600 text-[10px] ml-1 font-bold" title="${disc.yellows} Amarillas">🟨${disc.yellows}</span>` : '');
+                const labelColor = disc.suspended ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300';
+                
+                list.innerHTML += `<div class="flex items-center gap-2"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"><label for="cb-${p.id}" class="truncate ${labelColor} text-xs cursor-pointer flex-1">${p.isStaff?'(CT) ':''}${p.number?p.number+'-':''}${p.name} ${badge}</label></div>`;
             });
             window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
         };
@@ -1204,7 +1281,7 @@
             if(!window.isAdmin) return window.showToast('Solo edición', true);
             const m = document.getElementById('m-event-minute').value, pId = document.getElementById('m-event-player').value, type = document.getElementById('m-event-type').value, pOut = document.getElementById('m-event-player-out').value;
             if(!pId) return window.showToast('Selecciona jugador', true);
-            if(window.players.find(x=>x.id===pId)?.isStaff && ['goals','assists','penalty','freekick','sub','saved'].includes(type)) return window.showToast('CT solo amarillas/rojas', true);
+            if(window.players.find(x=>x.id===pId)?.isStaff && ['goals','assists','penalty','freekick','sub','saved'].includes(type)) return window.showToast('CT solo tarjetas', true);
             if(type==='sub' && (!pOut || pId===pOut)) return window.showToast('Cambio inválido', true);
             window.currentEvents.push({ minute:m, playerId:pId, type:type, playerOutId:pOut }); window.renderMatchEvents(); window.updateMvpSelect(); document.getElementById('m-event-minute').value = ''; window.drawTacticalBoard();
         };
@@ -1214,8 +1291,8 @@
         window.renderMatchEvents = function() {
             const list = document.getElementById('m-events-list'); if(!list) return; list.innerHTML = '';
             if(window.currentEvents.length===0){ list.innerHTML='<p class="text-xs text-slate-400 dark:text-slate-500">Sin eventos</p>'; return; }
-            const lbl = { goals:'Gol ⚽', penalty:'Penal 🎯', freekick:'Tiro Libre 👟', assists:'Asist. 👟', saved:'Atajado 🧤', yellows:'Amarilla 🟨', reds:'Roja 🟥', sub:'Cambio 🔄' };
-            const col = { goals:'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300', penalty:'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300', freekick:'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300', assists:'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300', saved:'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300', yellows:'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300', reds:'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300', sub:'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300' };
+            const lbl = { goals:'Gol ⚽', penalty:'Penal 🎯', freekick:'Tiro Libre 👟', assists:'Asist. 👟', saved:'Atajado 🧤', yellows:'Amarilla 🟨', double_yellow:'Doble Amarilla 🟨🟥', reds:'Roja 🟥', sub:'Cambio 🔄' };
+            const col = { goals:'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300', penalty:'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300', freekick:'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300', assists:'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300', saved:'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300', yellows:'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300', double_yellow:'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400', reds:'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300', sub:'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300' };
             window.currentEvents.sort((a,b)=>(parseInt(a.minute)||999)-(parseInt(b.minute)||999)).forEach((ev,idx)=>{
                 const pIn = window.players.find(x=>x.id===ev.playerId); if(!pIn) return;
                 let det = ev.type==='sub' ? `<span class="text-green-600 dark:text-green-400 font-bold text-xs"><i class="fas fa-arrow-up"></i> ${(pIn.name||'').split(' ')[0]}</span> <span class="text-red-500 dark:text-red-400 font-bold text-xs ml-1"><i class="fas fa-arrow-down"></i> ${(window.players.find(x=>x.id===ev.playerOutId)?.name||'?').split(' ')[0]}</span>` : `<span class="font-bold text-slate-700 dark:text-slate-300 text-sm">${pIn.name}</span>`;
@@ -1260,6 +1337,7 @@
                         if(['goals', 'penalty', 'freekick'].includes(e.type)) evGoals++;
                         if(e.type === 'assists') evAssists++;
                         if(e.type === 'yellows') evCards = '🟨';
+                        if(e.type === 'double_yellow') evCards = '🟥'; // Visually treat double_yellow as red
                         if(e.type === 'reds') evCards = '🟥';
                         if(e.type === 'saved') evSaved++;
                     }
