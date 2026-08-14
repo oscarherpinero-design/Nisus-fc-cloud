@@ -11,16 +11,14 @@
     
     <title>NISUS FC - Gestión y Estadísticas</title>
     
-    <!-- 1. CARGA DE LIBRERÍAS EXTERNAS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <!-- 2. CONFIGURACIÓN DE TAILWIND (Diseño) -->
     <script>
         tailwind.config = {
-            darkMode: 'class', // Permite alternar entre modo claro/oscuro
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
@@ -30,8 +28,7 @@
                 }
             }
         }
-        
-        // Prevención de parpadeo Modo Oscuro al cargar la página
+        // Prevención de parpadeo Modo Oscuro
         if (localStorage.getItem('nisus_theme') === 'dark' || (!('nisus_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -39,7 +36,6 @@
         }
     </script>
     
-    <!-- 3. ESTILOS PERSONALIZADOS (CSS puro para cosas complejas como la cancha) -->
     <style>
         body { font-family: 'Inter', sans-serif; padding-bottom: 80px; overscroll-behavior-y: none; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -48,12 +44,14 @@
         body.read-only .admin-only { display: none !important; }
         .force-hidden { display: none !important; }
         
+        /* Pizarra Táctica */
         .pitch-container {
             width: 100%; max-width: 320px; height: 480px; margin: 0 auto;
             background-color: #4ade80; position: relative; border-radius: 8px; overflow: hidden;
             background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 48px, transparent 48px, transparent 96px);
             touch-action: none; border: 2px solid #22c55e;
         }
+        
         .pitch-outline { position: absolute; top: 12px; bottom: 12px; left: 12px; right: 12px; border: 2px solid white; pointer-events: none; }
         .pitch-line-center { position: absolute; top: 50%; left: 12px; right: 12px; height: 2px; background: white; transform: translateY(-50%); pointer-events: none; }
         .pitch-circle-center { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
@@ -84,25 +82,39 @@
         }
         .player-token:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.1); z-index: 50; }
         .player-token img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .player-token .name-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; white-space: nowrap; pointer-events: none; z-index: 20; }
-        .captain-armband { position: absolute; top: -6px; right: -6px; background-color: #fbbf24; color: black; font-size: 9px; font-weight: 900; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; z-index: 30; }
-        .dorsal-badge { position: absolute; top: -6px; left: -6px; background-color: #f3f4f6; color: #111827; font-size: 9px; font-weight: 900; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; z-index: 30; }
+        .player-token .name-label {
+            position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; white-space: nowrap; pointer-events: none; z-index: 20;
+        }
+        .captain-armband {
+            position: absolute; top: -6px; right: -6px; background-color: #fbbf24; color: black; font-size: 9px; font-weight: 900; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; z-index: 30;
+        }
+        .dorsal-badge {
+            position: absolute; top: -6px; left: -6px; background-color: #f3f4f6; color: #111827; font-size: 9px; font-weight: 900; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; z-index: 30;
+        }
         
         select[multiple] { height: auto; min-height: 120px; }
         select[multiple] option { padding: 6px; border-radius: 4px; margin-bottom: 2px; }
         select[multiple] option:checked { background-color: #e0f2fe; color: #075985; font-weight: bold; }
         .dark select[multiple] option:checked { background-color: #0369a1; color: white; }
 
-        .player-card-export { width: 300px; height: 440px; background: linear-gradient(135deg, #111827, #1f2937); border: 4px solid #fbbf24; border-radius: 12px; padding: 16px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
-        .match-result-export { width: 400px; height: 400px; background: linear-gradient(135deg, #075985, #111827); border-radius: 16px; padding: 20px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        .player-card-export {
+            width: 300px; height: 440px; background: linear-gradient(135deg, #111827, #1f2937);
+            border: 4px solid #fbbf24; border-radius: 12px; padding: 16px; color: white;
+            font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .match-result-export {
+            width: 400px; height: 400px; background: linear-gradient(135deg, #075985, #111827);
+            border-radius: 16px; padding: 20px; color: white; font-family: 'Inter', sans-serif;
+            position: relative; box-sizing: border-box; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; overflow: hidden;
+        }
     </style>
 </head>
-
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-    <!-- ============================================== -->
-    <!-- ENCABEZADO SUPERIOR (HEADER)                   -->
-    <!-- ============================================== -->
+    <!-- SECCIÓN DE ENCABEZADO -->
     <header class="bg-brand-800 dark:bg-brand-950 text-white shadow-md sticky top-0 z-40 transition-colors">
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-4">
@@ -118,7 +130,7 @@
             </div>
             
             <div class="flex bg-brand-900 dark:bg-brand-900/50 rounded-lg p-1 items-center">
-                <!-- Filtros Responsivos -->
+                <!-- Filtros Responsivos en el Header -->
                 <div class="flex items-center">
                     <button onclick="window.setFilter('all')" id="btn-filter-all" class="text-xs px-2 sm:text-sm sm:px-3 py-1 rounded-md bg-white dark:bg-slate-700 text-brand-900 dark:text-white font-bold shadow-sm transition">GRL</button>
                     <button onclick="window.setFilter('f11')" id="btn-filter-f11" class="text-xs px-2 sm:text-sm sm:px-3 py-1 rounded-md text-brand-100 dark:text-slate-400 hover:text-white transition font-medium">F11</button>
@@ -127,7 +139,6 @@
                 
                 <div class="w-px h-4 bg-brand-700 dark:bg-slate-600 mx-1 sm:mx-2"></div>
                 
-                <!-- Usuarios Activos -->
                 <div class="hidden sm:flex items-center gap-2 mr-2 px-2 border-r border-brand-700 dark:border-slate-600" title="Usuarios activos">
                     <span class="relative flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -141,9 +152,6 @@
         </div>
     </header>
     
-    <!-- ============================================== -->
-    <!-- MENÚ LATERAL (SIDEBAR)                         -->
-    <!-- ============================================== -->
     <div id="side-menu-overlay" class="force-hidden fixed inset-0 bg-black/60 z-50 backdrop-blur-sm transition-opacity" onclick="window.toggleMenu()"></div>
     <div id="side-menu" class="fixed top-0 left-0 h-full w-72 bg-brand-900 dark:bg-slate-900 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col border-r border-brand-700 dark:border-slate-800">
         <div class="h-16 flex items-center justify-between px-4 bg-brand-950 dark:bg-slate-950 border-b border-brand-800 dark:border-slate-800">
@@ -192,9 +200,6 @@
         </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- CONTENEDOR PRINCIPAL (Las secciones se ocultan/muestran aquí) -->
-    <!-- ============================================== -->
     <main class="max-w-5xl mx-auto px-4 py-6">
         
         <!-- SECCIÓN 1: INICIO (DASHBOARD) -->
@@ -207,6 +212,7 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Tarjeta Próximo Partido -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 relative overflow-hidden flex flex-col justify-between transition-colors">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-brand-50 dark:bg-brand-900/20 rounded-bl-full -z-10"></div>
                     <div>
@@ -224,6 +230,7 @@
                     </button>
                 </div>
                 
+                <!-- Lista de Últimos Resultados -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-colors">
                     <h3 class="font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Últimos Resultados</h3>
                     <div id="latest-results" class="space-y-3">
@@ -232,6 +239,7 @@
                 </div>
             </div>
             
+            <!-- Contadores Globales -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-colors">
                     <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 text-xl"><i class="fas fa-futbol"></i></div>
@@ -249,6 +257,7 @@
                 </div>
             </div>
             
+            <!-- Top Goleadores y Asistidores -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
                     <div class="bg-slate-50 dark:bg-slate-900/50 px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
@@ -295,16 +304,16 @@
             </div>
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Lista de Deudores -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden lg:col-span-1 transition-colors">
                     <div class="bg-slate-50 dark:bg-slate-900/50 px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                         <h3 class="font-bold text-slate-800 dark:text-white"><i class="fas fa-list-check text-orange-500 mr-2"></i>Estado de Pagos</h3>
-                        <button onclick="window.copyGroupMessage()" class="admin-only text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded shadow-sm transition flex items-center gap-1" title="Copiar reporte al portapapeles">
-                            <i class="fab fa-whatsapp text-sm"></i> Grupal
-                        </button>
+                        <button onclick="window.copyGroupMessage()" class="admin-only bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow-sm flex items-center gap-1 transition"><i class="fab fa-whatsapp"></i> Cobro Grupal</button>
                     </div>
                     <div class="p-0 max-h-[400px] overflow-y-auto custom-scroll"><ul id="debtors-list" class="divide-y divide-slate-100 dark:divide-slate-700/50"></ul></div>
                 </div>
                 
+                <!-- Historial Financiero -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden lg:col-span-2 transition-colors">
                     <div class="bg-slate-50 dark:bg-slate-900/50 px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                         <h3 class="font-bold text-slate-800 dark:text-white"><i class="fas fa-history text-brand-500 mr-2"></i>Historial</h3>
@@ -335,7 +344,7 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 4: PLANTILLA DE JUGADORES -->
+        <!-- SECCIÓN 4: JUGADORES -->
         <section id="players" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div><h2 class="text-2xl font-bold text-slate-900 dark:text-white" id="players-title">Nuestra Plantilla</h2></div>
@@ -353,11 +362,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="matches-grid"></div>
         </section>
 
-        <!-- ============================================== -->
-        <!-- FORMULARIOS OCULTOS (Modales simulados a pantalla completa) -->
-        <!-- ============================================== -->
-        
-        <!-- Formulario Finanzas -->
+        <!-- FORMULARIOS (Ocultos por defecto) -->
         <section id="financesForm" class="hidden">
             <div class="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-900 dark:text-white" id="fin-form-title">Movimiento</h2><button onclick="window.showSection('finances')" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><i class="fas fa-times text-xl"></i></button></div>
@@ -375,7 +380,6 @@
             </div>
         </section>
 
-        <!-- Formulario Entrenamientos -->
         <section id="attendanceForm" class="hidden">
             <div class="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-900 dark:text-white">Entrenamiento</h2><button onclick="window.showSection('attendance')" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><i class="fas fa-times text-xl"></i></button></div>
@@ -392,7 +396,6 @@
             </div>
         </section>
 
-        <!-- Formulario Jugador -->
         <section id="playerForm" class="hidden">
             <div class="max-w-lg mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-900 dark:text-white" id="form-title">Añadir Miembro</h2><button onclick="window.showSection('players')" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><i class="fas fa-times text-xl"></i></button></div>
@@ -425,10 +428,17 @@
                         </div>
                     </div>
 
+                    <!-- Campos con la Fecha de Retorno -->
                     <div class="grid grid-cols-3 gap-4">
                         <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nacimiento</label><input type="date" id="p-birthdate" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg outline-none text-xs"></div>
                         <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Pie Dom.</label><select id="p-foot" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg outline-none text-xs"><option value="">N/E</option><option value="Diestro">Diestro</option><option value="Zurdo">Zurdo</option><option value="Ambidiestro">Ambi.</option></select></div>
-                        <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Estado</label><select id="p-status" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg outline-none text-xs font-medium"><option value="active">Activo ✅</option><option value="injured">Lesión 🚑</option><option value="suspended">Sanción 🟥</option><option value="absent">Ausente ✈️</option></select></div>
+                        <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Estado</label><select id="p-status" onchange="window.toggleReturnDateField()" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg outline-none text-xs font-medium"><option value="active">Activo ✅</option><option value="injured">Lesión 🚑</option><option value="suspended">Sanción 🟥</option><option value="absent">Ausente ✈️</option></select></div>
+                    </div>
+                    
+                    <div id="p-return-date-container" class="hidden pt-2">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><i class="fas fa-calendar-check text-brand-500 mr-1"></i>Fecha de Alta / Retorno</label>
+                        <input type="date" id="p-return-date" class="w-full px-4 py-2 border border-brand-300 dark:border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-slate-900 dark:text-white rounded-lg outline-none text-sm font-bold shadow-sm">
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">El estado cambiará automáticamente a "Activo" cuando se cumpla la fecha.</p>
                     </div>
                     
                     <div class="pt-3 pb-1 border-t border-slate-200 dark:border-slate-700 mt-4 border-b">
@@ -451,7 +461,6 @@
             </div>
         </section>
 
-        <!-- Formulario Partidos (Pizarra, Uniformes y Resultados) -->
         <section id="matchForm" class="hidden">
             <div class="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-slate-900 dark:text-white" id="match-form-title">Registrar Partido</h2><button onclick="window.showSection('matches')" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><i class="fas fa-times text-xl"></i></button></div>
@@ -607,11 +616,6 @@
             </div>
         </section>
 
-        <!-- ============================================== -->
-        <!-- MODALES DE EXPORTACIÓN Y CONFIRMACIÓN          -->
-        <!-- ============================================== -->
-
-        <!-- Modal Ficha de Jugador -->
         <div id="modalPlayerCard" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center border border-slate-200 dark:border-slate-800 transition-colors">
                 <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-slate-800 dark:text-white">Ficha</h3><button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><i class="fas fa-times text-xl"></i></button></div>
@@ -620,7 +624,6 @@
             </div>
         </div>
         
-        <!-- Modal Resultado de Partido -->
         <div id="modalMatchResult" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 text-center border border-slate-200 dark:border-slate-800 transition-colors">
                 <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-slate-800 dark:text-white">Resultado</h3><button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><i class="fas fa-times text-xl"></i></button></div>
@@ -629,10 +632,8 @@
             </div>
         </div>
         
-        <!-- Toast de Notificaciones -->
         <div id="toast" class="fixed top-20 right-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 translate-x-[150%] z-50 flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-medium text-sm"></span></div>
         
-        <!-- Modal Confirmación de Borrado -->
         <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div id="confirmModalContent" class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200 border border-slate-200 dark:border-slate-700">
                 <div class="p-6 text-center">
@@ -647,7 +648,6 @@
             </div>
         </div>
         
-        <!-- Modal PIN Admin -->
         <div id="pinModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center border border-slate-200 dark:border-slate-700 transition-colors">
                 <div class="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-lock"></i></div>
@@ -661,7 +661,6 @@
             </div>
         </div>
         
-        <!-- Modal Educativo para iOS (PWA) -->
         <div id="iosInstallModal" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onclick="this.classList.add('hidden')">
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border border-slate-200 dark:border-slate-700 relative" onclick="event.stopPropagation()">
                 <button onclick="document.getElementById('iosInstallModal').classList.add('hidden')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"><i class="fas fa-times"></i></button>
@@ -676,26 +675,23 @@
         </div>
     </main>
 
-    <!-- ============================================== -->
-    <!-- LÓGICA DE JAVASCRIPT (Base de Datos e Interfaz)-->
-    <!-- ============================================== -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Añadimos getDocs para hacer una carga inicial segura
-        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- ESTE ES EL CORAZÓN DE LA APLICACIÓN. Importamos Firebase en modo compatibilidad para evitar el SyntaxError -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-        // IMPORTANTE: Asegúrate de que estas credenciales correspondan a tu proyecto en la consola de Firebase.
+    <script>
         const firebaseConfig = { apiKey: "AIzaSyCXssxxTsyNBrp6x08dCX9QAPts6mon_1U", authDomain: "nisus-fc.firebaseapp.com", projectId: "nisus-fc", storageBucket: "nisus-fc.firebasestorage.app", messagingSenderId: "1095183265565", appId: "1:1095183265565:web:019161bbd603bba7ccfbf4" };
         
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         window.playersPath = `jugadores`; window.matchesPath = `partidos`; window.trainingsPath = `entrenamientos`; window.financesPath = `finanzas`;
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
         window.players = []; window.matches = []; window.trainings = []; window.finances = []; window.isReady = false;
+
         window.SECRET_PIN = "2024";
         window.isAdmin = localStorage.getItem('nisus_admin') === 'true';
         window.currentSeason = 'all'; window.currentFilter = 'all';
+        
         let deferredPrompt;
 
         window.generateId = function() { 
@@ -704,39 +700,389 @@
             }); 
         };
 
+        window.setupDarkMode = function() {
+            const updateUI = () => {
+                const isDark = document.documentElement.classList.contains('dark');
+                const label = document.getElementById('theme-label');
+                const ball = document.getElementById('theme-toggle-ball');
+                if(label && ball) {
+                    label.innerHTML = isDark ? '<i class="fas fa-moon text-blue-300 mr-2"></i>Modo Oscuro' : '<i class="fas fa-sun text-yellow-400 mr-2"></i>Modo Claro';
+                    if(isDark) { ball.classList.remove('translate-x-1'); ball.classList.add('translate-x-6'); } 
+                    else { ball.classList.remove('translate-x-6'); ball.classList.add('translate-x-1'); }
+                }
+            };
+            updateUI();
+            
+            window.toggleDarkMode = function() {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('nisus_theme', isDark ? 'dark' : 'light');
+                updateUI();
+            };
+        };
+
+        window.checkAutoActivations = async function() {
+            if (!window.isAdmin) return; // Solo el admin hace comprobaciones para no saturar firebase
+            const today = new Date().toISOString().split('T')[0];
+            const updates = [];
+            
+            window.players.forEach(p => {
+                if ((p.status === 'injured' || p.status === 'absent') && p.returnDate) {
+                    if (today >= p.returnDate) {
+                        console.log(`Activando automáticamente al jugador ${p.name}`);
+                        const pRef = db.collection(window.playersPath).doc(p.id);
+                        // Convertir a activo y borrar la fecha de retorno con null
+                        updates.push(pRef.set({ status: 'active', returnDate: null }, { merge: true }));
+                    }
+                }
+            });
+            
+            if (updates.length > 0) {
+                try {
+                    await Promise.all(updates);
+                    window.showToast(`Se activaron automáticamente ${updates.length} jugador(es)`);
+                } catch (e) {
+                    console.error("Error activando jugadores: ", e);
+                }
+            }
+        };
+
+        window.loadInitialData = async function() {
+            window.showToast("Conectando a base de datos...", false);
+            try {
+                // Descargamos todo antes de pintar la pantalla
+                const [pSnap, mSnap, tSnap, fSnap] = await Promise.all([
+                    db.collection(window.playersPath).get(),
+                    db.collection(window.matchesPath).get(),
+                    db.collection(window.trainingsPath).get(),
+                    db.collection(window.financesPath).get()
+                ]);
+
+                window.players = pSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                window.matches = mSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                window.trainings = tSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                window.finances = fSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                
+                window.isReady = true;
+                window.checkAutoActivations();
+                window.setupRealtimeListeners();
+                
+                // Pintamos la pantalla de inicio
+                window.showSection('dashboard');
+                window.setFilter('all');
+                window.updateAdminUI();
+                window.showToast("¡Datos cargados!");
+            } catch (error) {
+                console.error("Error cargando datos:", error);
+                window.showToast("Error de conexión", true);
+            }
+        };
+
+        window.setupRealtimeListeners = function() {
+            const sessionId = window.generateId();
+            const presenceRef = db.collection('sistema').doc('presencia_' + sessionId);
+            
+            // Avisar que estamos aquí cada 30 segundos
+            const presenceInterval = setInterval(() => { 
+                presenceRef.set({ lastSeen: Date.now() }).catch(e => console.log(e)); 
+            }, 30000);
+            
+            presenceRef.set({ lastSeen: Date.now() });
+
+            // Detectar cuando minimizamos la ventana (Solución a conexiones fantasmas)
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    presenceRef.delete();
+                } else {
+                    presenceRef.set({ lastSeen: Date.now() });
+                }
+            });
+
+            window.addEventListener('beforeunload', () => presenceRef.delete());
+
+            // Escuchar conectados reales
+            db.collection('sistema').onSnapshot((snapshot) => {
+                let online = 0; 
+                const now = Date.now();
+                snapshot.forEach(doc => { 
+                    const data = doc.data();
+                    // Si el usuario no ha reportado en más de 2 minutos (120000ms), es un fantasma, bórralo.
+                    if (doc.id.startsWith('presencia_')) {
+                        if (now - data.lastSeen < 60000) {
+                            online++; 
+                        } else if (now - data.lastSeen > 120000) {
+                            db.collection('sistema').doc(doc.id).delete();
+                        }
+                    }
+                });
+                const oc = document.getElementById('online-count'); if(oc) oc.textContent = online;
+            });
+
+            db.collection(window.playersPath).onSnapshot((snapshot) => {
+                if(!window.isReady) return;
+                window.players = []; snapshot.forEach(doc => window.players.push({ ...doc.data(), id: doc.id }));
+                window.checkAutoActivations();
+                if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers();
+                if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard();
+                if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList();
+                if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist();
+            });
+
+            db.collection(window.matchesPath).onSnapshot((snapshot) => {
+                if(!window.isReady) return;
+                window.matches = []; snapshot.forEach(doc => window.matches.push({ ...doc.data(), id: doc.id }));
+                window.updateSeasonDropdown(); 
+                if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches();
+                if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard();
+                if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); 
+            });
+
+            db.collection(window.trainingsPath).onSnapshot((snapshot) => {
+                if(!window.isReady) return;
+                window.trainings = []; snapshot.forEach(doc => window.trainings.push({ ...doc.data(), id: doc.id }));
+                if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings();
+                if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers();
+            });
+
+            db.collection(window.financesPath).onSnapshot((snapshot) => {
+                if(!window.isReady) return;
+                window.finances = []; snapshot.forEach(doc => window.finances.push({ ...doc.data(), id: doc.id }));
+                if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances();
+            });
+        };
+
+        window.initApp = function() {
+            window.setupPWA(); 
+            window.setupDarkMode();
+            window.loadInitialData(); // Descarga todo primero
+            
+            document.addEventListener('mousemove', window.dragMove); 
+            document.addEventListener('mouseup', window.dragEnd);
+            const pitch = document.getElementById('tactical-pitch');
+            if(pitch) { pitch.addEventListener('touchmove', window.dragMove, {passive: false}); pitch.addEventListener('touchend', window.dragEnd); }
+        };
+
+        window.onload = window.initApp;
+
+        window.toggleMenu = function() {
+            const menu = document.getElementById('side-menu'); const overlay = document.getElementById('side-menu-overlay');
+            if(menu.classList.contains('-translate-x-full')) { menu.classList.remove('-translate-x-full'); overlay.classList.remove('force-hidden'); } 
+            else { menu.classList.add('-translate-x-full'); overlay.classList.add('force-hidden'); }
+        };
+
+        window.showSection = function(sectionId) {
+            ['dashboard', 'players', 'matches', 'attendance', 'finances', 'playerForm', 'matchForm', 'attendanceForm', 'financesForm'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); });
+            const sec = document.getElementById(sectionId); if(sec) sec.classList.remove('hidden');
+            
+            ['dashboard', 'players', 'matches', 'attendance', 'finances'].forEach(id => {
+                const side = document.getElementById('nav-side-' + id);
+                if(side) { side.classList.remove('bg-brand-800', 'dark:bg-slate-800', 'text-white', 'border-brand-400', 'dark:border-slate-400'); side.classList.add('text-brand-100', 'dark:text-slate-400', 'border-transparent'); }
+            });
+            const activeSide = document.getElementById('nav-side-' + sectionId); if(activeSide) { activeSide.classList.add('bg-brand-800', 'dark:bg-slate-800', 'text-white', 'border-brand-400', 'dark:border-slate-400'); activeSide.classList.remove('text-brand-100', 'dark:text-slate-400', 'border-transparent'); }
+            
+            const menu = document.getElementById('side-menu'); if(menu && !menu.classList.contains('-translate-x-full')) window.toggleMenu();
+
+            if(sectionId === 'players') window.renderPlayers();
+            if(sectionId === 'matches') window.renderMatches();
+            if(sectionId === 'attendance') window.renderTrainings();
+            if(sectionId === 'dashboard') window.updateDashboard();
+            if(sectionId === 'finances') window.renderFinances();
+            window.scrollTo(0,0);
+        };
+
+        window.updateAdminUI = function() {
+            const btn = document.getElementById('btn-admin');
+            if (window.isAdmin) { document.body.classList.remove('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>'; } 
+            else { document.body.classList.add('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-lock text-slate-400"></i>'; }
+        };
+
+        window.toggleAdmin = function() { if(window.isAdmin) { window.isAdmin=false; localStorage.removeItem('nisus_admin'); window.updateAdminUI(); window.showToast("Modo lectura"); } else { document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('admin-pin').value=''; document.getElementById('admin-pin').focus(); } };
+        window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
+        window.verifyPin = function() { if(document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin=true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("Edición desbloqueada"); } else window.showToast("PIN incorrecto", true); };
+
+        window.pendingConfirm = null;
+        window.showConfirm = function(msg, action) { document.getElementById('confirm-msg').textContent = msg; window.pendingConfirm = action; const modal = document.getElementById('confirmModal'); const content = document.getElementById('confirmModalContent'); modal.classList.remove('hidden'); setTimeout(() => { content.classList.remove('scale-95', 'opacity-0'); content.classList.add('scale-100', 'opacity-100'); }, 10); };
+        window.closeConfirm = function() { const modal = document.getElementById('confirmModal'); const content = document.getElementById('confirmModalContent'); content.classList.remove('scale-100', 'opacity-100'); content.classList.add('scale-95', 'opacity-0'); setTimeout(() => { modal.classList.add('hidden'); window.pendingConfirm = null; }, 200); };
+        window.executeConfirm = function() { if(window.pendingConfirm) window.pendingConfirm(); window.closeConfirm(); };
+
+        window.showToast = function(msg, isError = false) {
+            const toast = document.getElementById('toast'); if(!toast) return;
+            document.getElementById('toast-msg').textContent = msg;
+            toast.className = `fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600 text-white' : 'bg-brand-900 dark:bg-white text-white dark:text-brand-900'}`;
+            setTimeout(() => toast.classList.remove('translate-x-[150%]'), 10);
+            setTimeout(() => toast.classList.add('translate-x-[150%]'), 3000);
+        };
+
+        window.setupPWA = function() {
+            const manifestStr = JSON.stringify({ 
+                name: "NISUS FC Cloud", short_name: "NISUS FC", start_url: ".", display: "standalone", 
+                background_color: "#0f172a", theme_color: "#075985", 
+                icons: [{ src: "https://placehold.co/192x192/0ea5e9/ffffff?text=NFC", sizes: "192x192", type: "image/png" }, { src: "https://placehold.co/512x512/0ea5e9/ffffff?text=NFC", sizes: "512x512", type: "image/png" }] 
+            });
+            const manifestBlob = new Blob([manifestStr], {type: 'application/json'});
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl; document.head.appendChild(link);
+            
+            const isIos = () => { const userAgent = window.navigator.userAgent.toLowerCase(); return /iphone|ipad|ipod/.test(userAgent); };
+            const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
+
+            if (isIos() && !isInStandaloneMode()) {
+                const btn = document.getElementById('btn-install-pwa');
+                if (btn) btn.classList.remove('hidden');
+            }
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault(); deferredPrompt = e;
+                const btn = document.getElementById('btn-install-pwa');
+                if (btn) btn.classList.remove('hidden');
+            });
+        };
+
+        window.installPWA = async function() {
+            const isIos = () => { const userAgent = window.navigator.userAgent.toLowerCase(); return /iphone|ipad|ipod/.test(userAgent); };
+            if (isIos()) {
+                document.getElementById('iosInstallModal').classList.remove('hidden');
+                return;
+            }
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { deferredPrompt = null; document.getElementById('btn-install-pwa').classList.add('hidden'); }
+            }
+        };
+
+        window.setFilter = function(f) { 
+            window.currentFilter = f; 
+            ['all','f11','f7'].forEach(x=>{ 
+                const btnTop = document.getElementById(`btn-filter-${x}`); 
+                if(btnTop) {
+                    btnTop.className = x===f ? "text-xs px-2 sm:text-sm sm:px-3 py-1 rounded-md bg-white dark:bg-slate-700 text-brand-900 dark:text-white font-bold shadow-sm transition" : "text-xs px-2 sm:text-sm sm:px-3 py-1 rounded-md text-brand-100 dark:text-slate-400 hover:text-white transition font-medium";
+                }
+                const btnSide = document.getElementById(`btn-side-filter-${x}`);
+                if(btnSide) {
+                    btnSide.className = x===f ? "flex-1 py-1 rounded-md bg-white dark:bg-slate-700 text-brand-900 dark:text-white font-bold shadow-sm transition text-center" : "flex-1 py-1 rounded-md text-brand-100 dark:text-slate-400 hover:text-white transition font-medium text-center";
+                }
+            }); 
+            
+            const d = document.getElementById('dashboard'); if(d && !d.classList.contains('hidden')) window.updateDashboard(); 
+            const p = document.getElementById('players'); if(p && !p.classList.contains('hidden')) window.renderPlayers(); 
+            const m = document.getElementById('matches'); if(m && !m.classList.contains('hidden')) window.renderMatches(); 
+        };
+        
+        window.setSeasonFilter = function(s) { 
+            window.currentSeason = s; 
+            const d = document.getElementById('dash-season-label'); 
+            if(d) { 
+                if(s==='all') d.classList.add('hidden'); 
+                else { d.textContent=`(T. ${s})`; d.classList.remove('hidden'); } 
+            } 
+            
+            const selTop = document.getElementById('season-filter'); if(selTop && selTop.value !== s) selTop.value = s;
+            const selSide = document.getElementById('season-filter-side'); if(selSide && selSide.value !== s) selSide.value = s;
+            
+            window.setFilter(window.currentFilter); 
+        };
+        
+        window.updateSeasonDropdown = function() { 
+            const cur = window.currentSeason; 
+            const unique = [...new Set(window.matches.map(m => String(m.season||'')).filter(s=>s.trim()!==''))].sort((a,b)=>b.localeCompare(a)); 
+            
+            const renderSel = (selId) => {
+                const sel = document.getElementById(selId); if(!sel) return;
+                sel.innerHTML = '<option value="all">Todas las Temporadas</option>'; 
+                unique.forEach(s => sel.innerHTML += `<option value="${s}">T. ${s}</option>`); 
+                if(cur==='all'||unique.includes(cur)) sel.value = cur; else { sel.value='all'; }
+            };
+            renderSel('season-filter'); renderSel('season-filter-side');
+            if(cur!=='all' && !unique.includes(cur)) window.currentSeason='all';
+        };
+
         const posValid = { POR: ['Portero'], DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'], LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'], LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'], CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'], MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'], MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'], MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'], MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'], MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'], ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'], EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'], DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta'] };
-        const formations = { f11: { "4-4-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:20,y:75,label:'LI',valid:posValid.LI},{x:40,y:75,label:'DFC',valid:posValid.DFC},{x:60,y:75,label:'DFC',valid:posValid.DFC},{x:80,y:75,label:'LD',valid:posValid.LD},{x:20,y:50,label:'MI',valid:posValid.MI},{x:40,y:50,label:'MC',valid:posValid.MC},{x:60,y:50,label:'MC',valid:posValid.MC},{x:80,y:50,label:'MD',valid:posValid.MD},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}], "4-3-3": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:20,y:75,label:'LI',valid:posValid.LI},{x:40,y:75,label:'DFC',valid:posValid.DFC},{x:60,y:75,label:'DFC',valid:posValid.DFC},{x:80,y:75,label:'LD',valid:posValid.LD},{x:30,y:55,label:'MC',valid:posValid.MC},{x:50,y:55,label:'MCD',valid:posValid.MCD},{x:70,y:55,label:'MC',valid:posValid.MC},{x:20,y:25,label:'EI',valid:posValid.EI},{x:50,y:25,label:'DC',valid:posValid.DC},{x:80,y:25,label:'ED',valid:posValid.ED}], "4-2-3-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'LI',valid:posValid.LI},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'LD',valid:posValid.LD},{x:35,y:60,label:'MCD',valid:posValid.MCD},{x:65,y:60,label:'MCD',valid:posValid.MCD},{x:20,y:40,label:'MI',valid:posValid.MI},{x:50,y:40,label:'MCO',valid:posValid.MCO},{x:80,y:40,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}], "4-1-4-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'LI',valid:posValid.LI},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'LD',valid:posValid.LD},{x:50,y:60,label:'MCD',valid:posValid.MCD},{x:15,y:45,label:'MI',valid:posValid.MI},{x:35,y:45,label:'MC',valid:posValid.MC},{x:65,y:45,label:'MC',valid:posValid.MC},{x:85,y:45,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}], "4-5-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'LI',valid:posValid.LI},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'LD',valid:posValid.LD},{x:15,y:50,label:'MI',valid:posValid.MI},{x:35,y:50,label:'MC',valid:posValid.MC},{x:50,y:50,label:'MCD',valid:posValid.MCD},{x:65,y:50,label:'MC',valid:posValid.MC},{x:85,y:50,label:'MD',valid:posValid.MD},{x:50,y:25,label:'DC',valid:posValid.DC}], "3-5-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:30,y:75,label:'DFC',valid:posValid.DFC},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:70,y:75,label:'DFC',valid:posValid.DFC},{x:15,y:50,label:'CAR',valid:posValid.CAR},{x:35,y:50,label:'MC',valid:posValid.MC},{x:50,y:50,label:'MCD',valid:posValid.MCD},{x:65,y:50,label:'MC',valid:posValid.MC},{x:85,y:50,label:'CAR',valid:posValid.CAR},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}], "3-4-3": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:30,y:75,label:'DFC',valid:posValid.DFC},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:70,y:75,label:'DFC',valid:posValid.DFC},{x:15,y:50,label:'MI',valid:posValid.MI},{x:35,y:50,label:'MC',valid:posValid.MC},{x:65,y:50,label:'MC',valid:posValid.MC},{x:85,y:50,label:'MD',valid:posValid.MD},{x:25,y:25,label:'EI',valid:posValid.EI},{x:50,y:25,label:'DC',valid:posValid.DC},{x:75,y:25,label:'ED',valid:posValid.ED}], "5-3-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'CAR',valid:posValid.CAR},{x:30,y:80,label:'DFC',valid:posValid.DFC},{x:50,y:80,label:'DFC',valid:posValid.DFC},{x:70,y:80,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'CAR',valid:posValid.CAR},{x:35,y:55,label:'MC',valid:posValid.MC},{x:50,y:55,label:'MCD',valid:posValid.MCD},{x:65,y:55,label:'MC',valid:posValid.MC},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}] }, f7: { "3-2-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:25,y:70,label:'LI',valid:posValid.LI},{x:50,y:70,label:'DFC',valid:posValid.DFC},{x:75,y:70,label:'LD',valid:posValid.LD},{x:35,y:45,label:'MC',valid:posValid.MC},{x:65,y:45,label:'MC',valid:posValid.MC},{x:50,y:20,label:'DC',valid:posValid.DC}], "3-1-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:25,y:70,label:'LI',valid:posValid.LI},{x:50,y:70,label:'DFC',valid:posValid.DFC},{x:75,y:70,label:'LD',valid:posValid.LD},{x:50,y:45,label:'MCD',valid:posValid.MCD},{x:35,y:20,label:'DC',valid:posValid.DC},{x:65,y:20,label:'DC',valid:posValid.DC}], "2-3-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:35,y:70,label:'DFC',valid:posValid.DFC},{x:65,y:70,label:'DFC',valid:posValid.DFC},{x:20,y:45,label:'MI',valid:posValid.MI},{x:50,y:45,label:'MC',valid:posValid.MC},{x:80,y:45,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}], "2-2-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:30,y:45,label:'MC',valid:posValid.MC},{x:70,y:45,label:'MC',valid:posValid.MC},{x:35,y:20,label:'DC',valid:posValid.DC},{x:65,y:20,label:'DC',valid:posValid.DC}], "1-3-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:20,y:50,label:'MI',valid:posValid.MI},{x:50,y:50,label:'MC',valid:posValid.MC},{x:80,y:50,label:'MD',valid:posValid.MD},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}], "1-4-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:15,y:45,label:'MI',valid:posValid.MI},{x:35,y:45,label:'MC',valid:posValid.MC},{x:65,y:45,label:'MC',valid:posValid.MC},{x:85,y:45,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}] } };
+        const formations = {
+            f11: {
+                "4-4-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:20,y:75,label:'LI',valid:posValid.LI},{x:40,y:75,label:'DFC',valid:posValid.DFC},{x:60,y:75,label:'DFC',valid:posValid.DFC},{x:80,y:75,label:'LD',valid:posValid.LD},{x:20,y:50,label:'MI',valid:posValid.MI},{x:40,y:50,label:'MC',valid:posValid.MC},{x:60,y:50,label:'MC',valid:posValid.MC},{x:80,y:50,label:'MD',valid:posValid.MD},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}],
+                "4-3-3": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:20,y:75,label:'LI',valid:posValid.LI},{x:40,y:75,label:'DFC',valid:posValid.DFC},{x:60,y:75,label:'DFC',valid:posValid.DFC},{x:80,y:75,label:'LD',valid:posValid.LD},{x:30,y:55,label:'MC',valid:posValid.MC},{x:50,y:55,label:'MCD',valid:posValid.MCD},{x:70,y:55,label:'MC',valid:posValid.MC},{x:20,y:25,label:'EI',valid:posValid.EI},{x:50,y:25,label:'DC',valid:posValid.DC},{x:80,y:25,label:'ED',valid:posValid.ED}],
+                "4-2-3-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'LI',valid:posValid.LI},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'LD',valid:posValid.LD},{x:35,y:60,label:'MCD',valid:posValid.MCD},{x:65,y:60,label:'MCD',valid:posValid.MCD},{x:20,y:40,label:'MI',valid:posValid.MI},{x:50,y:40,label:'MCO',valid:posValid.MCO},{x:80,y:40,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}],
+                "4-1-4-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'LI',valid:posValid.LI},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'LD',valid:posValid.LD},{x:50,y:60,label:'MCD',valid:posValid.MCD},{x:15,y:45,label:'MI',valid:posValid.MI},{x:35,y:45,label:'MC',valid:posValid.MC},{x:65,y:45,label:'MC',valid:posValid.MC},{x:85,y:45,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}],
+                "4-5-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'LI',valid:posValid.LI},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'LD',valid:posValid.LD},{x:15,y:50,label:'MI',valid:posValid.MI},{x:35,y:50,label:'MC',valid:posValid.MC},{x:50,y:50,label:'MCD',valid:posValid.MCD},{x:65,y:50,label:'MC',valid:posValid.MC},{x:85,y:50,label:'MD',valid:posValid.MD},{x:50,y:25,label:'DC',valid:posValid.DC}],
+                "3-5-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:30,y:75,label:'DFC',valid:posValid.DFC},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:70,y:75,label:'DFC',valid:posValid.DFC},{x:15,y:50,label:'CAR',valid:posValid.CAR},{x:35,y:50,label:'MC',valid:posValid.MC},{x:50,y:50,label:'MCD',valid:posValid.MCD},{x:65,y:50,label:'MC',valid:posValid.MC},{x:85,y:50,label:'CAR',valid:posValid.CAR},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}],
+                "3-4-3": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:30,y:75,label:'DFC',valid:posValid.DFC},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:70,y:75,label:'DFC',valid:posValid.DFC},{x:15,y:50,label:'MI',valid:posValid.MI},{x:35,y:50,label:'MC',valid:posValid.MC},{x:65,y:50,label:'MC',valid:posValid.MC},{x:85,y:50,label:'MD',valid:posValid.MD},{x:25,y:25,label:'EI',valid:posValid.EI},{x:50,y:25,label:'DC',valid:posValid.DC},{x:75,y:25,label:'ED',valid:posValid.ED}],
+                "5-3-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:15,y:75,label:'CAR',valid:posValid.CAR},{x:30,y:80,label:'DFC',valid:posValid.DFC},{x:50,y:80,label:'DFC',valid:posValid.DFC},{x:70,y:80,label:'DFC',valid:posValid.DFC},{x:85,y:75,label:'CAR',valid:posValid.CAR},{x:35,y:55,label:'MC',valid:posValid.MC},{x:50,y:55,label:'MCD',valid:posValid.MCD},{x:65,y:55,label:'MC',valid:posValid.MC},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}]
+            },
+            f7: {
+                "3-2-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:25,y:70,label:'LI',valid:posValid.LI},{x:50,y:70,label:'DFC',valid:posValid.DFC},{x:75,y:70,label:'LD',valid:posValid.LD},{x:35,y:45,label:'MC',valid:posValid.MC},{x:65,y:45,label:'MC',valid:posValid.MC},{x:50,y:20,label:'DC',valid:posValid.DC}],
+                "3-1-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:25,y:70,label:'LI',valid:posValid.LI},{x:50,y:70,label:'DFC',valid:posValid.DFC},{x:75,y:70,label:'LD',valid:posValid.LD},{x:50,y:45,label:'MCD',valid:posValid.MCD},{x:35,y:20,label:'DC',valid:posValid.DC},{x:65,y:20,label:'DC',valid:posValid.DC}],
+                "2-3-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:35,y:70,label:'DFC',valid:posValid.DFC},{x:65,y:70,label:'DFC',valid:posValid.DFC},{x:20,y:45,label:'MI',valid:posValid.MI},{x:50,y:45,label:'MC',valid:posValid.MC},{x:80,y:45,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}],
+                "2-2-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:35,y:75,label:'DFC',valid:posValid.DFC},{x:65,y:75,label:'DFC',valid:posValid.DFC},{x:30,y:45,label:'MC',valid:posValid.MC},{x:70,y:45,label:'MC',valid:posValid.MC},{x:35,y:20,label:'DC',valid:posValid.DC},{x:65,y:20,label:'DC',valid:posValid.DC}],
+                "1-3-2": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:20,y:50,label:'MI',valid:posValid.MI},{x:50,y:50,label:'MC',valid:posValid.MC},{x:80,y:50,label:'MD',valid:posValid.MD},{x:35,y:25,label:'DC',valid:posValid.DC},{x:65,y:25,label:'DC',valid:posValid.DC}],
+                "1-4-1": [{x:50,y:90,label:'POR',valid:posValid.POR},{x:50,y:75,label:'DFC',valid:posValid.DFC},{x:15,y:45,label:'MI',valid:posValid.MI},{x:35,y:45,label:'MC',valid:posValid.MC},{x:65,y:45,label:'MC',valid:posValid.MC},{x:85,y:45,label:'MD',valid:posValid.MD},{x:50,y:20,label:'DC',valid:posValid.DC}]
+            }
+        };
 
         window.getDiscipline = function(playerId, tournament) {
             if (!tournament) return { suspended: false, yellows: 0, suspensionsLeft: 0 };
-            const tourneyMatches = window.matches.filter(m => (m.status === 'finished' || m.status === 'forfait') && (m.tournament || '').trim().toLowerCase() === tournament.trim().toLowerCase()).sort((a, b) => new Date(a.date) - new Date(b.date));
-            let accYellows = 0; let suspensions = 0;
+            
+            const tourneyMatches = window.matches
+                .filter(m => (m.status === 'finished' || m.status === 'forfait') && (m.tournament || '').trim().toLowerCase() === tournament.trim().toLowerCase())
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+            let accYellows = 0;
+            let suspensions = 0;
             
             tourneyMatches.forEach(m => {
-                if (suspensions > 0) suspensions--;
+                if (suspensions > 0) {
+                    suspensions--;
+                }
+                
                 if (m.events) {
                     let y = 0, dy = 0, r = 0;
-                    m.events.forEach(e => { if (e.playerId === playerId) { if (e.type === 'yellows') y++; if (e.type === 'double_yellow') dy++; if (e.type === 'reds') r++; } });
-                    if (dy > 0) { suspensions += 1; } else { accYellows += y; if (accYellows >= 3) { suspensions += Math.floor(accYellows / 3); accYellows = accYellows % 3; } if (r > 0) suspensions += 1; }
+                    m.events.forEach(e => {
+                        if (e.playerId === playerId) {
+                            if (e.type === 'yellows') y++;
+                            if (e.type === 'double_yellow') dy++;
+                            if (e.type === 'reds') r++;
+                        }
+                    });
+                    
+                    if (dy > 0) {
+                        suspensions += 1;
+                        // Double yellow invalidates single yellows in the same match
+                    } else {
+                        accYellows += y;
+                        if (accYellows >= 3) {
+                            suspensions += Math.floor(accYellows / 3);
+                            accYellows = accYellows % 3;
+                        }
+                        if (r > 0) {
+                            suspensions += 1;
+                        }
+                    }
                 }
             });
+            
             return { suspended: suspensions > 0, yellows: accYellows, suspensionsLeft: suspensions };
         };
 
         window.getPlayerStat = function(player, statKey) {
             if(!player) return 0;
             if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
+            
             let count = 0;
             window.matches.forEach(m => {
                 if (m.status !== 'finished') return;
                 if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return;
                 if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
+                
                 const inLineup = m.lineup && m.lineup.some(l => l.playerId === player.id && l.x !== null); 
                 const subIn = m.events && m.events.some(e => e.type === 'sub' && e.playerId === player.id);
                 const played = inLineup || subIn;
                 
                 if (statKey === 'games' && played && !player.isStaff) count++;
-                if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) { const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero'); if (isGK && !player.isStaff) count++; }
+                
+                if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) {
+                    const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero');
+                    if (isGK && !player.isStaff) count++;
+                }
+                
                 if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
                 
                 if (m.events) {
@@ -752,280 +1098,25 @@
             return count;
         };
 
-        window.showToast = function(msg, isError = false) {
-            const toast = document.getElementById('toast'); if(!toast) return;
-            document.getElementById('toast-msg').textContent = msg;
-            toast.className = `fixed top-20 right-4 px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600 text-white' : 'bg-brand-900 dark:bg-white text-white dark:text-brand-900'}`;
-            setTimeout(() => toast.classList.remove('translate-x-[150%]'), 10);
-            setTimeout(() => toast.classList.add('translate-x-[150%]'), 3000);
-        };
-
-        window.copyToClipboard = function(text) {
-            const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0"; textArea.style.opacity = "0";
-            document.body.appendChild(textArea); textArea.focus(); textArea.select();
-            try { document.execCommand('copy'); window.showToast("¡Mensaje copiado al portapapeles!"); } catch (err) { window.showToast("Error al copiar", true); }
-            document.body.removeChild(textArea);
-        };
-
-        window.copyGroupMessage = function() {
-            let debtors = window.players.filter(p => !p.isStaff && p.isPaidUp === false && p.debtAmount > 0);
-            if (debtors.length === 0) return window.showToast("¡No hay deudas pendientes! 🏆");
-            let msg = "⚽ *NISUS FC - ESTADO DE CUENTAS* ⚽\n\n¡Saludos! equipo, les dejamos el reporte de saldos pendientes al día de hoy. Por favor ponerse al día para el próximo partido:\n\n";
-            let total = 0;
-            debtors.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach((p, index) => { msg += `${index + 1}. *${p.name}*: $${p.debtAmount.toFixed(2)}\n`; total += p.debtAmount; });
-            msg += `\n*Total Equipo:* $${total.toFixed(2)}\n\n¡Gracias por su apoyo! 🏆`;
-            window.copyToClipboard(msg);
-        };
-
-        window.copyIndividualMessage = function(id) {
-            const p = window.players.find(x => x.id === id); if (!p || !p.debtAmount) return;
-            const msg = `⚽ *NISUS FC* ⚽\n\n¡Saludos! *${p.name}*, te recordamos que tienes un saldo pendiente de *$${p.debtAmount.toFixed(2)}* con el equipo.\n\nPor favor, comunícate con nosotros para ponerte al día en el próximo encuentro. ¡Gracias por tu compromiso! 🏆`;
-            window.copyToClipboard(msg);
-        };
-
-        window.setupPWA = function() {
-            const manifestStr = JSON.stringify({ name: "NISUS FC Cloud", short_name: "NISUS FC", start_url: ".", display: "standalone", background_color: "#0f172a", theme_color: "#075985", icons: [{ src: "https://placehold.co/192x192/0ea5e9/ffffff?text=NFC", sizes: "192x192", type: "image/png" }, { src: "https://placehold.co/512x512/0ea5e9/ffffff?text=NFC", sizes: "512x512", type: "image/png" }] });
-            const manifestBlob = new Blob([manifestStr], {type: 'application/json'}); const manifestUrl = URL.createObjectURL(manifestBlob);
-            const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl; document.head.appendChild(link);
-            
-            const isIos = () => { const userAgent = window.navigator.userAgent.toLowerCase(); return /iphone|ipad|ipod/.test(userAgent); };
-            const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
-
-            if (isIos() && !isInStandaloneMode()) { const btn = document.getElementById('btn-install-pwa'); if (btn) btn.classList.remove('hidden'); }
-            window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const btn = document.getElementById('btn-install-pwa'); if (btn) btn.classList.remove('hidden'); });
-        };
-
-        window.installPWA = async function() {
-            const isIos = () => { const userAgent = window.navigator.userAgent.toLowerCase(); return /iphone|ipad|ipod/.test(userAgent); };
-            if (isIos()) { document.getElementById('iosInstallModal').classList.remove('hidden'); return; }
-            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { deferredPrompt = null; document.getElementById('btn-install-pwa').classList.add('hidden'); } }
-        };
-
-        window.setupDarkMode = function() {
-            const updateUI = () => {
-                const isDark = document.documentElement.classList.contains('dark');
-                const label = document.getElementById('theme-label'); const ball = document.getElementById('theme-toggle-ball');
-                if(label && ball) {
-                    label.innerHTML = isDark ? '<i class="fas fa-moon text-blue-300 mr-2"></i>Modo Oscuro' : '<i class="fas fa-sun text-yellow-400 mr-2"></i>Modo Claro';
-                    if(isDark) { ball.classList.remove('translate-x-1'); ball.classList.add('translate-x-6'); } else { ball.classList.remove('translate-x-6'); ball.classList.add('translate-x-1'); }
-                }
-            };
-            updateUI();
-            window.toggleDarkMode = function() { const isDark = document.documentElement.classList.toggle('dark'); localStorage.setItem('nisus_theme', isDark ? 'dark' : 'light'); updateUI(); };
-        };
-
-        // --- SOLUCIÓN APLICADA AQUÍ ---
-        // Se separó la escucha en tiempo real (onSnapshot) de la carga inicial (getDocs).
-        async function loadInitialData() {
-            try {
-                // Muestra un mensaje temporal mientras carga
-                const dashboardEl = document.getElementById('latest-results');
-                if (dashboardEl) dashboardEl.innerHTML = '<p class="text-sm text-slate-500 italic"><i class="fas fa-spinner fa-spin mr-2"></i> Conectando a la base de datos...</p>';
-
-                // Esperamos a que TODOS los datos lleguen antes de continuar
-                const [playersSnap, matchesSnap, trainingsSnap, financesSnap] = await Promise.all([
-                    getDocs(collection(db, window.playersPath)),
-                    getDocs(collection(db, window.matchesPath)),
-                    getDocs(collection(db, window.trainingsPath)),
-                    getDocs(collection(db, window.financesPath))
-                ]);
-
-                window.players = []; playersSnap.forEach(doc => window.players.push({ ...doc.data(), id: doc.id }));
-                window.matches = []; matchesSnap.forEach(doc => window.matches.push({ ...doc.data(), id: doc.id }));
-                window.trainings = []; trainingsSnap.forEach(doc => window.trainings.push({ ...doc.data(), id: doc.id }));
-                window.finances = []; financesSnap.forEach(doc => window.finances.push({ ...doc.data(), id: doc.id }));
-
-                console.log(`Datos cargados: ${window.players.length} jugadores, ${window.matches.length} partidos, ${window.trainings.length} entrenos, ${window.finances.length} finanzas.`);
-
-                // Ahora sí, actualizamos todas las vistas iniciales
-                window.updateSeasonDropdown();
-                window.updateDashboard();
-                window.renderPlayers();
-                window.renderMatches();
-                window.renderTrainings();
-                window.renderFinances();
-                
-            } catch (error) {
-                console.error("Error cargando los datos iniciales de Firebase:", error);
-                window.showToast("Error de conexión a la base de datos", true);
-                const dashboardEl = document.getElementById('latest-results');
-                if (dashboardEl) dashboardEl.innerHTML = '<p class="text-sm text-red-500 italic">Error de red. Verifica tu conexión.</p>';
-            }
-        }
-
-        function setupRealtimeListeners() {
-            const sessionId = window.generateId();
-            const presenceRef = doc(db, 'sistema', 'presencia_' + sessionId);
-            setInterval(() => { setDoc(presenceRef, { lastSeen: Date.now() }).catch(e => console.log(e)); }, 30000);
-            setDoc(presenceRef, { lastSeen: Date.now() });
-            window.addEventListener('beforeunload', () => deleteDoc(presenceRef));
-            
-            onSnapshot(collection(db, 'sistema'), (snapshot) => {
-                let online = 0; const now = Date.now();
-                snapshot.forEach(doc => { if(doc.id.startsWith('presencia_') && (now - doc.data().lastSeen < 60000)) online++; });
-                const oc = document.getElementById('online-count'); if(oc) oc.textContent = online;
-            });
-
-            // Los onSnapshot se quedan escuchando, pero ya no intentan "renderizar" ciegamente si la app no está lista.
-            onSnapshot(collection(db, window.playersPath), (snapshot) => {
-                if(!window.isReady) return; // Espera a la carga inicial
-                window.players = []; snapshot.forEach(doc => window.players.push({ ...doc.data(), id: doc.id }));
-                if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers();
-                if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard();
-                if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList();
-                if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist();
-                if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); // Act. deudores
-            });
-
-            onSnapshot(collection(db, window.matchesPath), (snapshot) => {
-                if(!window.isReady) return;
-                window.matches = []; snapshot.forEach(doc => window.matches.push({ ...doc.data(), id: doc.id }));
-                window.updateSeasonDropdown(); 
-                if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches();
-                if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard();
-                if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); 
-            });
-
-            onSnapshot(collection(db, window.trainingsPath), (snapshot) => {
-                if(!window.isReady) return;
-                window.trainings = []; snapshot.forEach(doc => window.trainings.push({ ...doc.data(), id: doc.id }));
-                if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings();
-                if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers();
-            });
-
-            onSnapshot(collection(db, window.financesPath), (snapshot) => {
-                if(!window.isReady) return;
-                window.finances = []; snapshot.forEach(doc => window.finances.push({ ...doc.data(), id: doc.id }));
-                if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances();
-            });
-        }
-        
-        window.showSection = function(sectionId) {
-            // Oculta todas las secciones
-            const sections = ['dashboard', 'finances', 'attendance', 'players', 'matches', 'financesForm', 'attendanceForm', 'playerForm', 'matchForm'];
-            sections.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
-            
-            // Muestra solo la que se solicitó
-            const target = document.getElementById(sectionId);
-            if (target) target.classList.remove('hidden');
-
-            // Actualiza el color de los botones en el menú
-            const menuItems = ['dashboard', 'players', 'attendance', 'matches', 'finances'];
-            menuItems.forEach(id => {
-                const btn = document.getElementById('nav-side-' + id);
-                if (!btn) return;
-                if (id === sectionId) {
-                    btn.classList.remove('text-brand-100', 'dark:text-slate-400', 'border-transparent');
-                    btn.classList.add('bg-brand-800', 'dark:bg-slate-800', 'text-white', 'border-brand-400', 'dark:border-slate-400');
-                } else {
-                    btn.classList.add('text-brand-100', 'dark:text-slate-400', 'border-transparent');
-                    btn.classList.remove('bg-brand-800', 'dark:bg-slate-800', 'text-white', 'border-brand-400', 'dark:border-slate-400');
-                }
-            });
-
-            // Sube al inicio de la pantalla automáticamente
-            window.scrollTo(0, 0);
-
-            // Si se tocó un botón en móvil, cierra el menú lateral automáticamente
-            const sidebar = document.getElementById('side-menu');
-            if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
-                window.toggleMenu();
-            }
-        };
-
-        window.toggleMenu = function() {
-            // Abre o cierra el menú lateral para los celulares
-            const menu = document.getElementById('side-menu');
-            const overlay = document.getElementById('side-menu-overlay');
-            if (menu) menu.classList.toggle('-translate-x-full');
-            if (overlay) overlay.classList.toggle('force-hidden');
-        };
-
-        window.onload = function() {
-            window.isReady = true; 
-            setupRealtimeListeners(); 
-            window.setupPWA(); 
-            window.setupDarkMode();
-            
-            window.showSection('dashboard'); 
-            window.setFilter('all'); 
-            window.updateAdminUI();
-            
-            document.addEventListener('mousemove', window.dragMove); 
-            document.addEventListener('mouseup', window.dragEnd);
-            const pitch = document.getElementById('tactical-pitch');
-            if(pitch) { pitch.addEventListener('touchmove', window.dragMove, {passive: false}); pitch.addEventListener('touchend', window.dragEnd); }
-        };
-
-        window.updateAdminUI = function() {
-            const btn = document.getElementById('btn-admin');
-            if (window.isAdmin) { document.body.classList.remove('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>'; } 
-            else { document.body.classList.add('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-lock text-slate-400"></i>'; }
-        };
-
-        window.toggleAdmin = function() { 
-            if(window.isAdmin) { window.isAdmin=false; localStorage.removeItem('nisus_admin'); window.updateAdminUI(); window.showToast("Modo lectura"); } 
-            else { document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('admin-pin').value=''; document.getElementById('admin-pin').focus(); } 
-        };
-        
-        window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
-        
-        window.verifyPin = function() { 
-            if(document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin=true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("Edición desbloqueada"); } 
-            else { window.showToast("PIN incorrecto", true); }
-        };
-
-        window.pendingConfirm = null;
-        window.showConfirm = function(msg, action) { 
-            document.getElementById('confirm-msg').textContent = msg; window.pendingConfirm = action; 
-            const modal = document.getElementById('confirmModal'); const content = document.getElementById('confirmModalContent'); 
-            modal.classList.remove('hidden'); setTimeout(() => { content.classList.remove('scale-95', 'opacity-0'); content.classList.add('scale-100', 'opacity-100'); }, 10); 
-        };
-        window.closeConfirm = function() { 
-            const modal = document.getElementById('confirmModal'); const content = document.getElementById('confirmModalContent'); 
-            content.classList.remove('scale-100', 'opacity-100'); content.classList.add('scale-95', 'opacity-0'); 
-            setTimeout(() => { modal.classList.add('hidden'); window.pendingConfirm = null; }, 200); 
-        };
-        window.executeConfirm = function() { if(window.pendingConfirm) window.pendingConfirm(); window.closeConfirm(); };
-
-        window.setFilter = function(f) { 
-            window.currentFilter = f; 
-            ['all','f11','f7'].forEach(x=>{ 
-                const btnTop = document.getElementById(`btn-filter-${x}`); if(btnTop) btnTop.className = x===f ? "text-xs px-2 sm:text-sm sm:px-3 py-1 rounded-md bg-white dark:bg-slate-700 text-brand-900 dark:text-white font-bold shadow-sm transition" : "text-xs px-2 sm:text-sm sm:px-3 py-1 rounded-md text-brand-100 dark:text-slate-400 hover:text-white transition font-medium";
-                const btnSide = document.getElementById(`btn-side-filter-${x}`); if(btnSide) btnSide.className = x===f ? "flex-1 py-1 rounded-md bg-white dark:bg-slate-700 text-brand-900 dark:text-white font-bold shadow-sm transition text-center" : "flex-1 py-1 rounded-md text-brand-100 dark:text-slate-400 hover:text-white transition font-medium text-center";
-            }); 
-            
-            const d = document.getElementById('dashboard'); if(d && !d.classList.contains('hidden')) window.updateDashboard(); 
-            const p = document.getElementById('players'); if(p && !p.classList.contains('hidden')) window.renderPlayers(); 
-            const m = document.getElementById('matches'); if(m && !m.classList.contains('hidden')) window.renderMatches(); 
-        };
-        
-        window.setSeasonFilter = function(s) { 
-            window.currentSeason = s; 
-            const d = document.getElementById('dash-season-label'); if(d) { if(s==='all') d.classList.add('hidden'); else { d.textContent=`(T. ${s})`; d.classList.remove('hidden'); } } 
-            const selTop = document.getElementById('season-filter'); if(selTop && selTop.value !== s) selTop.value = s;
-            const selSide = document.getElementById('season-filter-side'); if(selSide && selSide.value !== s) selSide.value = s;
-            window.setFilter(window.currentFilter); 
-        };
-        
-        window.updateSeasonDropdown = function() { 
-            const cur = window.currentSeason; 
-            const unique = [...new Set(window.matches.map(m => String(m.season||'')).filter(s=>s.trim()!==''))].sort((a,b)=>b.localeCompare(a)); 
-            const renderSel = (selId) => { const sel = document.getElementById(selId); if(!sel) return; sel.innerHTML = '<option value="all">Todas las Temporadas</option>'; unique.forEach(s => sel.innerHTML += `<option value="${s}">T. ${s}</option>`); if(cur==='all'||unique.includes(cur)) sel.value = cur; else sel.value='all'; };
-            renderSel('season-filter'); renderSel('season-filter-side');
-            if(cur!=='all' && !unique.includes(cur)) window.currentSeason='all';
-        };
-
         window.generateKitSVG = function(shirt, accent, short, sock, accent2 = null) {
-            const cid = 'clip-' + Math.random().toString(36).substr(2, 9); let extraPaths = '';
+            const cid = 'clip-' + Math.random().toString(36).substr(2, 9);
+            let extraPaths = '';
+            
             if (accent2) {
-                extraPaths += `<rect x="35" y="0" width="30" height="100" fill="${accent}"/>`; extraPaths += `<rect x="33" y="0" width="2" height="100" fill="${accent2}"/>`; extraPaths += `<rect x="65" y="0" width="2" height="100" fill="${accent2}"/>`; 
-                extraPaths += `<polygon points="0,0 25,0 25,50 0,50" fill="${accent}"/>`; extraPaths += `<polygon points="75,0 100,0 100,50 75,50" fill="${accent}"/>`; 
-                extraPaths += `<path d="M35 15 Q50 35 65 15 Z" fill="${accent2}"/>`; extraPaths += `<polygon points="0,35 25,45 25,55 0,45" fill="${accent2}"/>`; extraPaths += `<polygon points="100,35 75,45 75,55 100,45" fill="${accent2}"/>`; extraPaths += `<rect x="20" y="75" width="60" height="5" fill="${accent2}"/>`; 
-            } else { extraPaths += `<path d="M40 15 C45 25, 55 25, 60 15 Z" fill="${accent}"/>`; }
+                extraPaths += `<rect x="35" y="0" width="30" height="100" fill="${accent}"/>`; 
+                extraPaths += `<rect x="33" y="0" width="2" height="100" fill="${accent2}"/>`; 
+                extraPaths += `<rect x="65" y="0" width="2" height="100" fill="${accent2}"/>`; 
+                
+                extraPaths += `<polygon points="0,0 25,0 25,50 0,50" fill="${accent}"/>`; 
+                extraPaths += `<polygon points="75,0 100,0 100,50 75,50" fill="${accent}"/>`; 
+                
+                extraPaths += `<path d="M35 15 Q50 35 65 15 Z" fill="${accent2}"/>`; 
+                extraPaths += `<polygon points="0,35 25,45 25,55 0,45" fill="${accent2}"/>`; 
+                extraPaths += `<polygon points="100,35 75,45 75,55 100,45" fill="${accent2}"/>`; 
+                extraPaths += `<rect x="20" y="75" width="60" height="5" fill="${accent2}"/>`; 
+            } else {
+                extraPaths += `<path d="M40 15 C45 25, 55 25, 60 15 Z" fill="${accent}"/>`;
+            }
 
             return `<svg viewBox="0 0 100 120" style="width:100%;height:100%;filter:drop-shadow(0px 2px 2px rgba(0,0,0,0.2));">
                 <defs><clipPath id="${cid}"><path d="M25 15 C35 15, 65 15, 75 15 L90 35 L75 45 L75 80 L25 80 L25 45 L10 35 Z"/></clipPath></defs>
@@ -1042,7 +1133,12 @@
             const kitChoice = document.getElementById('m-kit')?.value || 'white_blue';
             let nShirt='#ffffff', nAcc='#0284c7', nShort='#111827', nSock='#111827', nAcc2='#111827'; 
             if (kitChoice === 'black') { nShirt='#111827'; nAcc='#111827'; nAcc2=null; }
-            const oppShirt = document.getElementById('m-opp-shirt')?.value || '#ff0000'; const oppShort = document.getElementById('m-opp-shorts')?.value || '#ff0000'; const oppSock = document.getElementById('m-opp-socks')?.value || '#ff0000'; const oppGk = document.getElementById('m-opp-gk')?.value || '#00ff00';
+            
+            const oppShirt = document.getElementById('m-opp-shirt')?.value || '#ff0000';
+            const oppShort = document.getElementById('m-opp-shorts')?.value || '#ff0000';
+            const oppSock = document.getElementById('m-opp-socks')?.value || '#ff0000';
+            const oppGk = document.getElementById('m-opp-gk')?.value || '#00ff00';
+
             const dNOut = document.getElementById('kit-nisus-outfield'); if(dNOut) dNOut.innerHTML = window.generateKitSVG(nShirt, nAcc, nShort, nSock, nAcc2);
             const dNGk = document.getElementById('kit-nisus-gk'); if(dNGk) dNGk.innerHTML = window.generateKitSVG('#eab308', '#111827', '#111827', '#111827');
             const dOOut = document.getElementById('kit-opp-outfield'); if(dOOut) dOOut.innerHTML = window.generateKitSVG(oppShirt, oppShirt, oppShort, oppSock);
@@ -1050,7 +1146,31 @@
             const lbl = document.getElementById('label-opp-kit'); if(lbl) lbl.textContent = document.getElementById('m-opponent')?.value || 'Rival';
         };
 
-        window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').textContent = 'Añadir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.showSection('playerForm'); };
+        window.toggleReturnDateField = function() {
+            const status = document.getElementById('p-status').value;
+            const container = document.getElementById('p-return-date-container');
+            const returnDateInput = document.getElementById('p-return-date');
+            if (status === 'injured' || status === 'absent') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+                returnDateInput.value = ''; // Limpiar si cambia de estado
+            }
+        };
+
+        window.newPlayer = function() { 
+            document.getElementById('player-form').reset(); 
+            document.getElementById('p-id').value = ''; 
+            document.getElementById('form-title').textContent = 'Añadir Miembro'; 
+            document.getElementById('p-image-preview').classList.add('hidden'); 
+            document.getElementById('p-image-placeholder').classList.remove('hidden'); 
+            document.getElementById('p-image-base64').value = ''; 
+            const sel = document.getElementById('p-position'); 
+            for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; 
+            window.toggleReturnDateField();
+            window.showSection('playerForm'); 
+        };
+        
         window.handleImageUpload = function(e) { const f = e.target.files[0]; if(!f)return; const r = new FileReader(); r.onload=function(ev){ const img=new Image(); img.onload=function(){ const cv=document.createElement('canvas'); const ct=cv.getContext('2d'); let w=img.width,h=img.height; if(w>h&&w>150){h*=150/w;w=150;}else if(h>150){w*=150/h;h=150;} cv.width=w;cv.height=h;ct.drawImage(img,0,0,w,h); const url=cv.toDataURL('image/jpeg',0.8); document.getElementById('p-image-base64').value=url; document.getElementById('p-image-preview').src=url; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); }; img.src=ev.target.result; }; r.readAsDataURL(f); };
         
         window.savePlayer = async function(e) {
@@ -1058,21 +1178,40 @@
             const btn = document.getElementById('btn-save-player'); btn.disabled=true; btn.textContent="Guardando...";
             const id = document.getElementById('p-id').value; const docId = id || window.generateId();
             const positions = Array.from(document.getElementById('p-position').selectedOptions).map(o=>o.value);
+            const pStatus = document.getElementById('p-status').value || 'active';
+            let returnD = null;
+            if (pStatus === 'injured' || pStatus === 'absent') {
+                returnD = document.getElementById('p-return-date').value || null;
+            }
+            
             const oldP = window.players.find(x => x.id === id);
-            const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: document.getElementById('p-image-base64').value, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: document.getElementById('p-status').value||'active', availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
+            const pData = { 
+                id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, 
+                showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, 
+                positions: positions, image: document.getElementById('p-image-base64').value, birthdate: document.getElementById('p-birthdate').value, 
+                foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD,
+                availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, 
+                isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked 
+            };
+            
             if(oldP && oldP.debtAmount) pData.debtAmount = oldP.debtAmount;
-            try { await setDoc(doc(db, window.playersPath, docId), pData); window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar"; }
+
+            try { await db.collection(window.playersPath).doc(docId).set(pData); window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar"; }
         };
 
         window.editPlayer = function(id) {
             const p = window.players.find(x => x.id === id); if(!p) return;
-            document.getElementById('p-id').value = p.id; document.getElementById('p-name').value = p.name; document.getElementById('p-alias').value = p.alias||''; document.getElementById('p-show-alias').checked = p.showAlias||false; document.getElementById('p-number').value = p.number||''; document.getElementById('p-image-base64').value = p.image||''; document.getElementById('p-birthdate').value = p.birthdate||''; document.getElementById('p-foot').value = p.foot||''; document.getElementById('p-status').value = p.status||'active'; document.getElementById('p-avail-f11').checked = p.availableF11; document.getElementById('p-avail-f7').checked = p.availableF7; document.getElementById('p-is-staff').checked = p.isStaff||false; document.getElementById('p-is-paid-up').checked = p.isPaidUp!==false;
+            document.getElementById('p-id').value = p.id; document.getElementById('p-name').value = p.name; document.getElementById('p-alias').value = p.alias||''; document.getElementById('p-show-alias').checked = p.showAlias||false; document.getElementById('p-number').value = p.number||''; document.getElementById('p-image-base64').value = p.image||''; document.getElementById('p-birthdate').value = p.birthdate||''; document.getElementById('p-foot').value = p.foot||''; 
+            document.getElementById('p-status').value = p.status||'active'; 
+            document.getElementById('p-return-date').value = p.returnDate || '';
+            document.getElementById('p-avail-f11').checked = p.availableF11; document.getElementById('p-avail-f7').checked = p.availableF7; document.getElementById('p-is-staff').checked = p.isStaff||false; document.getElementById('p-is-paid-up').checked = p.isPaidUp!==false;
             const sel = document.getElementById('p-position'); const pos = p.positions||(p.position?[p.position]:[]); for(let i=0;i<sel.options.length;i++) sel.options[i].selected = pos.includes(sel.options[i].value);
             if(p.image){ document.getElementById('p-image-preview').src=p.image; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); } else { document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); }
+            window.toggleReturnDateField();
             window.showSection('playerForm');
         };
 
-        window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador?', async () => { try { await deleteDoc(doc(db, window.playersPath, id)); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
+        window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador?', async () => { try { await db.collection(window.playersPath).doc(id).delete(); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
 
         window.renderPlayers = function() {
             const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
@@ -1089,7 +1228,14 @@
             if(list.length===0){ grid.innerHTML='<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">No hay registros</div>'; return; }
 
             list.forEach(p => {
-                const games = window.getPlayerStat(p, 'games'); const goals = window.getPlayerStat(p, 'goals'); const assists = window.getPlayerStat(p, 'assists'); const reds = window.getPlayerStat(p, 'reds'); const yellows = window.getPlayerStat(p, 'yellows'); const mvps = window.getPlayerStat(p, 'mvps'); const cleanSheets = window.getPlayerStat(p, 'cleanSheets'); const attendance = window.trainings?window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length:0;
+                const games = window.getPlayerStat(p, 'games'); 
+                const goals = window.getPlayerStat(p, 'goals'); 
+                const assists = window.getPlayerStat(p, 'assists'); 
+                const yellows = window.getPlayerStat(p, 'yellows'); 
+                const reds = window.getPlayerStat(p, 'reds');
+                const mvps = window.getPlayerStat(p, 'mvps'); 
+                const cleanSheets = window.getPlayerStat(p, 'cleanSheets');
+                const attendance = window.trainings?window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length:0;
 
                 let b='';
                 if(p.availableF11) b+='<span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/50">F11</span> ';
@@ -1101,9 +1247,16 @@
                 else b+='<span class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50"><i class="fas fa-check-circle"></i> Al Día</span> ';
 
                 let sb='', oc='opacity-100';
-                if(p.status==='injured'){ sb='<span class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-0.5 rounded text-[10px] border border-red-200 dark:border-red-800/50"><i class="fas fa-briefcase-medical"></i> Lesión</span>'; oc='opacity-70 hover:opacity-100'; }
+                
+                const formatRetDate = (d) => {
+                    if(!d) return '';
+                    const [y,m,day] = d.split('-');
+                    return ` (Hasta ${day}/${m})`;
+                };
+                
+                if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-0.5 rounded text-[10px] border border-red-200 dark:border-red-800/50"><i class="fas fa-briefcase-medical"></i> Lesión${formatRetDate(p.returnDate)}</span>`; oc='opacity-70 hover:opacity-100'; }
                 else if(p.status==='suspended'){ sb='<span class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-0.5 rounded text-[10px] border border-red-200 dark:border-red-800/50"><i class="fas fa-ban"></i> Sanción</span>'; oc='opacity-70 hover:opacity-100'; }
-                else if(p.status==='absent'){ sb='<span class="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] border border-slate-300 dark:border-slate-600"><i class="fas fa-plane"></i> Ausente</span>'; oc='opacity-70 hover:opacity-100'; }
+                else if(p.status==='absent'){ sb=`<span class="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] border border-slate-300 dark:border-slate-600"><i class="fas fa-plane"></i> Ausente${formatRetDate(p.returnDate)}</span>`; oc='opacity-70 hover:opacity-100'; }
 
                 let pb='', sh='';
                 if(p.isStaff){
@@ -1132,8 +1285,11 @@
             
             let age='--', ft=p.foot?p.foot.toUpperCase():'N/E'; 
             if(p.birthdate) {
-                const bdParts = p.birthdate.split('-'); const birthDate = new Date(bdParts[0], bdParts[1] - 1, bdParts[2]); const today = new Date();
-                let calcAge = today.getFullYear() - birthDate.getFullYear(); const m = today.getMonth() - birthDate.getMonth();
+                const bdParts = p.birthdate.split('-');
+                const birthDate = new Date(bdParts[0], bdParts[1] - 1, bdParts[2]);
+                const today = new Date();
+                let calcAge = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
                 if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { calcAge--; }
                 age = calcAge + ' Años';
             }
@@ -1144,6 +1300,17 @@
                 if((m.lineup&&m.lineup.some(l=>l.playerId===p.id)) || (m.events&&m.events.some(e=>e.type==='sub'&&e.playerId===p.id))) { mp++; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) mw++; }
             });
             const wr = mp>0?Math.round((mw/mp)*100)+'%':'0%';
+            
+            let statusBanner = '';
+            if (p.status === 'injured') {
+                const retStr = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
+                statusBanner = `<div class="bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded font-bold text-xs uppercase mb-3"><i class="fas fa-briefcase-medical mr-1"></i> Lesionado (${retStr})</div>`;
+            } else if (p.status === 'absent') {
+                const retStr = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
+                statusBanner = `<div class="bg-slate-500/20 text-slate-300 border border-slate-500/50 px-3 py-1 rounded font-bold text-xs uppercase mb-3"><i class="fas fa-plane mr-1"></i> Ausente (${retStr})</div>`;
+            } else if (p.status === 'suspended') {
+                 statusBanner = `<div class="bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded font-bold text-xs uppercase mb-3"><i class="fas fa-ban mr-1"></i> Sancionado</div>`;
+            }
             
             let discHtml = '';
             const uniqueTournaments = [...new Set(window.matches.filter(m => m.status === 'finished' || m.status === 'forfait').map(m => m.tournament))].filter(Boolean);
@@ -1171,6 +1338,7 @@
                     <div class="absolute top-4 right-4 opacity-50"><img src="escudo.png" class="w-10 h-10 object-contain" onerror="this.style.display='none'"></div>
                     <div class="w-32 h-32 rounded-full border-4 border-slate-600 bg-slate-800 flex items-center justify-center mt-6 mb-3 overflow-hidden shadow-lg">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-bold">${n.charAt(0)}</span>`}</div>
                     <h2 class="text-2xl font-bold uppercase tracking-wide text-center w-full truncate border-b border-slate-700 pb-1" style="font-size:${n.length>15?'1.25rem':'1.5rem'}">${n}</h2>${a}
+                    ${statusBanner}
                     <div class="flex justify-center gap-2 mt-1 text-[9px] font-medium text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">EDAD: ${age}</span><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">PIE: ${ft}</span><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">VIC: ${wr}</span></div>
                     <p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest font-bold">ESTADÍSTICAS ${fL} - ${sL}</p>
                     ${sH} ${mvps>0?`<div class="mt-2 bg-yellow-900/50 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/50"><i class="fas fa-star"></i> ${mvps} MVP</div>`:''}
@@ -1220,20 +1388,29 @@
             const status = document.getElementById('m-status').value;
             
             let goalsUs = null, goalsThem = null, mvp = null;
-            if (status === 'finished') { goalsUs = document.getElementById('m-goals-us').value || 0; goalsThem = document.getElementById('m-goals-them').value || 0; mvp = document.getElementById('m-mvp') ? document.getElementById('m-mvp').value : null; } 
-            else if (status === 'forfait') { goalsUs = 3; goalsThem = 0; mvp = null; }
+            if (status === 'finished') {
+                goalsUs = document.getElementById('m-goals-us').value || 0;
+                goalsThem = document.getElementById('m-goals-them').value || 0;
+                mvp = document.getElementById('m-mvp') ? document.getElementById('m-mvp').value : null;
+            } else if (status === 'forfait') {
+                goalsUs = 3; goalsThem = 0; mvp = null;
+            }
             
             const newMatch = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: status, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: goalsUs, goalsThem: goalsThem, mvp: mvp, captain: document.getElementById('m-captain')?document.getElementById('m-captain').value:null, notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: JSON.parse(JSON.stringify(window.currentEvents)) };
 
-            try { await setDoc(doc(db, window.matchesPath, docId), newMatch); window.showToast('Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
+            try { await db.collection(window.matchesPath).doc(docId).set(newMatch); window.showToast('Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
         };
 
-        window.deleteMatch = function(id) { window.showConfirm('¿Borrar partido?', async () => { try { await deleteDoc(doc(db, window.matchesPath, id)); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
+        window.deleteMatch = function(id) { window.showConfirm('¿Borrar partido?', async () => { try { await db.collection(window.matchesPath).doc(id).delete(); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
 
         window.toggleScoreFields = () => { 
-            const s = document.getElementById('m-status').value; const c = document.getElementById('m-score-container'); const lbl = document.getElementById('label-opponent'); 
+            const s = document.getElementById('m-status').value; 
+            const c = document.getElementById('m-score-container'); 
+            const lbl = document.getElementById('label-opponent'); 
             if(lbl) lbl.textContent = document.getElementById('m-opponent').value || 'Rival'; 
-            if(s==='finished') { c.classList.remove('hidden'); window.updateMvpSelect(); } else { c.classList.add('hidden'); } 
+            
+            if(s==='finished') { c.classList.remove('hidden'); window.updateMvpSelect(); } 
+            else { c.classList.add('hidden'); } 
         };
         
         window.handleModalityChange = () => { window.updateFormationOptions(); const mod = document.getElementById('m-modality').value; const max = mod==='f11'?11:7; window.currentLineup = window.currentLineup.filter(l => { const p = window.players.find(x=>x.id===l.playerId); return p && (mod==='f11'?p.availableF11:p.availableF7); }); let c=0; window.currentLineup.forEach(p => { const s = window.players.find(x=>x.id===p.playerId)?.isStaff; if(!s && p.x!==null && p.y!==null) { c++; if(c>max) {p.x=null;p.y=null;} } }); window.renderCallupList(); window.drawTacticalBoard(); };
@@ -1242,13 +1419,15 @@
 
         window.renderCallupList = function() {
             const list = document.getElementById('m-callup-list'); if(!list) return; list.innerHTML = '';
-            const mod = document.getElementById('m-modality').value; const tourn = document.getElementById('m-tournament').value;
+            const mod = document.getElementById('m-modality').value;
+            const tourn = document.getElementById('m-tournament').value;
             window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
                 if(mod==='f11' && !p.availableF11) return; if(mod==='f7' && !p.availableF7) return;
                 const isC = window.currentLineup.some(l=>l.playerId===p.id);
                 const disc = window.getDiscipline(p.id, tourn);
                 const badge = disc.suspended ? `<span class="bg-red-600 text-white text-[9px] px-1 rounded ml-1 font-bold">SANCIONADO</span>` : (disc.yellows > 0 ? `<span class="text-yellow-600 text-[10px] ml-1 font-bold" title="${disc.yellows} Amarillas">🟨${disc.yellows}</span>` : '');
                 const labelColor = disc.suspended ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300';
+                
                 list.innerHTML += `<div class="flex items-center gap-2"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"><label for="cb-${p.id}" class="truncate ${labelColor} text-xs cursor-pointer flex-1">${p.isStaff?'(CT) ':''}${p.number?p.number+'-':''}${p.name} ${badge}</label></div>`;
             });
             window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
@@ -1310,7 +1489,9 @@
             const mod = document.getElementById('m-modality').value, max = mod==='f11'?11:7, fk = document.getElementById('m-formation').value;
             let onPitch=0;
             
-            if(fk && formations[mod] && formations[mod][fk]) { formations[mod][fk].forEach(c => { const s = document.createElement('div'); s.className="formation-slot"; s.style.left=c.x+'%'; s.style.top=c.y+'%'; s.innerHTML=c.label; pitch.appendChild(s); }); }
+            if(fk && formations[mod] && formations[mod][fk]) { 
+                formations[mod][fk].forEach(c => { const s = document.createElement('div'); s.className="formation-slot"; s.style.left=c.x+'%'; s.style.top=c.y+'%'; s.innerHTML=c.label; pitch.appendChild(s); }); 
+            }
             
             window.currentLineup.forEach(l => {
                 const p = window.players.find(x=>x.id===l.playerId); if(!p) return;
@@ -1322,8 +1503,12 @@
                 let evGoals=0, evAssists=0, evCards='', evSaved=0;
                 window.currentEvents.forEach(e => {
                     if(e.playerId === p.id) {
-                        if(['goals', 'penalty', 'freekick'].includes(e.type)) evGoals++; if(e.type === 'assists') evAssists++;
-                        if(e.type === 'yellows') evCards = '🟨'; if(e.type === 'double_yellow' || e.type === 'reds') evCards = '🟥'; if(e.type === 'saved') evSaved++;
+                        if(['goals', 'penalty', 'freekick'].includes(e.type)) evGoals++;
+                        if(e.type === 'assists') evAssists++;
+                        if(e.type === 'yellows') evCards = '🟨';
+                        if(e.type === 'double_yellow') evCards = '🟥'; // Visually treat double_yellow as red
+                        if(e.type === 'reds') evCards = '🟥';
+                        if(e.type === 'saved') evSaved++;
                     }
                 });
                 
@@ -1340,8 +1525,13 @@
                 if (p.showAlias && p.alias) displayLabel = p.alias;
                 const initial = (p.name || '?').charAt(0).toUpperCase();
 
-                if (p.isStaff) { tok.style.borderColor = '#9333ea'; tok.innerHTML = (p.image ? `<img src="${p.image}" alt="">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f3e8ff; border-radius:50%;"><i class="fas fa-user-tie text-purple-600"></i></div>`) + `<span class="name-label" style="background: rgba(107, 33, 168, 0.9);">${displayLabel}</span>` + iconHtml; } 
-                else { if (p.image) tok.innerHTML = `${dor}${cap}<img src="${p.image}" alt=""><span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`; else tok.innerHTML = `${dor}${cap}${initial}<span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`; }
+                if (p.isStaff) {
+                    tok.style.borderColor = '#9333ea';
+                    tok.innerHTML = (p.image ? `<img src="${p.image}" alt="">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f3e8ff; border-radius:50%;"><i class="fas fa-user-tie text-purple-600"></i></div>`) + `<span class="name-label" style="background: rgba(107, 33, 168, 0.9);">${displayLabel}</span>` + iconHtml;
+                } else {
+                    if (p.image) tok.innerHTML = `${dor}${cap}<img src="${p.image}" alt=""><span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`;
+                    else tok.innerHTML = `${dor}${cap}${initial}<span class="name-label">${displayLabel}${gkIcon}</span>${iconHtml}`;
+                }
 
                 tok.onmousedown = window.dragStart; tok.addEventListener('touchstart', window.dragStart, {passive: false});
 
@@ -1351,8 +1541,29 @@
             const bdg = document.getElementById('pitch-count-badge'); if(bdg) { bdg.textContent=`${onPitch}/${max} en cancha`; bdg.className=`px-2 py-1 text-xs font-bold rounded ${onPitch>max?'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400':onPitch===max?'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400':'bg-brand-100 dark:bg-brand-900/30 text-brand-800 dark:text-brand-300'}`; }
         };
 
-        window.dragStart = function(e) { if(!window.isAdmin) return window.showToast("Solo edición", true); window.draggedElement = e.target.closest('.player-token'); if(!window.draggedElement) return; const p = document.getElementById('tactical-pitch'); if(window.draggedElement.parentElement !== p) { window.draggedElement.style.position='absolute'; window.draggedElement.style.transform='translate(-50%, -50%)'; p.appendChild(window.draggedElement); } };
-        window.dragMove = function(e) { if(!window.draggedElement) return; if(e.type==='touchmove' && e.cancelable) e.preventDefault(); const p = document.getElementById('tactical-pitch'); const r = p.getBoundingClientRect(); let cx = e.type.includes('touch')?e.touches[0].clientX:e.clientX; let cy = e.type.includes('touch')?e.touches[0].clientY:e.clientY; window.draggedElement.style.left = (((cx - r.left)/r.width)*100)+'%'; window.draggedElement.style.top = (((cy - r.top)/r.height)*100)+'%'; };
+        window.dragStart = function(e) { 
+            if(!window.isAdmin) return window.showToast("Solo edición", true); 
+            window.draggedElement = e.target.closest('.player-token'); 
+            if(!window.draggedElement) return; 
+            const p = document.getElementById('tactical-pitch'); 
+            if(window.draggedElement.parentElement !== p) { 
+                window.draggedElement.style.position='absolute'; 
+                window.draggedElement.style.transform='translate(-50%, -50%)'; 
+                p.appendChild(window.draggedElement); 
+            } 
+        };
+        
+        window.dragMove = function(e) { 
+            if(!window.draggedElement) return; 
+            if(e.type==='touchmove' && e.cancelable) e.preventDefault(); 
+            const p = document.getElementById('tactical-pitch'); 
+            const r = p.getBoundingClientRect(); 
+            let cx = e.type.includes('touch')?e.touches[0].clientX:e.clientX; 
+            let cy = e.type.includes('touch')?e.touches[0].clientY:e.clientY; 
+            window.draggedElement.style.left = (((cx - r.left)/r.width)*100)+'%'; 
+            window.draggedElement.style.top = (((cy - r.top)/r.height)*100)+'%'; 
+        };
+        
         window.dragEnd = function(e) {
             if(!window.draggedElement) return;
             const p = document.getElementById('tactical-pitch'), r = p.getBoundingClientRect();
@@ -1369,7 +1580,10 @@
                         const coords = formations[mod][fk]; let nrst = coords[0], mD = Infinity;
                         coords.forEach(c => { const d = Math.sqrt(Math.pow(nx-c.x,2)+Math.pow(ny-c.y,2)); if(d<mD){mD=d; nrst=c;} });
                         const occIdx = window.currentLineup.findIndex(l=>l.x===nrst.x && l.y===nrst.y && l.playerId!==pid);
-                        if(occIdx>=0) { if(ox===null) { window.currentLineup[occIdx].x=null; window.currentLineup[occIdx].y=null; } else { window.currentLineup[occIdx].x=ox; window.currentLineup[occIdx].y=oy; } }
+                        if(occIdx>=0) {
+                            if(ox===null) { window.currentLineup[occIdx].x=null; window.currentLineup[occIdx].y=null; } 
+                            else { window.currentLineup[occIdx].x=ox; window.currentLineup[occIdx].y=oy; }
+                        }
                         window.currentLineup[idx].x=nrst.x; window.currentLineup[idx].y=nrst.y;
                     } else { window.currentLineup[idx].x=nx; window.currentLineup[idx].y=ny; }
                 }
@@ -1395,19 +1609,41 @@
                 const kitBadge = m.kit==='white_blue' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border dark:border-blue-800/50 ml-1"><i class="fas fa-tshirt"></i> B/A</span>` : `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 dark:bg-slate-950 text-white border dark:border-slate-800 ml-1"><i class="fas fa-tshirt"></i> Negro</span>`;
 
                 let stat='', scor='', btn='';
-                if(m.status==='pending') { stat=`<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-xs font-bold px-2 py-1 rounded-full"><i class="far fa-clock mr-1"></i>Por Jugar</span>`; scor=`<div class="text-2xl font-black text-slate-300 dark:text-slate-600">VS</div>`; } 
-                else if (m.status==='forfait') { stat=`<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 text-xs font-bold px-2 py-1 rounded-full border border-purple-200 dark:border-purple-800"><i class="fas fa-gavel mr-1"></i>Forfait (W.O.)</span>`; scor=`<div class="flex items-center gap-4"><span class="text-3xl font-black text-green-600 dark:text-green-500">3</span><span class="text-slate-300 dark:text-slate-600 font-bold">-</span><span class="text-3xl font-black text-slate-800 dark:text-slate-400">0</span></div>`; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800/50 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`; }
-                else { stat=`<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Finalizado</span>`; let col = 'text-slate-500 dark:text-slate-400'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) col='text-green-600 dark:text-green-500'; else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)) col='text-red-500 dark:text-red-400'; scor=`<div class="flex items-center gap-4"><span class="text-3xl font-black ${col}">${m.goalsUs}</span><span class="text-slate-300 dark:text-slate-600 font-bold">-</span><span class="text-3xl font-black text-slate-800 dark:text-slate-200">${m.goalsThem}</span></div>`; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800/50 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`; }
+                if(m.status==='pending') { 
+                    stat=`<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-xs font-bold px-2 py-1 rounded-full"><i class="far fa-clock mr-1"></i>Por Jugar</span>`; scor=`<div class="text-2xl font-black text-slate-300 dark:text-slate-600">VS</div>`; 
+                } 
+                else if (m.status==='forfait') {
+                    stat=`<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 text-xs font-bold px-2 py-1 rounded-full border border-purple-200 dark:border-purple-800"><i class="fas fa-gavel mr-1"></i>Forfait (W.O.)</span>`; scor=`<div class="flex items-center gap-4"><span class="text-3xl font-black text-green-600 dark:text-green-500">3</span><span class="text-slate-300 dark:text-slate-600 font-bold">-</span><span class="text-3xl font-black text-slate-800 dark:text-slate-400">0</span></div>`; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800/50 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
+                }
+                else {
+                    stat=`<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Finalizado</span>`; let col = 'text-slate-500 dark:text-slate-400'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) col='text-green-600 dark:text-green-500'; else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)) col='text-red-500 dark:text-red-400'; scor=`<div class="flex items-center gap-4"><span class="text-3xl font-black ${col}">${m.goalsUs}</span><span class="text-slate-300 dark:text-slate-600 font-bold">-</span><span class="text-3xl font-black text-slate-800 dark:text-slate-200">${m.goalsThem}</span></div>`; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800/50 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`;
+                }
                 
                 let evs='';
-                if(m.events && m.events.length>0 && m.status !== 'forfait') { const g = m.events.filter(e=>['goals','penalty','freekick'].includes(e.type)); if(g.length>0) evs += `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 text-center"><i class="fas fa-futbol text-green-600 dark:text-green-500 mr-1"></i> ` + g.map(x=>{ const p = window.players.find(y=>y.id===x.playerId); return (p?(p.name||'').split(' ')[0]:'?') + (x.type==='penalty'?' 🎯':x.type==='freekick'?' 👟':''); }).join(', ') + `</p>`; }
+                if(m.events && m.events.length>0 && m.status !== 'forfait') {
+                    const g = m.events.filter(e=>['goals','penalty','freekick'].includes(e.type));
+                    if(g.length>0) evs += `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 text-center"><i class="fas fa-futbol text-green-600 dark:text-green-500 mr-1"></i> ` + g.map(x=>{ const p = window.players.find(y=>y.id===x.playerId); return (p?(p.name||'').split(' ')[0]:'?') + (x.type==='penalty'?' 🎯':x.type==='freekick'?' 👟':''); }).join(', ') + `</p>`;
+                }
                 if(m.status==='finished'&&m.mvp) { const p=window.players.find(x=>x.id===m.mvp); if(p) evs+=`<p class="text-[11px] font-bold text-yellow-600 dark:text-yellow-500 mt-1 text-center"><i class="fas fa-star mr-1"></i>MVP: ${(p.name||'').split(' ')[0]}</p>`; }
                 
                 let loc=''; if(m.location) loc=m.location.startsWith('http')?`<a href="${m.location}" target="_blank" class="text-blue-500 dark:text-blue-400 hover:underline flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> Ver en Maps</a>`:`<p class="text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1 text-[11px] font-medium mt-1"><i class="fas fa-map-marker-alt"></i> ${m.location.substring(0,25)}</p>`;
                 
                 let nShirt='#ffffff', nAcc='#0284c7', nShort='#111827', nSock='#111827', nAcc2='#111827'; if (m.kit === 'black') { nShirt='#111827'; nAcc='#111827'; nAcc2=null; }
                 
-                grid.innerHTML += `<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex flex-col hover:shadow-md transition-shadow"><div class="flex justify-between items-start mb-4"><div class="flex flex-wrap items-center gap-1">${stat} ${tournBadge} ${seasonBadge} ${kitBadge}</div><div class="admin-only flex gap-2"><button onclick="window.editMatch('${m.id}')" class="text-blue-400 hover:text-blue-500"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="text-red-400 hover:text-red-500"><i class="fas fa-trash"></i></button></div></div><div class="flex flex-col items-center justify-center py-2 mb-4 border-y border-dashed border-slate-200 dark:border-slate-700"><div class="text-center mb-3"><p class="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase">${dateStr}</p>${loc}</div><div class="flex items-center justify-between w-full px-2"><div class="text-center w-1/3"><div class="w-10 h-14 mx-auto">${window.generateKitSVG(nShirt,nAcc,nShort,nSock,nAcc2)}</div><p class="font-bold text-slate-800 dark:text-slate-200 text-[10px] mt-1">NISUS FC</p></div><div class="w-1/3 flex justify-center">${scor}</div><div class="text-center w-1/3"><div class="w-10 h-14 mx-auto">${window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000')}</div><p class="font-bold text-slate-800 dark:text-slate-200 text-[10px] mt-1 truncate max-w-[80px]" title="${m.opponent}">${m.opponent}</p></div></div>${evs}</div>${btn}<button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/40 rounded-lg text-sm font-medium transition"><i class="fas fa-clipboard-list mr-1"></i> Ver Detalles</button></div>`;
+                grid.innerHTML += `
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex flex-col hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4"><div class="flex flex-wrap items-center gap-1">${stat} ${tournBadge} ${seasonBadge} ${kitBadge}</div><div class="admin-only flex gap-2"><button onclick="window.editMatch('${m.id}')" class="text-blue-400 hover:text-blue-500"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="text-red-400 hover:text-red-500"><i class="fas fa-trash"></i></button></div></div>
+                        <div class="flex flex-col items-center justify-center py-2 mb-4 border-y border-dashed border-slate-200 dark:border-slate-700">
+                            <div class="text-center mb-3"><p class="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase">${dateStr}</p>${loc}</div>
+                            <div class="flex items-center justify-between w-full px-2">
+                                <div class="text-center w-1/3"><div class="w-10 h-14 mx-auto">${window.generateKitSVG(nShirt,nAcc,nShort,nSock,nAcc2)}</div><p class="font-bold text-slate-800 dark:text-slate-200 text-[10px] mt-1">NISUS FC</p></div>
+                                <div class="w-1/3 flex justify-center">${scor}</div>
+                                <div class="text-center w-1/3"><div class="w-10 h-14 mx-auto">${window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000')}</div><p class="font-bold text-slate-800 dark:text-slate-200 text-[10px] mt-1 truncate max-w-[80px]" title="${m.opponent}">${m.opponent}</p></div>
+                            </div>
+                            ${evs}
+                        </div>
+                        ${btn}<button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/40 rounded-lg text-sm font-medium transition"><i class="fas fa-clipboard-list mr-1"></i> Ver Detalles</button>
+                    </div>`;
             });
         };
 
@@ -1420,8 +1656,9 @@
             if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) { rCol='#4ade80'; rTxt='VICTORIA'; } else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)) { rCol='#f87171'; rTxt='DERROTA'; }
             
             let evH = ''; 
-            if(m.status === 'forfait') { evH = `<div class="mt-6 bg-purple-900/40 border border-purple-500/30 px-6 py-3 rounded-xl text-center backdrop-blur-sm"><p class="text-sm text-purple-300 font-bold tracking-wide uppercase"><i class="fas fa-gavel mr-2"></i>Victoria Administrativa (Forfait)</p></div>`; } 
-            else {
+            if(m.status === 'forfait') {
+                evH = `<div class="mt-6 bg-purple-900/40 border border-purple-500/30 px-6 py-3 rounded-xl text-center backdrop-blur-sm"><p class="text-sm text-purple-300 font-bold tracking-wide uppercase"><i class="fas fa-gavel mr-2"></i>Victoria Administrativa (Forfait)</p></div>`;
+            } else {
                 if(m.events) { const g = m.events.filter(e=>['goals','penalty','freekick'].includes(e.type)); if(g.length>0) evH += `<div class="mt-4 text-center"><p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Goleadores</p><p class="text-sm text-white font-medium"><i class="fas fa-futbol text-green-400 mr-2"></i>` + g.map(x=>{ const p = window.players.find(y=>y.id===x.playerId); return (p?(p.name||'').split(' ')[0]:'?') + (x.type==='penalty'?' 🎯':x.type==='freekick'?' 👟':''); }).join(', ') + `</p></div>`; }
                 if(m.mvp) { const p=window.players.find(x=>x.id===m.mvp); if(p) evH+=`<div class="mt-3 text-center"><p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">MVP</p><p class="text-sm text-yellow-400 font-bold"><i class="fas fa-star mr-1"></i>${(p.name||'').split(' ')[0]}</p></div>`; }
             }
@@ -1497,9 +1734,10 @@
         window.newAttendance = function() { document.getElementById('attendance-form').reset(); document.getElementById('a-id').value = ''; document.getElementById('a-date').value = new Date().toISOString().split('T')[0]; window.currentAttendees=[]; window.renderAttendanceChecklist(); window.showSection('attendanceForm'); };
         window.renderAttendanceChecklist = function() { const c = document.getElementById('a-players-list'); if(!c)return; c.innerHTML=''; window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ const ch = window.currentAttendees.includes(p.id)?'checked':''; c.innerHTML+=`<div class="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="att-${p.id}" ${ch} onchange="window.handleAttChange('${p.id}',this.checked)" class="rounded text-brand-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600"><label for="att-${p.id}" class="text-sm font-medium flex-1 cursor-pointer text-slate-800 dark:text-slate-200">${p.isStaff?'(CT) ':''}${p.name}</label></div>`; }); };
         window.handleAttChange = (id,chk) => { if(chk){if(!window.currentAttendees.includes(id))window.currentAttendees.push(id);}else window.currentAttendees=window.currentAttendees.filter(x=>x!==id); };
-        window.saveAttendance = async function(e) { e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); const id = document.getElementById('a-id').value; const docId = id||window.generateId(); try { await setDoc(doc(db, window.trainingsPath, docId), { id:docId, date:document.getElementById('a-date').value, location:document.getElementById('a-location').value, notes:document.getElementById('a-notes').value, attendees:window.currentAttendees }); window.showToast('Guardado'); window.showSection('attendance'); } catch(er){window.showToast('Error',true);} };
+        window.saveAttendance = async function(e) { e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); const id = document.getElementById('a-id').value; const docId = id||window.generateId(); try { await db.collection(window.trainingsPath).doc(docId).set({ id:docId, date:document.getElementById('a-date').value, location:document.getElementById('a-location').value, notes:document.getElementById('a-notes').value, attendees:window.currentAttendees }); window.showToast('Guardado'); window.showSection('attendance'); } catch(er){window.showToast('Error',true);} };
         window.editAttendance = function(id) { const t = window.trainings.find(x=>x.id===id); if(!t)return; document.getElementById('a-id').value=t.id; document.getElementById('a-date').value=t.date; document.getElementById('a-location').value=t.location||''; document.getElementById('a-notes').value=t.notes||''; window.currentAttendees=[...(t.attendees||[])]; window.renderAttendanceChecklist(); window.showSection('attendanceForm'); };
-        window.deleteAttendance = function(id) { window.showConfirm('¿Borrar entreno?', async()=>{ try{ await deleteDoc(doc(db, window.trainingsPath, id)); window.showToast('Eliminado'); }catch(e){window.showToast('Error',true);} }); };
+        window.deleteAttendance = function(id) { window.showConfirm('¿Borrar entreno?', async()=>{ try{ await db.collection(window.trainingsPath).doc(id).delete(); window.showToast('Eliminado'); }catch(e){window.showToast('Error',true);} }); };
+        
         window.renderTrainings = function() { const u=document.getElementById('attendance-grid-upcoming'), p=document.getElementById('attendance-grid-past'); if(!u||!p)return; u.innerHTML=''; p.innerHTML=''; const td=new Date().toISOString().split('T')[0]; const s=[...window.trainings].sort((a,b)=>new Date(b.date)-new Date(a.date)); s.forEach(t=>{ const up=t.date>=td; let loc=''; if(t.location) loc=t.location.startsWith('http')?`<a href="${t.location}" target="_blank" class="text-blue-500 dark:text-blue-400 hover:underline text-[11px]"><i class="fas fa-map-marker-alt"></i> Maps</a>`:`<p class="text-slate-500 dark:text-slate-400 text-[11px]"><i class="fas fa-map-marker-alt"></i> ${t.location}</p>`; const html=`<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-shadow"><div class="flex justify-between mb-3"><span class="${up?'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400':'bg-brand-100 dark:bg-brand-900/30 text-brand-800 dark:text-brand-300'} text-[10px] font-bold px-2 py-1 rounded"><i class="fas ${up?'fa-clock':'fa-check'}"></i> ${up?'Pronto':'Realizado'}</span><div class="admin-only"><button onclick="window.editAttendance('${t.id}')" class="text-blue-400 hover:text-blue-500 mr-2 transition"><i class="fas fa-edit"></i></button><button onclick="window.deleteAttendance('${t.id}')" class="text-red-400 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div></div><h3 class="text-lg font-bold text-slate-800 dark:text-white">${t.date}</h3>${loc}<p class="text-sm font-medium mt-2 text-slate-600 dark:text-slate-300"><i class="fas fa-users text-slate-400 dark:text-slate-500"></i> ${t.attendees?t.attendees.length:0} asistentes</p></div>`; if(up) u.innerHTML+=html; else p.innerHTML+=html; }); if(!u.innerHTML) u.innerHTML='<p class="text-slate-500 dark:text-slate-400 text-sm italic">Sin programar</p>'; if(!p.innerHTML) p.innerHTML='<p class="text-slate-500 dark:text-slate-400 text-sm italic">Sin historial</p>'; };
 
         window.newTransaction = function(type) { document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; document.getElementById('fin-form-title').textContent = type === 'income' ? 'Ingreso Libre' : 'Pagar Arbitraje'; const cat = document.getElementById('f-category'); if(type === 'income') cat.innerHTML = '<option value="Ingreso Varios">Aporte Libre</option>'; else cat.innerHTML = '<option value="Arbitraje">Arbitraje (Divide entre convocados)</option>'; window.toggleMatchSelect(); window.showSection('financesForm'); };
@@ -1534,12 +1772,12 @@
                         const ids = m.lineup.map(l => l.playerId).filter(x => { const p = window.players.find(y => y.id === x); return p && !p.isStaff; }); 
                         if (ids.length > 0) { 
                             const cuota = amt / ids.length; const updates = []; 
-                            ids.forEach(pid => { const p = window.players.find(x => x.id === pid); updates.push(setDoc(doc(db, window.playersPath, pid), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + cuota }, { merge: true })); }); 
+                            ids.forEach(pid => { const p = window.players.find(x => x.id === pid); updates.push(db.collection(window.playersPath).doc(pid).set({ isPaidUp: false, debtAmount: (p.debtAmount || 0) + cuota }, { merge: true })); }); 
                             await Promise.all(updates); 
                         } 
                     } 
                 } 
-                await setDoc(doc(db, window.financesPath, docId), { id: docId, type: document.getElementById('f-type').value, amount: amt, date: document.getElementById('f-date').value, category: cat, description: document.getElementById('f-desc').value, matchId: cat === 'Arbitraje' ? mId : null }); 
+                await db.collection(window.financesPath).doc(docId).set({ id: docId, type: document.getElementById('f-type').value, amount: amt, date: document.getElementById('f-date').value, category: cat, description: document.getElementById('f-desc').value, matchId: cat === 'Arbitraje' ? mId : null }); 
                 window.showToast('Guardado'); window.showSection('finances'); 
             } catch(er) { window.showToast('Error', true); } finally { btn.disabled = false; btn.textContent = 'Guardar'; }
         };
@@ -1547,7 +1785,7 @@
         window.deleteTransaction = function(id) { 
             if(!window.isAdmin) return window.showToast('Desbloquea el candado', true);
             if(!id) return window.showToast('Error: Registro corrupto', true);
-            window.showConfirm('¿Borrar este movimiento?', async () => { try { await deleteDoc(doc(db, window.financesPath, id)); window.showToast('Borrado exitoso'); } catch(e) { window.showToast('Error al borrar', true); } }); 
+            window.showConfirm('¿Borrar este movimiento?', async () => { try { await db.collection(window.financesPath).doc(id).delete(); window.showToast('Borrado exitoso'); } catch(e) { window.showToast('Error al borrar', true); } }); 
         };
 
         window.clearFinancialHistory = function() {
@@ -1557,7 +1795,7 @@
                 window.showToast('Limpiando...', false); let c = 0;
                 for (let i = 0; i < window.finances.length; i++) {
                     const t = window.finances[i];
-                    if (t.id) { await deleteDoc(doc(db, window.financesPath, t.id)).catch(e=>console.log(e)); c++; }
+                    if (t.id) { await db.collection(window.financesPath).doc(t.id).delete().catch(e=>console.log(e)); c++; }
                 }
                 window.showToast(`Se borraron ${c} registros de caja`);
             });
@@ -1571,13 +1809,46 @@
                     let debt = p.debtAmount || 0;
                     if(debt > 0) { 
                         const newFinId = window.generateId();
-                        await setDoc(doc(db, window.financesPath, newFinId), { id: newFinId, type: 'income', amount: debt, date: new Date().toISOString().split('T')[0], category: 'Saldar Deuda', description: `Saldó deuda: ${p.name}` }); 
+                        await db.collection(window.financesPath).doc(newFinId).set({ id: newFinId, type: 'income', amount: debt, date: new Date().toISOString().split('T')[0], category: 'Saldar Deuda', description: `Saldó deuda: ${p.name}` }); 
                     } 
-                    await setDoc(doc(db, window.playersPath, id), { isPaidUp: true, debtAmount: 0 }, { merge: true }); window.showToast('Deuda saldada e ingreso creado'); 
-                } else { await setDoc(doc(db, window.playersPath, id), { isPaidUp: false }, { merge: true }); window.showToast('Marcado deudor'); } 
+                    await db.collection(window.playersPath).doc(id).set({ isPaidUp: true, debtAmount: 0 }, { merge: true }); window.showToast('Deuda saldada e ingreso creado'); 
+                } else { await db.collection(window.playersPath).doc(id).set({ isPaidUp: false }, { merge: true }); window.showToast('Marcado deudor'); } 
             } catch(e) { window.showToast('Error', true); } 
         };
         
+        window.copyGroupMessage = function() {
+            const debtors = window.players.filter(p => !p.isStaff && (p.isPaidUp === false || (p.debtAmount && p.debtAmount > 0)));
+            if (debtors.length === 0) return window.showToast("¡Excelente! No hay deudores hoy.");
+            
+            let msg = `📋 *ESTADO DE CUENTAS NISUS FC*\n\nHola a todos. Para mantener el equipo funcionando, necesitamos que los siguientes jugadores se pongan al día con sus cuotas:\n\n`;
+            let total = 0;
+            debtors.forEach(p => {
+                const amt = p.debtAmount || 0;
+                msg += `🔸 *${p.name}*: $${amt.toFixed(2)}\n`;
+                total += amt;
+            });
+            msg += `\n*Deuda Total del Equipo:* $${total.toFixed(2)}\n\nPor favor, realizar el pago a la brevedad. ¡Gracias! 💪`;
+            
+            const tempInput = document.createElement("textarea");
+            tempInput.value = msg;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            window.showToast("Mensaje grupal copiado al portapapeles");
+        };
+
+        window.copyIndividualMessage = function(name, amount) {
+            const msg = `¡Hola *${name}*! 👋\nTe escribimos de la administración de *NISUS FC*.\n\nActualmente tienes un saldo pendiente de *$${amount.toFixed(2)}* por pagos atrasados o arbitraje.\n\nPor favor, ponte al día lo antes posible para mantener las finanzas del equipo al 100% 🏆.\n\n¡Gracias!`;
+            const tempInput = document.createElement("textarea");
+            tempInput.value = msg;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            window.showToast(`Mensaje copiado para ${name}`);
+        };
+
         window.renderFinances = function() {
             let bal = 0, inC = 0, outC = 0; const tl = document.getElementById('transactions-list'); if(tl) tl.innerHTML = '';
             window.finances.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => { 
@@ -1594,43 +1865,10 @@
                 dl.innerHTML = '';
                 window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { 
                     const isP = p.isPaidUp !== false && (!p.debtAmount || p.debtAmount === 0); 
-                    let actionButtons = `<button onclick="window.togglePaidUp('${p.id}', ${isP})" class="admin-only text-[10px] px-3 py-1.5 rounded border font-bold shadow-sm ${isP ? 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white border-slate-300 dark:border-slate-600' : 'bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'} uppercase transition-colors">${isP ? 'Hacer Deudor' : '💰 Saldar'}</button>`;
-                    if (!isP) actionButtons += `<button onclick="window.copyIndividualMessage('${p.id}')" class="admin-only text-[10px] px-3 py-1.5 rounded border font-bold shadow-sm bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 uppercase transition-colors ml-1" title="Copiar mensaje individual"><i class="fab fa-whatsapp text-sm"></i></button>`;
-                    dl.innerHTML += `<li class="px-5 py-3 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-700/50 last:border-0 transition-colors"><div class="flex items-center gap-3"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-lg"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[10px] font-bold uppercase ${isP ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${isP ? 'Al Día' : `Deuda: $${(p.debtAmount||0).toFixed(2)}`}</p></div></div><div class="flex gap-2">${actionButtons}</div></li>`; 
+                    dl.innerHTML += `<li class="px-5 py-3 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-700/50 last:border-0 transition-colors"><div class="flex items-center gap-3"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-lg"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[10px] font-bold uppercase ${isP ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${isP ? 'Al Día' : `Deuda: $${(p.debtAmount||0).toFixed(2)}`}</p></div></div><div class="flex items-center gap-2">${!isP ? `<button onclick="window.copyIndividualMessage('${p.name}', ${p.debtAmount||0})" class="admin-only text-green-500 hover:text-green-600 transition" title="Copiar mensaje"><i class="fab fa-whatsapp text-lg"></i></button>` : ''}<button onclick="window.togglePaidUp('${p.id}', ${isP})" class="admin-only text-[10px] px-3 py-1.5 rounded border font-bold shadow-sm ${isP ? 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white border-slate-300 dark:border-slate-600' : 'bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'} uppercase transition-colors">${isP ? 'Hacer Deudor' : '💰 Saldar'}</button></div></li>`; 
                 });
             }
         };
-
-        // --- INICIALIZACIÓN ROBUSTA DE LA APP ---
-        window.initApp = async function() {
-            window.setupPWA(); 
-            window.setupDarkMode();
-            window.setFilter('all'); 
-            window.updateAdminUI();
-            
-            // 1. Mostrar el Dashboard de inmediato (para ver la interfaz de carga)
-            window.showSection('dashboard'); 
-            
-            // 2. Iniciar la carga de datos (Pausa el proceso aquí hasta terminar)
-            await loadInitialData();
-            
-            // 3. Marcar la app como lista y arrancar las escuchas en vivo
-            window.isReady = true; 
-            setupRealtimeListeners(); 
-            
-            // 4. Configurar interactividad extra (arrastrar pizarra)
-            document.addEventListener('mousemove', window.dragMove); 
-            document.addEventListener('mouseup', window.dragEnd);
-            const pitch = document.getElementById('tactical-pitch');
-            if(pitch) { pitch.addEventListener('touchmove', window.dragMove, {passive: false}); pitch.addEventListener('touchend', window.dragEnd); }
-        };
-
-        // Escuchamos a que el navegador termine de leer el HTML antes de arrancar todo
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', window.initApp);
-        } else {
-            window.initApp();
-        }
     </script>
 </body>
 </html>
