@@ -309,7 +309,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="matches-grid"></div>
         </section>
 
-        <!-- FORMULARIOS (Ocultos por defecto) -->
+        <!-- FORMULARIOS -->
         
         <section id="financesForm" class="hidden modal-animate">
             <div class="max-w-md mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-8 transition-colors">
@@ -317,18 +317,26 @@
                 <form id="finances-form" onsubmit="window.saveTransaction(event)" class="space-y-5">
                     <input type="hidden" id="f-id"> <input type="hidden" id="f-type">
                     <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Monto ($) *</label><input type="number" step="0.01" min="0.01" id="f-amount" oninput="if(document.getElementById('f-category').value === 'Gasto Grupal') window.calcGastoGrupal(); else window.calcArbitraje();" required class="input-premium font-black text-lg"></div>
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Monto ($) *</label><input type="number" step="0.01" min="0.01" id="f-amount" oninput="window.handleAmountInput()" required class="input-premium font-black text-lg"></div>
                         <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Fecha *</label><input type="date" id="f-date" required class="input-premium"></div>
-                </div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría *</label><select id="f-category" onchange="window.toggleMatchSelect()" required class="input-premium"></select></div>
-                <div id="f-match-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Partido asociado</label><select id="f-match" onchange="window.handleMatchChange()" class="input-premium"><option value="">Selecciona...</option></select><div id="f-arbitraje-calc" class="mt-3 text-sm text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 hidden"></div></div>
-                <div id="f-player-container" class="hidden"><label id="f-player-label" class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jugador *</label><select id="f-player" class="input-premium"><option value="">Selecciona...</option></select></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Descripción *</label><input type="text" id="f-desc" required class="input-premium"></div>
-                <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-2"><button type="button" onclick="window.showSection('finances')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800" id="btn-cancel-fin">Cerrar</button><button type="submit" id="btn-save-fin" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar</button></div>
-            </form>
+                    </div>
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría *</label><select id="f-category" onchange="window.toggleMatchSelect()" required class="input-premium"></select></div>
+                    <div id="f-match-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Partido asociado *</label><select id="f-match" onchange="window.calcArbitraje()" class="input-premium"><option value="">Selecciona...</option></select><div id="f-arbitraje-calc" class="mt-3 text-sm text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 hidden"></div></div>
+                    <div id="f-player-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jugador *</label><select id="f-player" onchange="window.populateSpecificDebts()" class="input-premium"><option value="">Selecciona...</option></select></div>
+                    <div id="f-specific-debt-container" class="hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 text-brand-600 dark:text-brand-400">Vincular a deuda específica (Opcional)</label>
+                        <select id="f-specific-debt" onchange="window.handleSpecificDebtSelect()" class="input-premium text-xs mb-1">
+                            <option value="">Abono general a cuenta</option>
+                        </select>
+                        <p class="text-[10px] text-slate-400 italic">Si eliges una, el monto se calculará automáticamente, pero puedes modificarlo para hacer un pago parcial.</p>
+                    </div>
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Descripción *</label><input type="text" id="f-desc" required class="input-premium"></div>
+                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-2"><button type="button" onclick="window.showSection('finances')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800" id="btn-cancel-fin">Cerrar</button><button type="submit" id="btn-save-fin" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar</button></div>
+                </form>
             </div>
         </section>
 
+        <!-- (Se mantienen idénticos todos los demás formularios de la UI: attendanceForm, playerForm, matchForm, modales, toasts, pinModal) -->
         <section id="attendanceForm" class="hidden modal-animate">
             <div class="max-w-md mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-8 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white">Sesión Técnica</h2><button onclick="window.showSection('attendance')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
@@ -570,9 +578,24 @@
             </div>
         </div>
         
-        <div id="toast" class="fixed top-20 right-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 translate-x-[150%] z-[60] flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-bold text-sm"></span></div>
+        <!-- Modal Pago Específico -->
+        <div id="modalPaySpecific" class="hidden fixed inset-0 bg-slate-900/80 z-[70] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
+            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-md overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 transition-colors">
+                <div class="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                    <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-user text-brand-500"></i> <span id="pay-spec-name">Jugador</span></h3>
+                    <button onclick="document.getElementById('modalPaySpecific').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-5 overflow-y-auto max-h-[60vh] custom-scroll" id="pay-spec-list"></div>
+                <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Deuda Total:</span>
+                    <span class="text-xl font-black text-red-500" id="pay-spec-total">$0.00</span>
+                </div>
+            </div>
+        </div>
         
-        <div id="confirmModal" class="hidden fixed inset-0 bg-slate-900/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div id="toast" class="fixed top-20 right-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 translate-x-[150%] z-[80] flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-bold text-sm"></span></div>
+        
+        <div id="confirmModal" class="hidden fixed inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
             <div id="confirmModalContent" class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200 border border-slate-200 dark:border-slate-800">
                 <div class="p-8 text-center">
                     <div class="w-20 h-20 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-5 text-3xl"><i class="fas fa-exclamation-triangle"></i></div>
@@ -586,7 +609,7 @@
             </div>
         </div>
         
-        <div id="pinModal" class="hidden fixed inset-0 bg-slate-900/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
+        <div id="pinModal" class="hidden fixed inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-sm overflow-hidden p-8 text-center border border-slate-200 dark:border-slate-800 transition-colors">
                 <div class="w-20 h-20 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-500 flex items-center justify-center mx-auto mb-5 text-3xl"><i class="fas fa-lock"></i></div>
                 <h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Modo Edición</h3>
@@ -650,9 +673,51 @@
             }); return count;
         };
 
+        window.getPlayerDebts = function(playerId) {
+            const p = window.players.find(x => x.id === playerId);
+            if (!p) return { total: 0, debts: [] };
+            let rawDebts = [];
+            
+            // 1. Cobros manuales y multas directas
+            window.finances.filter(t => (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta') && t.playerId === playerId && !t.isPaid).forEach(t => { rawDebts.push({ type: 'direct', id: t.id, desc: `${t.category}: ${t.description}`, amount: t.amount, date: t.date }); });
+            
+            // 2. Arbitrajes grupales
+            window.finances.filter(t => t.category === 'Arbitraje' && t.matchId).forEach(t => {
+                const match = window.matches.find(m => m.id === t.matchId);
+                if (match && match.lineup && match.lineup.some(l => l.playerId === playerId)) {
+                    const validPlayers = match.lineup.filter(l => { const py = window.players.find(x => x.id === l.playerId); return py && !py.isStaff; });
+                    if (validPlayers.length > 0) {
+                        const cuota = t.amount / validPlayers.length;
+                        const paidId = `arb_${t.id}_${playerId}`;
+                        if (!t.paidBy || !t.paidBy.includes(playerId)) { rawDebts.push({ type: 'arbitraje', id: paidId, parentId: t.id, desc: `Arbitraje: vs ${match.opponent}`, amount: cuota, date: t.date }); }
+                    }
+                }
+            });
+
+            // 3. Obtener el historial de pagos de deudas específicas (Abonos)
+            window.finances.filter(t => t.category === 'Abono a Deuda (Jugador)' && t.playerId === playerId && t.specificDebtId).forEach(t => {
+                const targetDebt = rawDebts.find(d => d.id === t.specificDebtId);
+                if (targetDebt) { targetDebt.amount -= t.amount; }
+            });
+
+            rawDebts = rawDebts.filter(d => d.amount > 0.01).sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+            // Conciliación: Si el jugador debe menos (o nada) en su ficha, usamos pagos genéricos "huérfanos" para saldar lo más viejo
+            let surplus = rawDebts.reduce((sum, d) => sum + d.amount, 0) - (p.debtAmount || 0);
+            if (surplus > 0.01) {
+                rawDebts = rawDebts.filter(d => {
+                    if (surplus >= d.amount) { surplus -= d.amount; return false; }
+                    else if (surplus > 0) { d.amount -= surplus; surplus = 0; return true; }
+                    return true;
+                });
+            }
+
+            return { total: rawDebts.reduce((sum, d) => sum + d.amount, 0), debts: rawDebts };
+        };
+
         window.showToast = function(msg, isError = false) {
             const t = document.getElementById('toast'); if(!t) return; document.getElementById('toast-msg').textContent = msg;
-            t.className = `fixed top-20 right-4 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 z-[60] flex items-center gap-3 ${isError ? 'bg-red-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'}`;
+            t.className = `fixed top-20 right-4 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 z-[80] flex items-center gap-3 ${isError ? 'bg-red-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'}`;
             setTimeout(() => t.classList.remove('translate-x-[150%]'), 10); setTimeout(() => t.classList.add('translate-x-[150%]'), 3000);
         };
 
@@ -854,7 +919,7 @@
             if(pStatus === 'injured' || pStatus === 'absent') { returnD = document.getElementById('p-return-date').value || null; }
             const oldP = window.players.find(x => x.id === id);
             const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: document.getElementById('p-image-base64').value, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
-            if(oldP && oldP.debtAmount) pData.debtAmount = oldP.debtAmount;
+            if(oldP && oldP.debtAmount !== undefined) pData.debtAmount = oldP.debtAmount;
             try { await db.collection(window.playersPath).doc(docId).set(pData); window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Ficha"; }
         };
 
@@ -883,7 +948,10 @@
                 if(mvps>0) b+=`<span class="bg-yellow-500 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase shadow-sm"><i class="fas fa-star"></i> ${mvps}</span> `;
                 const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position==='Portero');
                 if(isGK && cleanSheets>0) b+=`<span class="bg-teal-500 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase shadow-sm">🛡️ ${cleanSheets}</span> `;
-                if(p.isPaidUp===false || (p.debtAmount && p.debtAmount>0)) b+='<span class="text-red-500 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> Deuda</span> ';
+                
+                // Calculamos la deuda real
+                const dData = window.getPlayerDebts(p.id);
+                if(dData.total > 0.01) b+=`<span class="text-red-500 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> $${dData.total.toFixed(2)}</span> `;
                 else b+='<span class="text-green-500 font-black text-[10px] ml-1"><i class="fas fa-check-circle"></i> Al Día</span> ';
 
                 let sb='', oc='';
@@ -998,58 +1066,25 @@
             const batch = db.batch();
             let multasAplicadas = 0;
 
-            // Revisamos todos los eventos guardados para generar las multas automáticas
             matchEvents.forEach(ev => {
-                // Si es Amarilla o Roja y NO se le ha cobrado antes
                 if (['yellows', 'double_yellow', 'reds'].includes(ev.type) && !ev.fineApplied) {
-                    
-                    // MONTO DE LAS MULTAS: Puedes modificar estos números 
-                    // Amarilla = $1.00,  Doble Amarilla/Roja = $3.00
                     const montoMulta = ev.type === 'yellows' ? 1.00 : 3.00; 
-                    
                     const finId = window.generateId();
                     const p = window.players.find(x => x.id === ev.playerId);
                     
                     if (p) {
-                        // 1. Registramos el Movimiento en Finanzas
-                        batch.set(db.collection(window.financesPath).doc(finId), {
-                            id: finId,
-                            type: 'expense',
-                            amount: montoMulta,
-                            date: document.getElementById('m-date').value,
-                            category: 'Cobro a Jugador',
-                            description: `Multa Automática (${ev.type==='yellows'?'Amarilla':'Roja'})`,
-                            matchId: docId,
-                            playerId: ev.playerId
-                        });
-                        
-                        // 2. Le sumamos la deuda al jugador
-                        batch.set(db.collection(window.playersPath).doc(ev.playerId), {
-                            isPaidUp: false,
-                            debtAmount: (p.debtAmount || 0) + montoMulta
-                        }, { merge: true });
-                        
-                        // 3. Marcamos el evento para no cobrarle doble si editas el partido
-                        ev.fineApplied = true;
-                        multasAplicadas++;
+                        batch.set(db.collection(window.financesPath).doc(finId), { id: finId, type: 'expense', amount: montoMulta, date: document.getElementById('m-date').value, category: 'Multa Tarjeta', description: `Multa Automática (${ev.type==='yellows'?'Amarilla':'Roja'})`, matchId: docId, playerId: ev.playerId, isPaid: false });
+                        batch.set(db.collection(window.playersPath).doc(ev.playerId), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + montoMulta }, { merge: true });
+                        ev.fineApplied = true; multasAplicadas++;
                     }
                 }
             });
 
             const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
             
-            // Guardamos el partido junto con las multas generadas
             batch.set(db.collection(window.matchesPath).doc(docId), nm);
 
-            try { 
-                await batch.commit(); 
-                window.showToast(multasAplicadas > 0 ? `Guardado (${multasAplicadas} multas aplicadas)` : 'Partido Guardado'); 
-                window.showSection('matches'); 
-            } catch(err) { 
-                window.showToast('Error', true); 
-            } finally { 
-                btn.disabled=false; btn.textContent="Guardar Partido"; 
-            }
+            try { await batch.commit(); window.showToast(multasAplicadas > 0 ? `Guardado (${multasAplicadas} multas aplicadas)` : 'Partido Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
         };
 
         window.deleteMatch = function(id) { window.showConfirm('¿Borrar partido permanentemente?', async () => { try { await db.collection(window.matchesPath).doc(id).delete(); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
@@ -1363,10 +1398,38 @@
             });
         };
 
-        window.newTransaction = function(type) { document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Ingreso Libre' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso'; const cat = document.getElementById('f-category'); if(type === 'income') cat.innerHTML = '<option value="Ingreso Varios">Aporte Libre</option>'; else cat.innerHTML = '<option value="Arbitraje">Arbitraje (Divide entre convocados)</option><option value="Multa Tarjeta">Multa por Tarjeta (Un jugador)</option><option value="Cobro Manual">Cobro Genérico a Jugador (Inscripción, etc.)</option>'; window.toggleMatchSelect(); window.updateAdminUI(); window.showSection('financesForm'); };
-        window.toggleMatchSelect = function() { const c = document.getElementById('f-category').value, mc = document.getElementById('f-match-container'), ms = document.getElementById('f-match'), ca = document.getElementById('f-arbitraje-calc'), pc = document.getElementById('f-player-container'), ps = document.getElementById('f-player'); if (c === 'Arbitraje' || c === 'Multa Tarjeta') { mc.classList.remove('hidden'); ms.required = true; let h = '<option value="">Selecciona Partido...</option>'; window.matches.filter(x => x.status === 'finished' || x.status === 'forfait').sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20).forEach(x => h += `<option value="${x.id}">${x.date} vs ${x.opponent}</option>`); ms.innerHTML = h; if(c === 'Arbitraje') { ca.classList.remove('hidden'); pc.classList.add('hidden'); ps.required = false; window.calcArbitraje(); } else { ca.classList.add('hidden'); pc.classList.remove('hidden'); ps.required = true; window.populateFinePlayers(); } } else if (c === 'Cobro Manual') { mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.remove('hidden'); ps.required = true; window.populateFinePlayers(); } else { mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.add('hidden'); ps.required = false; } };
-        window.handleMatchChange = function() { const c = document.getElementById('f-category').value; if(c === 'Arbitraje') window.calcArbitraje(); else if(c === 'Multa Tarjeta') window.populateFinePlayers(); };
-        window.populateFinePlayers = function() { const mId = document.getElementById('f-match').value, ps = document.getElementById('f-player'); let h = '<option value="">Selecciona Jugador...</option>'; if(mId && document.getElementById('f-category').value !== 'Cobro Manual') { const m = window.matches.find(x => x.id === mId); if(m && m.lineup) { m.lineup.forEach(l => { const p = window.players.find(x => x.id === l.playerId); if(p && !p.isStaff) h += `<option value="${p.id}">${p.name}</option>`; }); } } else { window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => h += `<option value="${p.id}">${p.name}</option>`); } ps.innerHTML = h; };
+        window.newTransaction = function(type) { document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Ingreso Libre' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso'; const cat = document.getElementById('f-category'); if(type === 'income') { cat.innerHTML = '<option value="Ingreso Varios">Aporte Libre / Patrocinio</option><option value="Abono a Deuda (Jugador)">Abono a Deuda (Jugador)</option>'; } else cat.innerHTML = '<option value="Arbitraje">Arbitraje (Divide entre convocados)</option><option value="Multa Tarjeta">Multa por Tarjeta (Aplica deuda)</option><option value="Cobro Manual">Gasto por Jugador (Aplica deuda)</option>'; window.toggleMatchSelect(); window.updateAdminUI(); window.showSection('financesForm'); };
+
+        window.toggleMatchSelect = function() { 
+            const c = document.getElementById('f-category').value, mc = document.getElementById('f-match-container'), ms = document.getElementById('f-match'), ca = document.getElementById('f-arbitraje-calc'), pc = document.getElementById('f-player-container'), ps = document.getElementById('f-player'), dc = document.getElementById('f-specific-debt-container'), ds = document.getElementById('f-specific-debt');
+            if (c === 'Arbitraje') { 
+                mc.classList.remove('hidden'); ms.required = true; ca.classList.remove('hidden'); pc.classList.add('hidden'); ps.required = false; dc.classList.add('hidden');
+                let h = '<option value="">Selecciona Partido...</option>'; window.matches.filter(x => x.status === 'finished' || x.status === 'forfait').sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20).forEach(x => h += `<option value="${x.id}">${x.date} vs ${x.opponent}</option>`); ms.innerHTML = h; window.calcArbitraje(); 
+            } else if (c === 'Multa Tarjeta' || c === 'Cobro Manual' || c === 'Abono a Deuda (Jugador)') { 
+                mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.remove('hidden'); ps.required = true; 
+                let h = '<option value="">Selecciona Jugador...</option>'; window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => h += `<option value="${p.id}">${p.name}</option>`); ps.innerHTML = h; 
+                if(c === 'Abono a Deuda (Jugador)') { dc.classList.remove('hidden'); ds.innerHTML = '<option value="">Abono general a cuenta</option>'; } else { dc.classList.add('hidden'); }
+            } else { mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.add('hidden'); ps.required = false; dc.classList.add('hidden'); } 
+        };
+
+        window.populateSpecificDebts = function() {
+            const cat = document.getElementById('f-category').value; if(cat !== 'Abono a Deuda (Jugador)') return;
+            const pId = document.getElementById('f-player').value; const ds = document.getElementById('f-specific-debt'); ds.innerHTML = '<option value="">Abono general a cuenta</option>';
+            if(pId) {
+                const dData = window.getPlayerDebts(pId);
+                dData.debts.forEach(d => { ds.innerHTML += `<option value="${d.id}" data-amount="${d.amount}">${d.desc} (Resta $${d.amount.toFixed(2)})</option>`; });
+                const amIn = document.getElementById('f-amount'); if(amIn.value) amIn.value = '';
+            }
+        };
+
+        window.handleSpecificDebtSelect = function() {
+            const ds = document.getElementById('f-specific-debt'); const sel = ds.options[ds.selectedIndex];
+            const amIn = document.getElementById('f-amount');
+            if (sel.value !== '') { amIn.value = sel.getAttribute('data-amount'); document.getElementById('f-desc').value = `Abono a: ${sel.text.split(' (')[0]}`; } else { amIn.value = ''; document.getElementById('f-desc').value = 'Abono a deuda'; }
+        };
+
+        window.handleAmountInput = function() { const c = document.getElementById('f-category').value; if (c === 'Arbitraje') window.calcArbitraje(); };
+
         window.calcArbitraje = function() { const mId = document.getElementById('f-match').value, amt = parseFloat(document.getElementById('f-amount').value) || 0, div = document.getElementById('f-arbitraje-calc'); if (!mId || amt <= 0) { div.innerHTML = '<span class="font-bold">Falta monto o partido</span>'; return; } const m = window.matches.find(x => x.id === mId); if (!m || !m.lineup) return; let c = 0; m.lineup.forEach(l => { const p = window.players.find(x => x.id === l.playerId); if (p && !p.isStaff) c++; }); if (c === 0) { div.innerHTML = '<span class="text-red-500 font-bold">Nadie convocado</span>'; return; } div.innerHTML = `<div class="flex justify-between mb-1 text-xs font-bold uppercase tracking-widest"><span>Convocados:</span> <span class="text-slate-900 dark:text-white">${c}</span></div><div class="flex justify-between text-brand-600 dark:text-brand-400 mt-2 pt-2 border-t border-blue-200 dark:border-blue-800/50 text-xs font-bold uppercase tracking-widest items-center"><span>Cuota C/U:</span> <span class="text-lg font-black">$${(amt/c).toFixed(2)}</span></div>`; };
 
         window.saveTransaction = async function(e) { 
@@ -1375,21 +1438,28 @@
             const docId = document.getElementById('f-id').value || window.generateId(), cat = document.getElementById('f-category').value, amt = parseFloat(document.getElementById('f-amount').value), mId = document.getElementById('f-match').value, pId = document.getElementById('f-player').value; 
             try { 
                 const batch = db.batch();
+                let specificDebtId = null;
+
                 if (cat === 'Arbitraje' && mId) { 
                     const m = window.matches.find(x => x.id === mId); 
                     if (m && m.lineup) { 
                         const ids = m.lineup.map(l => l.playerId).filter(x => { const p = window.players.find(y => y.id === x); return p && !p.isStaff; }); 
-                        if (ids.length > 0) { 
-                            const cuota = amt / ids.length; 
-                            ids.forEach(pid => { const p = window.players.find(x => x.id === pid); batch.set(db.collection(window.playersPath).doc(pid), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + cuota }, { merge: true }); }); 
-                        } 
+                        if (ids.length > 0) { const cuota = amt / ids.length; ids.forEach(pid => { const p = window.players.find(x => x.id === pid); batch.set(db.collection(window.playersPath).doc(pid), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + cuota }, { merge: true }); }); } 
                     } 
                 } else if ((cat === 'Multa Tarjeta' || cat === 'Cobro Manual') && pId) {
+                    const p = window.players.find(x => x.id === pId); if (p) { batch.set(db.collection(window.playersPath).doc(pId), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + amt }, { merge: true }); }
+                } else if (cat === 'Abono a Deuda (Jugador)' && pId) {
                     const p = window.players.find(x => x.id === pId);
-                    if (p) { batch.set(db.collection(window.playersPath).doc(pId), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + amt }, { merge: true }); }
+                    if (p) {
+                        let newDebt = (p.debtAmount || 0) - amt; if(newDebt < 0) newDebt = 0;
+                        batch.set(db.collection(window.playersPath).doc(pId), { isPaidUp: newDebt === 0, debtAmount: newDebt }, { merge: true });
+                        const sd = document.getElementById('f-specific-debt').value; if(sd) specificDebtId = sd;
+                    }
                 }
                 
-                let transactionData = { id: docId, type: document.getElementById('f-type').value, amount: amt, date: document.getElementById('f-date').value, category: cat, description: document.getElementById('f-desc').value, matchId: (cat === 'Arbitraje' || cat === 'Multa Tarjeta') ? mId : null, playerId: (cat === 'Multa Tarjeta' || cat === 'Cobro Manual') ? pId : null };
+                let transactionData = { id: docId, type: document.getElementById('f-type').value, amount: amt, date: document.getElementById('f-date').value, category: cat, description: document.getElementById('f-desc').value, matchId: (cat === 'Arbitraje') ? mId : null, playerId: (cat === 'Multa Tarjeta' || cat === 'Cobro Manual' || cat === 'Abono a Deuda (Jugador)') ? pId : null, isPaid: false };
+                if (specificDebtId) transactionData.specificDebtId = specificDebtId;
+
                 batch.set(db.collection(window.financesPath).doc(docId), transactionData);
                 await batch.commit(); 
                 window.showToast('Guardado'); window.showSection('finances'); 
@@ -1399,31 +1469,55 @@
         window.deleteTransaction = function(id) { if(!window.isAdmin) return window.showToast('Desbloquea el candado', true); if(!id) return; window.showConfirm('¿Borrar este movimiento?', async () => { try { await db.collection(window.financesPath).doc(id).delete(); window.showToast('Borrado exitoso'); } catch(e) { window.showToast('Error al borrar', true); } }); };
         window.clearFinancialHistory = function() { if(!window.isAdmin) return window.showToast('Desbloquea el candado', true); if(window.finances.length === 0) return window.showToast('El historial ya está vacío'); window.showConfirm('¿ELIMINAR TODO el historial financiero? La caja volverá a $0.00.', async () => { window.showToast('Limpiando...', false); let c = 0; for (let i = 0; i < window.finances.length; i++) { const t = window.finances[i]; if (t.id) { await db.collection(window.financesPath).doc(t.id).delete().catch(e=>console.log(e)); c++; } } window.showToast(`Se borraron ${c} registros de caja`); }); };
 
-        window.togglePaidUp = async function(id, isPaid) { 
-            if(!window.isAdmin) return window.showToast('Solo edición', true); const p = window.players.find(x => x.id === id); if(!p) return; 
-            try { 
-                if(!isPaid) { 
-                    let debt = p.debtAmount || 0;
-                    if(debt > 0) { const newFinId = window.generateId(); await db.collection(window.financesPath).doc(newFinId).set({ id: newFinId, type: 'income', amount: debt, date: new Date().toISOString().split('T')[0], category: 'Saldar Deuda', description: `Saldó deuda: ${p.name}` }); } 
-                    await db.collection(window.playersPath).doc(id).set({ isPaidUp: true, debtAmount: 0 }, { merge: true }); window.showToast('Deuda saldada e ingreso creado'); 
-                } else { await db.collection(window.playersPath).doc(id).set({ isPaidUp: false }, { merge: true }); window.showToast('Marcado deudor'); } 
-            } catch(e) { window.showToast('Error', true); } 
+        window.openPaySpecificModal = function(playerId) {
+            const p = window.players.find(x => x.id === playerId); if (!p) return;
+            const dData = window.getPlayerDebts(playerId);
+            document.getElementById('pay-spec-name').textContent = p.name;
+            const l = document.getElementById('pay-spec-list'); l.innerHTML = '';
+            
+            if (dData.debts.length === 0) { l.innerHTML = '<p class="text-sm text-center text-slate-500 font-bold italic py-6">No hay deudas detalladas pendientes</p>'; }
+            else {
+                dData.debts.forEach(d => {
+                    l.innerHTML += `<div class="flex justify-between items-center p-3 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm"><div class="flex-1"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">${d.desc}</p><p class="text-[9px] font-black text-slate-400 mt-1 tracking-widest">${d.date} <span class="text-red-500 ml-1">-${d.amount.toFixed(2)}</span></p></div><button onclick="window.paySpecificDebt('${playerId}', '${d.id}', '${d.type}', ${d.amount}, '${d.parentId||d.id}', '${d.desc}')" class="admin-only ml-3 shrink-0 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors border border-green-200 flex items-center gap-1"><i class="fas fa-check"></i> Pagar</button></div>`;
+                });
+            }
+            document.getElementById('pay-spec-total').textContent = `$${dData.total.toFixed(2)}`;
+            document.getElementById('modalPaySpecific').classList.remove('hidden');
         };
 
-        window.copyIndividualMessage = function(playerId) { const p = window.players.find(x=>x.id===playerId); if(!p) return; const debt = (p.debtAmount||0).toFixed(2); const msg = `¡Saludos *${p.name}*! \n\nEste es un recordatorio amistoso del equipo *NISUS FC*. Tienes un saldo pendiente de *$${debt}* 💰\n\nPor favor, ponte al día lo antes posible para que podamos seguir cubriendo los gastos del equipo 🏆.\n\n¡Gracias por tu compromiso!`; const temp = document.createElement("textarea"); temp.value = msg; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); document.body.removeChild(temp); window.showToast("Mensaje copiado"); };
-        window.copyGroupMessage = function() { let msg = `⚠️ *AVISO IMPORTANTE - NISUS FC* ⚠️\n\nEl siguiente es el estado de cuentas del equipo. Se solicita a los jugadores en la lista que se pongan al día a la brevedad posible:\n\n`; let d = false; window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ const isP = p.isPaidUp !== false && (!p.debtAmount || p.debtAmount === 0); if(!isP) { d = true; msg += `🔸 *${p.name}*: $${(p.debtAmount||0).toFixed(2)}\n`; } }); if(!d) return window.showToast("No hay deudores en la lista"); msg += `\n¡Apoyemos al equipo! ⚽ Gracias.`; const temp = document.createElement("textarea"); temp.value = msg; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); document.body.removeChild(temp); window.showToast("Mensaje grupal copiado"); };
+        window.paySpecificDebt = async function(playerId, debtId, type, amount, originalFinId, desc) {
+            if(!window.isAdmin) return window.showToast('Solo edición', true);
+            const p = window.players.find(x => x.id === playerId); if (!p) return;
+            try {
+                const batch = db.batch();
+                
+                // 1. Crear el movimiento de ingreso de dinero a la caja
+                const newFinId = window.generateId();
+                batch.set(db.collection(window.financesPath).doc(newFinId), { id: newFinId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: `Pago: ${desc} (${p.name.split(' ')[0]})`, playerId: playerId, specificDebtId: debtId, isPaid: true });
+                
+                // 2. Restar la deuda en la ficha del jugador
+                let newDebt = (p.debtAmount || 0) - amount; if (newDebt < 0) newDebt = 0;
+                batch.set(db.collection(window.playersPath).doc(playerId), { isPaidUp: newDebt === 0, debtAmount: newDebt }, { merge: true });
+                
+                // 3. Marcar la transacción original como pagada (si aplica)
+                if (type === 'direct') { batch.set(db.collection(window.financesPath).doc(originalFinId), { isPaid: true }, { merge: true }); } 
+                else if (type === 'arbitraje') {
+                    const originalFin = window.finances.find(x => x.id === originalFinId);
+                    if (originalFin) { const currentPaidBy = originalFin.paidBy || []; if (!currentPaidBy.includes(playerId)) { currentPaidBy.push(playerId); batch.set(db.collection(window.financesPath).doc(originalFinId), { paidBy: currentPaidBy }, { merge: true }); } }
+                }
+                
+                await batch.commit(); window.showToast('Deuda saldada correctamente'); document.getElementById('modalPaySpecific').classList.add('hidden');
+            } catch(e) { window.showToast('Error', true); }
+        };
+
+        window.copyGroupMessage = function() { let msg = `⚠️ *AVISO IMPORTANTE - NISUS FC* ⚠️\n\nEl siguiente es el estado de cuentas del equipo. Se solicita a los jugadores en la lista que se pongan al día a la brevedad posible:\n\n`; let d = false; window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ const dData = window.getPlayerDebts(p.id); if(dData.total > 0.01) { d = true; msg += `🔸 *${p.name}*: $${dData.total.toFixed(2)}\n`; } }); if(!d) return window.showToast("No hay deudores en la lista"); msg += `\n¡Apoyemos al equipo! ⚽ Gracias.`; const temp = document.createElement("textarea"); temp.value = msg; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); document.body.removeChild(temp); window.showToast("Mensaje grupal copiado"); };
 
         window.renderFinances = function() {
             let bal = 0, inC = 0, outC = 0; const tl = document.getElementById('transactions-list'); if(tl) tl.innerHTML = '';
             window.finances.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => { 
                 const isI = t.type === 'income'; if(isI) { bal += t.amount; inC += t.amount; } else { bal -= t.amount; outC += t.amount; } 
-                
                 let extraInfo = '';
-                if (t.playerId) {
-                    const p = window.players.find(x => x.id === t.playerId);
-                    if (p) extraInfo = ` <span class="text-orange-500 text-[10px] ml-2 font-black tracking-widest uppercase"><i class="fas fa-user mr-1"></i>${p.name.split(' ')[0]}</span>`;
-                }
-
+                if (t.playerId) { const p = window.players.find(x => x.id === t.playerId); if (p) extraInfo = ` <span class="text-orange-500 text-[10px] ml-2 font-black tracking-widest uppercase"><i class="fas fa-user mr-1"></i>${p.name.split(' ')[0]}</span>`; }
                 if(tl) tl.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"><td class="px-6 py-4"><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${t.description}${extraInfo}</p><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">${t.date} | ${t.category}</p></td><td class="px-6 py-4 text-right"><p class="text-lg font-black ${isI ? 'text-green-500' : 'text-red-500'}">${isI ? '+' : '-'}$${t.amount.toFixed(2)}</p><button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-red-500 transition mt-1"><i class="fas fa-trash"></i></button></td></tr>`; 
             }); 
             if(tl && !tl.innerHTML) tl.innerHTML = '<tr><td colspan="2" class="px-6 py-5 text-center text-sm font-medium text-slate-500">Sin movimientos</td></tr>';
@@ -1433,9 +1527,8 @@
             if(dl) {
                 dl.innerHTML = '';
                 window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { 
-                    const isP = p.isPaidUp !== false && (!p.debtAmount || p.debtAmount === 0); 
-                    let wAppBtn = ''; if(!isP) { wAppBtn = `<button onclick="window.copyIndividualMessage('${p.id}')" class="admin-only ml-2 text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20 w-8 h-8 rounded-lg flex items-center justify-center transition"><i class="fab fa-whatsapp text-lg"></i></button>`; }
-                    dl.innerHTML += `<li class="px-6 py-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/50 last:border-0 transition-colors"><div class="flex items-center gap-4"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-xl drop-shadow-sm"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[9px] font-black uppercase tracking-widest mt-0.5 ${isP ? 'text-green-500' : 'text-red-500'}">${isP ? 'Al Día' : `Deuda: $${(p.debtAmount||0).toFixed(2)}`}</p></div></div><div class="flex items-center whitespace-nowrap shrink-0"><button onclick="window.togglePaidUp('${p.id}', ${isP})" class="admin-only text-[9px] px-3 py-2 rounded-lg font-black tracking-widest shadow-sm uppercase transition-colors ${isP ? 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white border border-slate-200 dark:border-slate-700' : 'bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100'}">${isP ? 'Hacer Deudor' : '💰 Saldar'}</button>${wAppBtn}</div></li>`; 
+                    const dData = window.getPlayerDebts(p.id); const isP = dData.total <= 0.01;
+                    dl.innerHTML += `<li class="px-6 py-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/50 last:border-0 transition-colors"><div class="flex items-center gap-4"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-xl drop-shadow-sm"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[9px] font-black uppercase tracking-widest mt-0.5 ${isP ? 'text-green-500' : 'text-red-500'}">${isP ? 'Al Día' : `Deuda: $${dData.total.toFixed(2)}`}</p></div></div><div class="flex items-center whitespace-nowrap shrink-0">${isP ? `<span class="text-[9px] px-3 py-2 rounded-lg font-black tracking-widest uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">Sin Deuda</span>` : `<button onclick="window.openPaySpecificModal('${p.id}')" class="text-[9px] px-3 py-2 rounded-lg font-black tracking-widest shadow-sm uppercase transition-colors bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100">💰 Saldar</button>`}</div></li>`; 
                 });
             }
         };
@@ -1475,9 +1568,9 @@
             });
 
             db.collection(window.playersPath).onSnapshot((s) => { if(!window.isReady) return; window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id })); window.checkAutoActivations(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList(); if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
-            db.collection(window.matchesPath).onSnapshot((s) => { if(!window.isReady) return; window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); window.updateSeasonDropdown(); if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); });
+            db.collection(window.matchesPath).onSnapshot((s) => { if(!window.isReady) return; window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); window.updateSeasonDropdown(); if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
             db.collection(window.trainingsPath).onSnapshot((s) => { if(!window.isReady) return; window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id })); if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); });
-            db.collection(window.financesPath).onSnapshot((s) => { if(!window.isReady) return; window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+            db.collection(window.financesPath).onSnapshot((s) => { if(!window.isReady) return; window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); });
         }
 
         window.initApp = async function() { await loadInitialData(); setupRealtimeListeners(); window.setupPWA(); window.updateAdminUI(); document.addEventListener('mousemove', window.dragMove); document.addEventListener('mouseup', window.dragEnd); const p = document.getElementById('tactical-pitch'); if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } };
