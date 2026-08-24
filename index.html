@@ -309,8 +309,6 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="matches-grid"></div>
         </section>
 
-        <!-- FORMULARIOS -->
-        
         <section id="financesForm" class="hidden modal-animate">
             <div class="max-w-md mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-8 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white" id="fin-form-title">Movimiento</h2><button onclick="window.showSection('finances')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
@@ -336,7 +334,6 @@
             </div>
         </section>
 
-        <!-- (Se mantienen idénticos todos los demás formularios de la UI: attendanceForm, playerForm, matchForm, modales, toasts, pinModal) -->
         <section id="attendanceForm" class="hidden modal-animate">
             <div class="max-w-md mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-8 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white">Sesión Técnica</h2><button onclick="window.showSection('attendance')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
@@ -956,7 +953,7 @@
 
                 let sb='', oc='';
                 if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
-                else if(p.status==='suspended'){ sb='<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-ban mr-1"></i> Sanción</span>'; oc='opacity-75 hover:opacity-100'; }
+                else if(p.status==='suspended'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-ban mr-1"></i> Sanción</span>`; oc='opacity-75 hover:opacity-100'; }
                 else if(p.status==='absent'){ sb=`<span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-600 block mt-2 text-center w-full"><i class="fas fa-plane mr-1"></i> Ausente${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
 
                 let pb='', sh='';
@@ -1528,7 +1525,7 @@
                 dl.innerHTML = '';
                 window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { 
                     const dData = window.getPlayerDebts(p.id); const isP = dData.total <= 0.01;
-                    dl.innerHTML += `<li class="px-6 py-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/50 last:border-0 transition-colors"><div class="flex items-center gap-4"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-xl drop-shadow-sm"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[9px] font-black uppercase tracking-widest mt-0.5 ${isP ? 'text-green-500' : 'text-red-500'}">${isP ? 'Al Día' : `Deuda: $${dData.total.toFixed(2)}`}</p></div></div><div class="flex items-center whitespace-nowrap shrink-0">${isP ? `<span class="text-[9px] px-3 py-2 rounded-lg font-black tracking-widest uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">Sin Deuda</span>` : `<button onclick="window.openPaySpecificModal('${p.id}')" class="text-[9px] px-3 py-2 rounded-lg font-black tracking-widest shadow-sm uppercase transition-colors bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100">💰 Saldar</button>`}</div></li>`; 
+                    dl.innerHTML += `<li class="px-6 py-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/50 last:border-0 transition-colors"><div class="flex items-center gap-4"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-xl drop-shadow-sm"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[9px] font-black uppercase tracking-widest mt-0.5 ${isP ? 'text-green-500' : 'text-red-500'}">${isP ? 'Al Día' : `Deuda: $${dData.total.toFixed(2)}`}</p></div></div><div class="flex items-center whitespace-nowrap shrink-0">${isP ? `<span class="text-[9px] px-3 py-2 rounded-lg font-black tracking-widest uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">Sin Deuda</span>` : `<button onclick="window.openPaySpecificModal('${p.id}')" class="admin-only text-[9px] px-3 py-2 rounded-lg font-black tracking-widest shadow-sm uppercase transition-colors bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100">💰 Saldar</button>`}</div></li>`; 
                 });
             }
         };
