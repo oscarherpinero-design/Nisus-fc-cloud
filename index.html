@@ -321,6 +321,7 @@
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría *</label><select id="f-category" onchange="window.toggleMatchSelect()" required class="input-premium"></select></div>
                     <div id="f-match-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Partido asociado *</label><select id="f-match" onchange="window.calcArbitraje()" class="input-premium"><option value="">Selecciona...</option></select><div id="f-arbitraje-calc" class="mt-3 text-sm text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 hidden"></div></div>
                     <div id="f-player-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jugador *</label><select id="f-player" onchange="window.populateSpecificDebts()" class="input-premium"><option value="">Selecciona...</option></select></div>
+                    
                     <div id="f-specific-debt-container" class="hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 text-brand-600 dark:text-brand-400">Vincular a deuda específica (Opcional)</label>
                         <select id="f-specific-debt" onchange="window.handleSpecificDebtSelect()" class="input-premium text-xs mb-1">
@@ -328,6 +329,7 @@
                         </select>
                         <p class="text-[10px] text-slate-400 italic">Si eliges una, el monto se calculará automáticamente, pero puedes modificarlo para hacer un pago parcial.</p>
                     </div>
+
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Descripción *</label><input type="text" id="f-desc" required class="input-premium"></div>
                     <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-2"><button type="button" onclick="window.showSection('finances')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800" id="btn-cancel-fin">Cerrar</button><button type="submit" id="btn-save-fin" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar</button></div>
                 </form>
@@ -675,10 +677,8 @@
             if (!p) return { total: 0, debts: [] };
             let rawDebts = [];
             
-            // 1. Cobros manuales y multas directas
             window.finances.filter(t => (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta') && t.playerId === playerId && !t.isPaid).forEach(t => { rawDebts.push({ type: 'direct', id: t.id, desc: `${t.category}: ${t.description}`, amount: t.amount, date: t.date }); });
             
-            // 2. Arbitrajes grupales
             window.finances.filter(t => t.category === 'Arbitraje' && t.matchId).forEach(t => {
                 const match = window.matches.find(m => m.id === t.matchId);
                 if (match && match.lineup && match.lineup.some(l => l.playerId === playerId)) {
@@ -691,7 +691,6 @@
                 }
             });
 
-            // 3. Obtener el historial de pagos de deudas específicas (Abonos)
             window.finances.filter(t => t.category === 'Abono a Deuda (Jugador)' && t.playerId === playerId && t.specificDebtId).forEach(t => {
                 const targetDebt = rawDebts.find(d => d.id === t.specificDebtId);
                 if (targetDebt) { targetDebt.amount -= t.amount; }
@@ -699,7 +698,6 @@
 
             rawDebts = rawDebts.filter(d => d.amount > 0.01).sort((a,b) => new Date(a.date) - new Date(b.date));
             
-            // Conciliación: Si el jugador debe menos (o nada) en su ficha, usamos pagos genéricos "huérfanos" para saldar lo más viejo
             let surplus = rawDebts.reduce((sum, d) => sum + d.amount, 0) - (p.debtAmount || 0);
             if (surplus > 0.01) {
                 rawDebts = rawDebts.filter(d => {
@@ -946,7 +944,6 @@
                 const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position==='Portero');
                 if(isGK && cleanSheets>0) b+=`<span class="bg-teal-500 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase shadow-sm">🛡️ ${cleanSheets}</span> `;
                 
-                // Calculamos la deuda real
                 const dData = window.getPlayerDebts(p.id);
                 if(dData.total > 0.01) b+=`<span class="text-red-500 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> $${dData.total.toFixed(2)}</span> `;
                 else b+='<span class="text-green-500 font-black text-[10px] ml-1"><i class="fas fa-check-circle"></i> Al Día</span> ';
@@ -1395,23 +1392,64 @@
             });
         };
 
-        window.newTransaction = function(type) { document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Ingreso Libre' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso'; const cat = document.getElementById('f-category'); if(type === 'income') { cat.innerHTML = '<option value="Ingreso Varios">Aporte Libre / Patrocinio</option><option value="Abono a Deuda (Jugador)">Abono a Deuda (Jugador)</option>'; } else cat.innerHTML = '<option value="Arbitraje">Arbitraje (Divide entre convocados)</option><option value="Multa Tarjeta">Multa por Tarjeta (Aplica deuda)</option><option value="Cobro Manual">Gasto por Jugador (Aplica deuda)</option>'; window.toggleMatchSelect(); window.updateAdminUI(); window.showSection('financesForm'); };
+        window.newTransaction = function(type) { 
+            document.getElementById('finances-form').reset(); 
+            document.getElementById('f-id').value = ''; 
+            document.getElementById('f-type').value = type; 
+            document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; 
+            document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Ingreso Libre' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso'; 
+            
+            const cat = document.getElementById('f-category'); 
+            if(type === 'income') { 
+                cat.innerHTML = '<option value="Ingreso Varios">Aporte Libre / Patrocinio</option><option value="Abono a Deuda (Jugador)">Abono a Deuda (Jugador)</option>'; 
+            } else {
+                cat.innerHTML = '<option value="Arbitraje">Arbitraje (Divide entre convocados)</option><option value="Multa Tarjeta">Multa por Tarjeta (Aplica deuda)</option><option value="Cobro Manual">Gasto por Jugador (Aplica deuda)</option>'; 
+            }
+            
+            window.toggleMatchSelect(); 
+            window.updateAdminUI(); 
+            window.showSection('financesForm'); 
+        };
 
         window.toggleMatchSelect = function() { 
-            const c = document.getElementById('f-category').value, mc = document.getElementById('f-match-container'), ms = document.getElementById('f-match'), ca = document.getElementById('f-arbitraje-calc'), pc = document.getElementById('f-player-container'), ps = document.getElementById('f-player'), dc = document.getElementById('f-specific-debt-container'), ds = document.getElementById('f-specific-debt');
+            const c = document.getElementById('f-category').value, 
+                  mc = document.getElementById('f-match-container'), 
+                  ms = document.getElementById('f-match'), 
+                  ca = document.getElementById('f-arbitraje-calc'), 
+                  pc = document.getElementById('f-player-container'), 
+                  ps = document.getElementById('f-player'), 
+                  dc = document.getElementById('f-specific-debt-container'), 
+                  ds = document.getElementById('f-specific-debt');
+            
             if (c === 'Arbitraje') { 
                 mc.classList.remove('hidden'); ms.required = true; ca.classList.remove('hidden'); pc.classList.add('hidden'); ps.required = false; dc.classList.add('hidden');
-                let h = '<option value="">Selecciona Partido...</option>'; window.matches.filter(x => x.status === 'finished' || x.status === 'forfait').sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20).forEach(x => h += `<option value="${x.id}">${x.date} vs ${x.opponent}</option>`); ms.innerHTML = h; window.calcArbitraje(); 
+                let h = '<option value="">Selecciona Partido...</option>'; 
+                window.matches.filter(x => x.status === 'finished' || x.status === 'forfait').sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20).forEach(x => h += `<option value="${x.id}">${x.date} vs ${x.opponent}</option>`); 
+                ms.innerHTML = h; window.calcArbitraje(); 
             } else if (c === 'Multa Tarjeta' || c === 'Cobro Manual' || c === 'Abono a Deuda (Jugador)') { 
                 mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.remove('hidden'); ps.required = true; 
-                let h = '<option value="">Selecciona Jugador...</option>'; window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => h += `<option value="${p.id}">${p.name}</option>`); ps.innerHTML = h; 
-                if(c === 'Abono a Deuda (Jugador)') { dc.classList.remove('hidden'); ds.innerHTML = '<option value="">Abono general a cuenta</option>'; } else { dc.classList.add('hidden'); }
-            } else { mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.add('hidden'); ps.required = false; dc.classList.add('hidden'); } 
+                let h = '<option value="">Selecciona Jugador...</option>'; 
+                window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => h += `<option value="${p.id}">${p.name}</option>`); 
+                ps.innerHTML = h; 
+                
+                if(c === 'Abono a Deuda (Jugador)') { 
+                    dc.classList.remove('hidden'); ds.innerHTML = '<option value="">Abono general a cuenta</option>'; 
+                } else { 
+                    dc.classList.add('hidden'); 
+                }
+            } else { 
+                mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.add('hidden'); ps.required = false; dc.classList.add('hidden'); 
+            } 
         };
 
         window.populateSpecificDebts = function() {
-            const cat = document.getElementById('f-category').value; if(cat !== 'Abono a Deuda (Jugador)') return;
-            const pId = document.getElementById('f-player').value; const ds = document.getElementById('f-specific-debt'); ds.innerHTML = '<option value="">Abono general a cuenta</option>';
+            const cat = document.getElementById('f-category').value; 
+            if(cat !== 'Abono a Deuda (Jugador)') return;
+            
+            const pId = document.getElementById('f-player').value; 
+            const ds = document.getElementById('f-specific-debt'); 
+            ds.innerHTML = '<option value="">Abono general a cuenta</option>';
+            
             if(pId) {
                 const dData = window.getPlayerDebts(pId);
                 dData.debts.forEach(d => { ds.innerHTML += `<option value="${d.id}" data-amount="${d.amount}">${d.desc} (Resta $${d.amount.toFixed(2)})</option>`; });
@@ -1420,14 +1458,41 @@
         };
 
         window.handleSpecificDebtSelect = function() {
-            const ds = document.getElementById('f-specific-debt'); const sel = ds.options[ds.selectedIndex];
+            const ds = document.getElementById('f-specific-debt'); 
+            const sel = ds.options[ds.selectedIndex];
             const amIn = document.getElementById('f-amount');
-            if (sel.value !== '') { amIn.value = sel.getAttribute('data-amount'); document.getElementById('f-desc').value = `Abono a: ${sel.text.split(' (')[0]}`; } else { amIn.value = ''; document.getElementById('f-desc').value = 'Abono a deuda'; }
+            
+            if (sel.value !== '') { 
+                amIn.value = sel.getAttribute('data-amount'); 
+                document.getElementById('f-desc').value = `Abono a: ${sel.text.split(' (')[0]}`; 
+            } else { 
+                amIn.value = ''; 
+                document.getElementById('f-desc').value = 'Abono a deuda'; 
+            }
         };
 
-        window.handleAmountInput = function() { const c = document.getElementById('f-category').value; if (c === 'Arbitraje') window.calcArbitraje(); };
+        window.handleAmountInput = function() { 
+            const c = document.getElementById('f-category').value; 
+            if (c === 'Arbitraje') window.calcArbitraje(); 
+        };
 
-        window.calcArbitraje = function() { const mId = document.getElementById('f-match').value, amt = parseFloat(document.getElementById('f-amount').value) || 0, div = document.getElementById('f-arbitraje-calc'); if (!mId || amt <= 0) { div.innerHTML = '<span class="font-bold">Falta monto o partido</span>'; return; } const m = window.matches.find(x => x.id === mId); if (!m || !m.lineup) return; let c = 0; m.lineup.forEach(l => { const p = window.players.find(x => x.id === l.playerId); if (p && !p.isStaff) c++; }); if (c === 0) { div.innerHTML = '<span class="text-red-500 font-bold">Nadie convocado</span>'; return; } div.innerHTML = `<div class="flex justify-between mb-1 text-xs font-bold uppercase tracking-widest"><span>Convocados:</span> <span class="text-slate-900 dark:text-white">${c}</span></div><div class="flex justify-between text-brand-600 dark:text-brand-400 mt-2 pt-2 border-t border-blue-200 dark:border-blue-800/50 text-xs font-bold uppercase tracking-widest items-center"><span>Cuota C/U:</span> <span class="text-lg font-black">$${(amt/c).toFixed(2)}</span></div>`; };
+        window.calcArbitraje = function() { 
+            const mId = document.getElementById('f-match').value, 
+                  amt = parseFloat(document.getElementById('f-amount').value) || 0, 
+                  div = document.getElementById('f-arbitraje-calc'); 
+            
+            if (!mId || amt <= 0) { div.innerHTML = '<span class="font-bold">Falta monto o partido</span>'; return; } 
+            
+            const m = window.matches.find(x => x.id === mId); 
+            if (!m || !m.lineup) return; 
+            
+            let c = 0; 
+            m.lineup.forEach(l => { const p = window.players.find(x => x.id === l.playerId); if (p && !p.isStaff) c++; }); 
+            
+            if (c === 0) { div.innerHTML = '<span class="text-red-500 font-bold">Nadie convocado</span>'; return; } 
+            
+            div.innerHTML = `<div class="flex justify-between mb-1 text-xs font-bold uppercase tracking-widest"><span>Convocados:</span> <span class="text-slate-900 dark:text-white">${c}</span></div><div class="flex justify-between text-brand-600 dark:text-brand-400 mt-2 pt-2 border-t border-blue-200 dark:border-blue-800/50 text-xs font-bold uppercase tracking-widest items-center"><span>Cuota C/U:</span> <span class="text-lg font-black">$${(amt/c).toFixed(2)}</span></div>`; 
+        };
 
         window.saveTransaction = async function(e) { 
             e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); 
@@ -1441,10 +1506,14 @@
                     const m = window.matches.find(x => x.id === mId); 
                     if (m && m.lineup) { 
                         const ids = m.lineup.map(l => l.playerId).filter(x => { const p = window.players.find(y => y.id === x); return p && !p.isStaff; }); 
-                        if (ids.length > 0) { const cuota = amt / ids.length; ids.forEach(pid => { const p = window.players.find(x => x.id === pid); batch.set(db.collection(window.playersPath).doc(pid), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + cuota }, { merge: true }); }); } 
+                        if (ids.length > 0) { 
+                            const cuota = amt / ids.length; 
+                            ids.forEach(pid => { const p = window.players.find(x => x.id === pid); batch.set(db.collection(window.playersPath).doc(pid), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + cuota }, { merge: true }); }); 
+                        } 
                     } 
                 } else if ((cat === 'Multa Tarjeta' || cat === 'Cobro Manual') && pId) {
-                    const p = window.players.find(x => x.id === pId); if (p) { batch.set(db.collection(window.playersPath).doc(pId), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + amt }, { merge: true }); }
+                    const p = window.players.find(x => x.id === pId); 
+                    if (p) { batch.set(db.collection(window.playersPath).doc(pId), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + amt }, { merge: true }); }
                 } else if (cat === 'Abono a Deuda (Jugador)' && pId) {
                     const p = window.players.find(x => x.id === pId);
                     if (p) {
@@ -1464,6 +1533,7 @@
         };
 
         window.deleteTransaction = function(id) { if(!window.isAdmin) return window.showToast('Desbloquea el candado', true); if(!id) return; window.showConfirm('¿Borrar este movimiento?', async () => { try { await db.collection(window.financesPath).doc(id).delete(); window.showToast('Borrado exitoso'); } catch(e) { window.showToast('Error al borrar', true); } }); };
+        
         window.clearFinancialHistory = function() { if(!window.isAdmin) return window.showToast('Desbloquea el candado', true); if(window.finances.length === 0) return window.showToast('El historial ya está vacío'); window.showConfirm('¿ELIMINAR TODO el historial financiero? La caja volverá a $0.00.', async () => { window.showToast('Limpiando...', false); let c = 0; for (let i = 0; i < window.finances.length; i++) { const t = window.finances[i]; if (t.id) { await db.collection(window.financesPath).doc(t.id).delete().catch(e=>console.log(e)); c++; } } window.showToast(`Se borraron ${c} registros de caja`); }); };
 
         window.openPaySpecificModal = function(playerId) {
@@ -1488,15 +1558,12 @@
             try {
                 const batch = db.batch();
                 
-                // 1. Crear el movimiento de ingreso de dinero a la caja
                 const newFinId = window.generateId();
                 batch.set(db.collection(window.financesPath).doc(newFinId), { id: newFinId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: `Pago: ${desc} (${p.name.split(' ')[0]})`, playerId: playerId, specificDebtId: debtId, isPaid: true });
                 
-                // 2. Restar la deuda en la ficha del jugador
                 let newDebt = (p.debtAmount || 0) - amount; if (newDebt < 0) newDebt = 0;
                 batch.set(db.collection(window.playersPath).doc(playerId), { isPaidUp: newDebt === 0, debtAmount: newDebt }, { merge: true });
                 
-                // 3. Marcar la transacción original como pagada (si aplica)
                 if (type === 'direct') { batch.set(db.collection(window.financesPath).doc(originalFinId), { isPaid: true }, { merge: true }); } 
                 else if (type === 'arbitraje') {
                     const originalFin = window.finances.find(x => x.id === originalFinId);
@@ -1507,7 +1574,47 @@
             } catch(e) { window.showToast('Error', true); }
         };
 
-        window.copyGroupMessage = function() { let msg = `⚠️ *AVISO IMPORTANTE - NISUS FC* ⚠️\n\nEl siguiente es el estado de cuentas del equipo. Se solicita a los jugadores en la lista que se pongan al día a la brevedad posible:\n\n`; let d = false; window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ const dData = window.getPlayerDebts(p.id); if(dData.total > 0.01) { d = true; msg += `🔸 *${p.name}*: $${dData.total.toFixed(2)}\n`; } }); if(!d) return window.showToast("No hay deudores en la lista"); msg += `\n¡Apoyemos al equipo! ⚽ Gracias.`; const temp = document.createElement("textarea"); temp.value = msg; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); document.body.removeChild(temp); window.showToast("Mensaje grupal copiado"); };
+        window.copyIndividualMessage = function(playerId) { 
+            const p = window.players.find(x=>x.id===playerId); if(!p) return; 
+            
+            const dData = window.getPlayerDebts(p.id);
+            let msg = `¡Saludos *${p.name}*! \n\nEste es un recordatorio amistoso del equipo *NISUS FC*. Tienes un saldo pendiente de *$${dData.total.toFixed(2)}* 💰\n\n`;
+            
+            if (dData.debts.length > 0) {
+                msg += `*Detalle de deuda:*\n`;
+                dData.debts.forEach(d => {
+                    msg += `  - ${d.desc} ($${d.amount.toFixed(2)})\n`;
+                });
+                msg += `\n`;
+            }
+            
+            msg += `Por favor, ponte al día lo antes posible para que podamos seguir cubriendo los gastos del equipo 🏆.\n\n¡Gracias por tu compromiso!`; 
+            
+            const temp = document.createElement("textarea"); temp.value = msg; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); document.body.removeChild(temp); window.showToast("Mensaje copiado"); 
+        };
+
+        window.copyGroupMessage = function() { 
+            let msg = `⚠️ *AVISO IMPORTANTE - NISUS FC* ⚠️\n\nEl siguiente es el estado de cuentas del equipo. Se solicita a los jugadores en la lista que se pongan al día a la brevedad posible:\n\n`; 
+            let d = false; 
+            
+            window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ 
+                const dData = window.getPlayerDebts(p.id); 
+                if(dData.total > 0.01) { 
+                    d = true; 
+                    msg += `🔸 *${p.name}*: $${dData.total.toFixed(2)}\n`; 
+                    if (dData.debts.length > 0) {
+                        dData.debts.forEach(debt => {
+                            msg += `  - ${debt.desc} ($${debt.amount.toFixed(2)})\n`;
+                        });
+                    }
+                } 
+            }); 
+            
+            if(!d) return window.showToast("No hay deudores en la lista"); 
+            msg += `\n¡Apoyemos al equipo! ⚽ Gracias.`; 
+            
+            const temp = document.createElement("textarea"); temp.value = msg; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); document.body.removeChild(temp); window.showToast("Mensaje grupal copiado"); 
+        };
 
         window.renderFinances = function() {
             let bal = 0, inC = 0, outC = 0; const tl = document.getElementById('transactions-list'); if(tl) tl.innerHTML = '';
@@ -1518,14 +1625,20 @@
                 if(tl) tl.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"><td class="px-6 py-4"><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${t.description}${extraInfo}</p><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">${t.date} | ${t.category}</p></td><td class="px-6 py-4 text-right"><p class="text-lg font-black ${isI ? 'text-green-500' : 'text-red-500'}">${isI ? '+' : '-'}$${t.amount.toFixed(2)}</p><button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-red-500 transition mt-1"><i class="fas fa-trash"></i></button></td></tr>`; 
             }); 
             if(tl && !tl.innerHTML) tl.innerHTML = '<tr><td colspan="2" class="px-6 py-5 text-center text-sm font-medium text-slate-500">Sin movimientos</td></tr>';
+            
             const eBal = document.getElementById('fin-balance'); if(eBal) { eBal.textContent = `$${bal.toFixed(2)}`; eBal.className = `text-4xl font-black ${bal < 0 ? 'text-red-500' : 'text-slate-800 dark:text-white'}`; }
             const eIn = document.getElementById('fin-income'); if(eIn) eIn.textContent = `+$${inC.toFixed(2)}`; const eOut = document.getElementById('fin-expense'); if(eOut) eOut.textContent = `-$${outC.toFixed(2)}`;
+            
             const dl = document.getElementById('debtors-list'); 
             if(dl) {
                 dl.innerHTML = '';
                 window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { 
                     const dData = window.getPlayerDebts(p.id); const isP = dData.total <= 0.01;
-                    dl.innerHTML += `<li class="px-6 py-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/50 last:border-0 transition-colors"><div class="flex items-center gap-4"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-xl drop-shadow-sm"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[9px] font-black uppercase tracking-widest mt-0.5 ${isP ? 'text-green-500' : 'text-red-500'}">${isP ? 'Al Día' : `Deuda: $${dData.total.toFixed(2)}`}</p></div></div><div class="flex items-center whitespace-nowrap shrink-0">${isP ? `<span class="text-[9px] px-3 py-2 rounded-lg font-black tracking-widest uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">Sin Deuda</span>` : `<button onclick="window.openPaySpecificModal('${p.id}')" class="admin-only text-[9px] px-3 py-2 rounded-lg font-black tracking-widest shadow-sm uppercase transition-colors bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100">💰 Saldar</button>`}</div></li>`; 
+                    
+                    let wAppBtn = ''; 
+                    if(!isP) { wAppBtn = `<button onclick="window.copyIndividualMessage('${p.id}')" class="admin-only ml-2 text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20 w-8 h-8 rounded-lg flex items-center justify-center transition" title="Copiar mensaje de cobro"><i class="fab fa-whatsapp text-lg"></i></button>`; }
+                    
+                    dl.innerHTML += `<li class="px-6 py-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/50 last:border-0 transition-colors"><div class="flex items-center gap-4"><i class="fas ${isP ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} text-xl drop-shadow-sm"></i><div><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[9px] font-black uppercase tracking-widest mt-0.5 ${isP ? 'text-green-500' : 'text-red-500'}">${isP ? 'Al Día' : `Deuda: $${dData.total.toFixed(2)}`}</p></div></div><div class="flex items-center whitespace-nowrap shrink-0">${isP ? `<span class="text-[9px] px-3 py-2 rounded-lg font-black tracking-widest uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">Sin Deuda</span>` : `<button onclick="window.openPaySpecificModal('${p.id}')" class="admin-only text-[9px] px-3 py-2 rounded-lg font-black tracking-widest shadow-sm uppercase transition-colors bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100">💰 Saldar</button>`}${wAppBtn}</div></li>`; 
                 });
             }
         };
