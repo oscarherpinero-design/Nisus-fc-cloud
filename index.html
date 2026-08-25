@@ -182,7 +182,6 @@
 
     <main class="max-w-5xl mx-auto px-4 py-8">
         
-        <!-- DASHBOARD -->
         <section id="dashboard" class="space-y-8">
             <div class="flex justify-between items-end mb-2">
                 <div>
@@ -239,7 +238,6 @@
             </div>
         </section>
 
-        <!-- FINANZAS -->
         <section id="finances" class="hidden space-y-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Finanzas</h2><p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Control financiero y tesorería</p></div>
@@ -251,13 +249,13 @@
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 transition-colors">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Saldo Total en Caja</p><h3 class="text-4xl font-black text-slate-800 dark:text-white" id="fin-balance">$0.00</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2" id="lbl-balance">Saldo Total en Caja</p><h3 class="text-4xl font-black text-slate-800 dark:text-white" id="fin-balance">$0.00</h3>
                 </div>
                 <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                    <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+$0.00</h3>
+                    <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2" id="lbl-income"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+$0.00</h3>
                 </div>
                 <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                    <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-$0.00</h3>
+                    <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2" id="lbl-expense"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-$0.00</h3>
                 </div>
             </div>
             
@@ -265,7 +263,7 @@
                 <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-1 flex flex-col">
                     <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
                         <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-list-check text-orange-500 mr-2"></i>Estado Pagos</h3>
-                        <button onclick="window.copyGroupMessage()" class="admin-only text-[10px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 px-2 py-1 rounded flex items-center gap-1"><i class="fab fa-whatsapp"></i> Cobro Grupal</button>
+                        <button onclick="window.copyGroupMessage()" class="admin-only text-[10px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 px-2 py-1 rounded flex items-center gap-1"><i class="fab fa-whatsapp"></i> Grupal</button>
                     </div>
                     <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><ul id="debtors-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></ul></div>
                 </div>
@@ -280,7 +278,6 @@
             </div>
         </section>
 
-        <!-- ENTRENAMIENTOS -->
         <section id="attendance" class="hidden space-y-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Entrenamientos</h2><p class="text-slate-500 text-sm mt-1 font-medium">Control de asistencia técnica</p></div>
@@ -296,7 +293,6 @@
             </div>
         </section>
 
-        <!-- JUGADORES -->
         <section id="players" class="hidden space-y-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" id="players-title">Plantilla Oficial</h2><p class="text-slate-500 text-sm mt-1 font-medium">Jugadores y Cuerpo Técnico</p></div>
@@ -305,7 +301,6 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="players-grid"></div>
         </section>
 
-        <!-- PARTIDOS -->
         <section id="matches" class="hidden space-y-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" id="matches-title">Partidos</h2><p class="text-slate-500 text-sm mt-1 font-medium">Calendario y actas de partido</p></div>
@@ -314,9 +309,6 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="matches-grid"></div>
         </section>
 
-        <!-- MODALES DE FORMULARIO -->
-        
-        <!-- Formulario Finanzas -->
         <section id="financesForm" class="hidden modal-animate">
             <div class="max-w-md mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-8 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white" id="fin-form-title">Movimiento</h2><button onclick="window.showSection('finances')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
@@ -328,16 +320,25 @@
                     </div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría *</label><select id="f-category" onchange="window.toggleMatchSelect()" required class="input-premium"></select></div>
                     
+                    <div id="f-manual-modality-container" class="hidden">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Modalidad Asignada</label>
+                        <select id="f-manual-modality" class="input-premium">
+                            <option value="general">Caja General</option>
+                            <option value="f11">Solo Fútbol 11</option>
+                            <option value="f7">Solo Fútbol 7</option>
+                        </select>
+                        <p class="text-[10px] text-slate-400 mt-1 italic">Determina en qué filtro (GRL/F11/F7) se verá reflejado este dinero.</p>
+                    </div>
+
                     <div id="f-match-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Partido asociado *</label><select id="f-match" onchange="window.calcArbitraje()" class="input-premium"><option value="">Selecciona...</option></select><div id="f-arbitraje-calc" class="mt-3 text-sm text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 hidden"></div></div>
                     
                     <div id="f-player-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jugador *</label><select id="f-player" onchange="window.populateSpecificDebts()" class="input-premium"><option value="">Selecciona...</option></select></div>
                     
                     <div id="f-specific-debt-container" class="hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 text-brand-600 dark:text-brand-400">Vincular a deuda específica (Opcional)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 text-brand-600 dark:text-brand-400">Vincular a deuda (Opcional)</label>
                         <select id="f-specific-debt" onchange="window.handleSpecificDebtSelect()" class="input-premium text-xs mb-1">
                             <option value="">Abono general a cuenta</option>
                         </select>
-                        <p class="text-[10px] text-slate-400 italic">Si eliges una, el monto se calculará automáticamente, pero puedes modificarlo para hacer un pago parcial.</p>
                     </div>
 
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Descripción *</label><input type="text" id="f-desc" required class="input-premium"></div>
@@ -346,7 +347,6 @@
             </div>
         </section>
 
-        <!-- Modal Pago Específico -->
         <div id="modalPaySpecific" class="hidden fixed inset-0 bg-slate-900/80 z-[70] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-md overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 transition-colors">
                 <div class="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
@@ -355,7 +355,7 @@
                 </div>
                 <div class="p-5 overflow-y-auto max-h-[60vh] custom-scroll" id="pay-spec-list"></div>
                 <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Deuda Total:</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Deuda Total Real:</span>
                     <span class="text-xl font-black text-red-500" id="pay-spec-total">$0.00</span>
                 </div>
             </div>
@@ -586,7 +586,6 @@
             </div>
         </section>
 
-        <!-- Modales Auxiliares -->
         <div id="modalPlayerCard" class="hidden fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
             <div class="relative max-w-sm w-full flex flex-col items-center">
                 <button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition backdrop-blur"><i class="fas fa-times text-xl"></i></button>
@@ -633,7 +632,6 @@
         </div>
     </main>
 
-    <!-- SCRIPTS CORE -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -648,6 +646,35 @@
         window.currentSeason = 'all'; window.currentFilter = 'all'; let deferredPrompt;
 
         window.generateId = function() { return crypto.randomUUID ? crypto.randomUUID() : 'x-x-4-y-x'.replace(/[xy]/g, c => { var r = Math.random()*16|0; return (c==='x'?r:r&0x3|0x8).toString(16); }); };
+
+        window.clearFinancialHistory = function() {
+            if(!window.isAdmin) return window.showToast('Desbloquea el candado', true);
+            window.showConfirm('¿Hacer un BORRÓN Y CUENTA NUEVA? Se eliminará el historial financiero y TODAS las deudas de los jugadores volverán a 0.', async () => {
+                window.showToast('Limpiando...', false);
+                try {
+                    const batch = db.batch();
+                    
+                    // 1. Borrar todas las transacciones de Finanzas
+                    window.finances.forEach(t => {
+                        batch.delete(db.collection(window.financesPath).doc(t.id));
+                    });
+                    
+                    // 2. Reiniciar las deudas de todos los jugadores
+                    window.players.forEach(p => {
+                        batch.update(db.collection(window.playersPath).doc(p.id), {
+                            debtAmount: 0,
+                            isPaidUp: true
+                        });
+                    });
+                    
+                    await batch.commit();
+                    window.showToast('¡Borrón y cuenta nueva exitoso!');
+                } catch(e) {
+                    window.showToast('Error al limpiar', true);
+                    console.error(e);
+                }
+            });
+        };
 
         const posValid = { POR: ['Portero'], DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'], LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'], LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'], CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'], MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'], MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'], MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'], MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'], MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'], ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'], EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'], DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta'] };
         const formations = {
@@ -689,24 +716,12 @@
             if (!p) return { total: 0, debts: [] };
             let rawDebts = [];
             
-            // 1. Filtrar Finanzas según modalidad actual (F11 / F7)
-            let fList = window.finances;
-            if (window.currentFilter !== 'all') {
-                fList = window.finances.filter(t => {
-                    if (t.matchId) {
-                        const m = window.matches.find(x => x.id === t.matchId);
-                        return m && m.modality === window.currentFilter;
-                    }
-                    // Gastos directos o abonos no atados a un partido: se asume que pertenecen al filtro si el jugador está disponible
-                    if (window.currentFilter === 'f11' && p.availableF11) return true;
-                    if (window.currentFilter === 'f7' && p.availableF7) return true;
-                    return false;
-                });
-            }
-
-            fList.filter(t => (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta') && t.playerId === playerId && !t.isPaid).forEach(t => { rawDebts.push({ type: 'direct', id: t.id, desc: `${t.category}: ${t.description}`, amount: t.amount, date: t.date }); });
+            // LA BILLETERA DEL JUGADOR ES GLOBAL (No importa el filtro de vista)
+            window.finances.filter(t => (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta') && t.playerId === playerId && !t.isPaid).forEach(t => { 
+                rawDebts.push({ type: 'direct', id: t.id, desc: `${t.category}: ${t.description}`, amount: t.amount, date: t.date }); 
+            });
             
-            fList.filter(t => t.category === 'Arbitraje' && t.matchId).forEach(t => {
+            window.finances.filter(t => t.category === 'Arbitraje' && t.matchId).forEach(t => {
                 const match = window.matches.find(m => m.id === t.matchId);
                 if (match && match.lineup && match.lineup.some(l => l.playerId === playerId)) {
                     const validPlayers = match.lineup.filter(l => { const py = window.players.find(x => x.id === l.playerId); return py && !py.isStaff; });
@@ -718,13 +733,16 @@
                 }
             });
 
-            fList.filter(t => t.category === 'Abono a Deuda (Jugador)' && t.playerId === playerId && t.specificDebtId).forEach(t => {
+            // Restar los abonos específicos
+            window.finances.filter(t => t.category === 'Abono a Deuda (Jugador)' && t.playerId === playerId && t.specificDebtId).forEach(t => {
                 const targetDebt = rawDebts.find(d => d.id === t.specificDebtId);
                 if (targetDebt) { targetDebt.amount -= t.amount; }
             });
 
+            // Limpiar deudas saldadas
             rawDebts = rawDebts.filter(d => d.amount > 0.01).sort((a,b) => new Date(a.date) - new Date(b.date));
             
+            // Conciliación de excedentes (abonos no vinculados)
             let surplus = rawDebts.reduce((sum, d) => sum + d.amount, 0) - (p.debtAmount || 0);
             if (surplus > 0.01) {
                 rawDebts = rawDebts.filter(d => {
@@ -1094,7 +1112,11 @@
                     const p = window.players.find(x => x.id === ev.playerId);
                     
                     if (p) {
-                        batch.set(db.collection(window.financesPath).doc(finId), { id: finId, type: 'expense', amount: montoMulta, date: document.getElementById('m-date').value, category: 'Multa Tarjeta', description: `Multa Automática (${ev.type==='yellows'?'Amarilla':'Roja'})`, matchId: docId, playerId: ev.playerId, isPaid: false });
+                        batch.set(db.collection(window.financesPath).doc(finId), {
+                            id: finId, type: 'expense', amount: montoMulta, date: document.getElementById('m-date').value,
+                            category: 'Multa Tarjeta', description: `Multa Automática (${ev.type==='yellows'?'Amarilla':'Roja'})`,
+                            matchId: docId, playerId: ev.playerId, isPaid: false
+                        });
                         batch.set(db.collection(window.playersPath).doc(ev.playerId), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + montoMulta }, { merge: true });
                         ev.fineApplied = true; multasAplicadas++;
                     }
@@ -1446,12 +1468,20 @@
                   pc = document.getElementById('f-player-container'), 
                   ps = document.getElementById('f-player'), 
                   dc = document.getElementById('f-specific-debt-container'), 
-                  ds = document.getElementById('f-specific-debt');
+                  ds = document.getElementById('f-specific-debt'),
+                  mmc = document.getElementById('f-manual-modality-container');
             
+            // Lógica para mostrar/ocultar el selector de modalidad manual
+            if (c === 'Ingreso Varios' || c === 'Cobro Manual') {
+                mmc.classList.remove('hidden');
+            } else {
+                mmc.classList.add('hidden');
+            }
+
             if (c === 'Arbitraje') { 
                 mc.classList.remove('hidden'); ms.required = true; ca.classList.remove('hidden'); pc.classList.add('hidden'); ps.required = false; dc.classList.add('hidden');
                 let h = '<option value="">Selecciona Partido...</option>'; 
-                window.matches.filter(x => x.status === 'finished' || x.status === 'forfait').sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20).forEach(x => h += `<option value="${x.id}">${x.date} vs ${x.opponent}</option>`); 
+                window.matches.filter(x => x.status === 'finished' || x.status === 'forfait').sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20).forEach(x => h += `<option value="${x.id}">${x.date} vs ${x.opponent} (${x.modality.toUpperCase()})</option>`); 
                 ms.innerHTML = h; window.calcArbitraje(); 
             } else if (c === 'Multa Tarjeta' || c === 'Cobro Manual' || c === 'Abono a Deuda (Jugador)') { 
                 mc.classList.add('hidden'); ms.required = false; ca.classList.add('hidden'); pc.classList.remove('hidden'); ps.required = true; 
@@ -1528,6 +1558,12 @@
             try { 
                 const batch = db.batch();
                 let specificDebtId = null;
+                let manualModality = null;
+
+                // Capturar la modalidad manual si es visible
+                if (!document.getElementById('f-manual-modality-container').classList.contains('hidden')) {
+                    manualModality = document.getElementById('f-manual-modality').value;
+                }
 
                 if (cat === 'Arbitraje' && mId) { 
                     const m = window.matches.find(x => x.id === mId); 
@@ -1552,6 +1588,7 @@
                 
                 let transactionData = { id: docId, type: document.getElementById('f-type').value, amount: amt, date: document.getElementById('f-date').value, category: cat, description: document.getElementById('f-desc').value, matchId: (cat === 'Arbitraje') ? mId : null, playerId: (cat === 'Multa Tarjeta' || cat === 'Cobro Manual' || cat === 'Abono a Deuda (Jugador)') ? pId : null, isPaid: false };
                 if (specificDebtId) transactionData.specificDebtId = specificDebtId;
+                if (manualModality) transactionData.manualModality = manualModality;
 
                 batch.set(db.collection(window.financesPath).doc(docId), transactionData);
                 await batch.commit(); 
@@ -1561,8 +1598,6 @@
 
         window.deleteTransaction = function(id) { if(!window.isAdmin) return window.showToast('Desbloquea el candado', true); if(!id) return; window.showConfirm('¿Borrar este movimiento?', async () => { try { await db.collection(window.financesPath).doc(id).delete(); window.showToast('Borrado exitoso'); } catch(e) { window.showToast('Error al borrar', true); } }); };
         
-        window.clearFinancialHistory = function() { if(!window.isAdmin) return window.showToast('Desbloquea el candado', true); if(window.finances.length === 0) return window.showToast('El historial ya está vacío'); window.showConfirm('¿ELIMINAR TODO el historial financiero? La caja volverá a $0.00.', async () => { window.showToast('Limpiando...', false); let c = 0; for (let i = 0; i < window.finances.length; i++) { const t = window.finances[i]; if (t.id) { await db.collection(window.financesPath).doc(t.id).delete().catch(e=>console.log(e)); c++; } } window.showToast(`Se borraron ${c} registros de caja`); }); };
-
         window.openPaySpecificModal = function(playerId) {
             const p = window.players.find(x => x.id === playerId); if (!p) return;
             const dData = window.getPlayerDebts(playerId);
@@ -1624,7 +1659,11 @@
             let msg = `⚠️ *AVISO IMPORTANTE - NISUS FC* ⚠️\n\nEl siguiente es el estado de cuentas del equipo. Se solicita a los jugadores en la lista que se pongan al día a la brevedad posible:\n\n`; 
             let d = false; 
             
-            window.players.filter(p=>!p.isStaff).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ 
+            let pList = window.players.filter(p => !p.isStaff);
+            if(window.currentFilter === 'f11') pList = pList.filter(p => p.availableF11);
+            if(window.currentFilter === 'f7') pList = pList.filter(p => p.availableF7);
+
+            pList.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ 
                 const dData = window.getPlayerDebts(p.id); 
                 if(dData.total > 0.01) { 
                     d = true; 
@@ -1637,7 +1676,7 @@
                 } 
             }); 
             
-            if(!d) return window.showToast("No hay deudores en la lista"); 
+            if(!d) return window.showToast("No hay deudores en la lista actual"); 
             msg += `\n¡Apoyemos al equipo! ⚽ Gracias.`; 
             
             const temp = document.createElement("textarea"); temp.value = msg; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); document.body.removeChild(temp); window.showToast("Mensaje grupal copiado"); 
@@ -1646,22 +1685,24 @@
         window.renderFinances = function() {
             let bal = 0, inC = 0, outC = 0; const tl = document.getElementById('transactions-list'); if(tl) tl.innerHTML = '';
             
-            let fList = window.finances;
-            if (window.currentFilter !== 'all') {
+            let fList = [];
+            if (window.currentFilter === 'all') {
+                fList = window.finances;
+            } else {
                 fList = window.finances.filter(t => {
+                    // Si la transacción tiene una modalidad manual asignada
+                    if (t.manualModality && t.manualModality !== 'general') {
+                        return t.manualModality === window.currentFilter;
+                    }
+                    
+                    // Si está ligada a un partido (Arbitraje)
                     if (t.matchId) {
                         const m = window.matches.find(x => x.id === t.matchId);
                         return m && m.modality === window.currentFilter;
                     }
-                    if (t.playerId) {
-                        const p = window.players.find(x => x.id === t.playerId);
-                        if (p) {
-                            if (window.currentFilter === 'f11' && p.availableF11) return true;
-                            if (window.currentFilter === 'f7' && p.availableF7) return true;
-                            return false;
-                        }
-                    }
-                    return true; 
+
+                    // Si la transacción manual está como 'general', entonces solo se ve en GRL (return false aquí)
+                    return false; 
                 });
             }
 
@@ -1669,10 +1710,24 @@
                 const isI = t.type === 'income'; if(isI) { bal += t.amount; inC += t.amount; } else { bal -= t.amount; outC += t.amount; } 
                 let extraInfo = '';
                 if (t.playerId) { const p = window.players.find(x => x.id === t.playerId); if (p) extraInfo = ` <span class="text-orange-500 text-[10px] ml-2 font-black tracking-widest uppercase"><i class="fas fa-user mr-1"></i>${p.name.split(' ')[0]}</span>`; }
-                if(tl) tl.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"><td class="px-6 py-4"><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${t.description}${extraInfo}</p><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">${t.date} | ${t.category}</p></td><td class="px-6 py-4 text-right"><p class="text-lg font-black ${isI ? 'text-green-500' : 'text-red-500'}">${isI ? '+' : '-'}$${t.amount.toFixed(2)}</p><button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-red-500 transition mt-1"><i class="fas fa-trash"></i></button></td></tr>`; 
+                
+                let bStr = '';
+                if (t.manualModality && t.manualModality !== 'general') {
+                    bStr = `<span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-widest ml-1 shadow-sm">F${t.manualModality==='f11'?11:7}</span>`;
+                } else if (t.matchId && window.currentFilter === 'all') {
+                    const m = window.matches.find(x => x.id === t.matchId);
+                    if(m) bStr = `<span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-widest ml-1 shadow-sm">F${m.modality==='f11'?11:7}</span>`;
+                } else if (t.category === 'Ingreso Varios' && window.currentFilter === 'all') {
+                    bStr = `<span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-widest ml-1 shadow-sm">GRL</span>`;
+                }
+
+                if(tl) tl.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"><td class="px-6 py-4"><p class="text-sm font-bold text-slate-800 dark:text-slate-200">${t.description}${extraInfo}</p><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1">${t.date} | ${t.category} ${bStr}</p></td><td class="px-6 py-4 text-right"><p class="text-lg font-black ${isI ? 'text-green-500' : 'text-red-500'}">${isI ? '+' : '-'}$${t.amount.toFixed(2)}</p><button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-red-500 transition mt-1"><i class="fas fa-trash"></i></button></td></tr>`; 
             }); 
             if(tl && !tl.innerHTML) tl.innerHTML = '<tr><td colspan="2" class="px-6 py-5 text-center text-sm font-medium text-slate-500">Sin movimientos</td></tr>';
             
+            const lblBal = document.getElementById('lbl-balance');
+            if (lblBal) lblBal.innerHTML = window.currentFilter === 'all' ? 'Saldo Total en Caja' : `Balance Neto (F${window.currentFilter==='f11'?11:7})`;
+
             const eBal = document.getElementById('fin-balance'); if(eBal) { eBal.textContent = `$${bal.toFixed(2)}`; eBal.className = `text-4xl font-black ${bal < 0 ? 'text-red-500' : 'text-slate-800 dark:text-white'}`; }
             const eIn = document.getElementById('fin-income'); if(eIn) eIn.textContent = `+$${inC.toFixed(2)}`; const eOut = document.getElementById('fin-expense'); if(eOut) eOut.textContent = `-$${outC.toFixed(2)}`;
             
