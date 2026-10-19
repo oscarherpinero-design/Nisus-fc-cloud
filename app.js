@@ -326,7 +326,47 @@ window.editPlayer = function(id) {
 };
 
 window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador permanentemente?', async () => { try { await db.collection(window.playersPath).doc(id).delete(); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
+window.migrarFotosAStorage = async function() {
+    if (!window.isAdmin) return window.showToast('Debes ser administrador', true);
+    
+    // Buscar fotos viejas en formato Base64
+    const jugadoresConBase64 = window.players.filter(p => p.image && p.image.startsWith('data:image'));
+    
+    if (jugadoresConBase64.length === 0) {
+        return window.showToast('No hay fotos antiguas para migrar.');
+    }
 
+    window.showConfirm(`Se encontraron ${jugadoresConBase64.length} fotos antiguas. ¿Subirlas al servidor Storage?`, async () => {
+        const btn = document.getElementById('btn-migrar-fotos');
+        if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Migrando...'; }
+        
+        let migradas = 0; let errores = 0;
+        
+        for (const p of jugadoresConBase64) {
+            try {
+                // 1. Convertir texto a imagen real
+                const res = await fetch(p.image);
+                const blob = await res.blob();
+                
+                // 2. Subir a Firebase Storage
+                const ref = firebase.storage().ref(`jugadores/${p.id}.jpg`);
+                await ref.put(blob);
+                
+                // 3. Conseguir URL ligera y actualizar base de datos
+                const url = await ref.getDownloadURL();
+                await db.collection(window.playersPath).doc(p.id).update({ image: url });
+                migradas++;
+                
+            } catch(e) {
+                console.error(`Error foto ${p.name}:`, e);
+                errores++;
+            }
+        }
+        
+        window.showToast(`Migración lista: ${migradas} fotos subidas.`);
+        if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Listo'; btn.classList.replace('bg-orange-500', 'bg-green-500'); }
+    });
+};
 window.renderPlayers = function() {
     const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
     let list = window.players; if(window.currentFilter==='f11') list = list.filter(p=>p.availableF11); else if(window.currentFilter==='f7') list = list.filter(p=>p.availableF7);
