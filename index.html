@@ -281,64 +281,84 @@
             </div>
         </section>
 
-        <section id="finances" class="hidden space-y-8">
+        <section id="finances" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Finanzas</h2><p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Control financiero y tesorería</p></div>
-                <div class="admin-only flex flex-wrap gap-3 w-full sm:w-auto">
-                    <button onclick="window.newTransaction('income')" class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-down"></i> Nuevo Ingreso</button>
-                    <button onclick="window.newTransaction('expense')" class="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-up"></i> Nuevo Egreso</button>
-                </div>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 transition-colors">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2" id="lbl-balance">Saldo Total en Caja</p><h3 class="text-4xl font-black text-slate-800 dark:text-white" id="fin-balance">$0.00</h3>
+
+            <div class="flex gap-2 bg-white dark:bg-darkcard p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full sm:w-auto sm:inline-flex">
+                <button onclick="window.switchFinancesTab('resumen')" id="fin-tab-btn-resumen" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 bg-brand-600 text-white shadow-sm"><i class="fas fa-chart-pie"></i> Resumen</button>
+                <button onclick="window.switchFinancesTab('cobros')" id="fin-tab-btn-cobros" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fas fa-hand-holding-dollar"></i> Cobros</button>
+            </div>
+
+            <div id="fin-tab-resumen" class="space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 transition-colors">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2" id="lbl-balance">Saldo Total en Caja</p><h3 class="text-4xl font-black text-slate-800 dark:text-white" id="fin-balance">$0.00</h3>
+                    </div>
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
+                        <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2" id="lbl-income"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+$0.00</h3>
+                    </div>
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
+                        <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2" id="lbl-expense"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-$0.00</h3>
+                    </div>
                 </div>
-                <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                    <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2" id="lbl-income"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+$0.00</h3>
-                </div>
-                <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                    <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2" id="lbl-expense"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-$0.00</h3>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-1 flex flex-col">
+                        <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
+                            <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-list-check text-orange-500 mr-2"></i>Por Cobrar</h3>
+                            <button onclick="window.copyGroupMessage()" class="admin-only text-[10px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 px-2 py-1 rounded flex items-center gap-1"><i class="fab fa-whatsapp"></i> Grupal</button>
+                        </div>
+                        <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><ul id="debtors-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></ul></div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-2 flex flex-col">
+                        <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
+                            <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-history text-brand-500 mr-2"></i>Historial</h3>
+                            <button onclick="window.clearFinancialHistory()" class="admin-only text-[10px] text-red-500 hover:text-red-700 font-bold bg-red-50 px-2 py-1 rounded flex items-center gap-1"><i class="fas fa-trash-alt"></i> Vaciar</button>
+                        </div>
+                        <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><table class="w-full text-left border-collapse"><tbody id="transactions-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></tbody></table></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden">
-                <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-calendar-check text-brand-500 mr-2"></i>Cuotas Mensuales</h3>
-                        <p class="text-xs text-slate-400 font-medium mt-1">Cobra la mensualidad a todo el plantel para cancha y materiales</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div class="flex items-center gap-2">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mes</label>
-                            <input type="month" id="dues-month" class="input-premium py-2 text-sm" onchange="window.renderMonthlyDues()">
+            <div id="fin-tab-cobros" class="hidden space-y-8">
+                <div class="bg-gradient-to-br from-brand-50 to-slate-50 dark:from-brand-900/20 dark:to-slate-900/50 rounded-2xl border border-brand-100 dark:border-brand-900/30 p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-brand-600 text-white flex items-center justify-center shrink-0 shadow-md"><i class="fas fa-soccer-ball text-xl"></i></div>
+                        <div>
+                            <h3 class="font-black text-slate-800 dark:text-white text-lg">¿Para qué se usa el dinero recaudado?</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">Las mensualidades cubren los gastos operativos del equipo: alquiler de cancha para entrenar, materiales como balones, conos y petos, y eventualmente arbitrajes de partidos. Mantén al día los cobros para que el club funcione.</p>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cuota $</label>
-                            <input type="number" step="0.01" min="0" id="dues-amount" placeholder="0.00" class="input-premium py-2 text-sm w-24" onchange="window.renderMonthlyDues()">
-                        </div>
-                        <button onclick="window.chargeMonthlyDues()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"><i class="fas fa-bolt"></i> Cobrar a todos</button>
                     </div>
                 </div>
-                <div id="monthly-dues-grid" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-                <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-bold text-slate-500 dark:text-slate-400" id="dues-summary"></div>
-            </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-1 flex flex-col">
-                    <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
-                        <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-list-check text-orange-500 mr-2"></i>Estado Pagos</h3>
-                        <button onclick="window.copyGroupMessage()" class="admin-only text-[10px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 px-2 py-1 rounded flex items-center gap-1"><i class="fab fa-whatsapp"></i> Grupal</button>
-                    </div>
-                    <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><ul id="debtors-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></ul></div>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="window.newTransaction('income')" class="admin-only flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-down"></i> Registrar Ingreso</button>
+                    <button onclick="window.newTransaction('expense')" class="admin-only flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-up"></i> Registrar Egreso</button>
                 </div>
-                
-                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-2 flex flex-col">
-                    <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
-                        <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-history text-brand-500 mr-2"></i>Historial</h3>
-                        <button onclick="window.clearFinancialHistory()" class="admin-only text-[10px] text-red-500 hover:text-red-700 font-bold bg-red-50 px-2 py-1 rounded flex items-center gap-1"><i class="fas fa-trash-alt"></i> Vaciar</button>
+
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-calendar-check text-brand-500 mr-2"></i>Cuotas Mensuales</h3>
+                            <p class="text-xs text-slate-400 font-medium mt-1">Cobra la mensualidad a todo el plantel para cancha y materiales</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mes</label>
+                                <input type="month" id="dues-month" class="input-premium py-2 text-sm" onchange="window.renderMonthlyDues()">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cuota $</label>
+                                <input type="number" step="0.01" min="0" id="dues-amount" placeholder="0.00" class="input-premium py-2 text-sm w-24" onchange="window.renderMonthlyDues()">
+                            </div>
+                            <button onclick="window.chargeMonthlyDues()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"><i class="fas fa-bolt"></i> Cobrar a todos</button>
+                        </div>
                     </div>
-                    <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><table class="w-full text-left border-collapse"><tbody id="transactions-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></tbody></table></div>
+                    <div id="monthly-dues-grid" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                    <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-bold text-slate-500 dark:text-slate-400" id="dues-summary"></div>
                 </div>
             </div>
         </section>

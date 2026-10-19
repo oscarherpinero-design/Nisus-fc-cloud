@@ -174,7 +174,7 @@ window.showSection = function(sectionId) {
     ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances'].forEach(id => { const s = document.getElementById('nav-side-' + id); if(s) { s.classList.remove('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); s.classList.add('text-slate-600', 'dark:text-slate-400'); } });
     const aS = document.getElementById('nav-side-' + sectionId); if(aS) { aS.classList.add('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); aS.classList.remove('text-slate-600', 'dark:text-slate-400'); }
     const m = document.getElementById('side-menu'); if(m && !m.classList.contains('-translate-x-full')) window.toggleMenu();
-    if(sectionId === 'players') { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(sectionId === 'matches') window.renderMatches(); if(sectionId === 'attendance') window.renderTrainings(); if(sectionId === 'dashboard') window.updateDashboard(); if(sectionId === 'stats') window.updateDashboard(); if(sectionId === 'finances') window.renderFinances();
+    if(sectionId === 'players') { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(sectionId === 'matches') window.renderMatches(); if(sectionId === 'attendance') window.renderTrainings(); if(sectionId === 'dashboard') window.updateDashboard(); if(sectionId === 'stats') window.updateDashboard(); if(sectionId === 'finances') { if(!window.currentFinTab) window.switchFinancesTab('resumen'); window.renderFinances(); }
     window.scrollTo(0,0);
 };
 
@@ -1045,6 +1045,26 @@ window.deleteTransaction = function(id) {
     });
 };
 
+window.switchFinancesTab = function(tab) {
+    window.currentFinTab = tab;
+    const btnRes = document.getElementById('fin-tab-btn-resumen');
+    const btnCob = document.getElementById('fin-tab-btn-cobros');
+    const contRes = document.getElementById('fin-tab-resumen');
+    const contCob = document.getElementById('fin-tab-cobros');
+    const activeClasses = ['bg-brand-600', 'text-white', 'shadow-sm'];
+    const inactiveClasses = ['text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-50', 'dark:hover:bg-slate-800'];
+    if (tab === 'resumen') {
+        btnRes.classList.add(...activeClasses); btnRes.classList.remove(...inactiveClasses);
+        btnCob.classList.add(...inactiveClasses); btnCob.classList.remove(...activeClasses);
+        contRes.classList.remove('hidden'); contCob.classList.add('hidden');
+    } else {
+        btnCob.classList.add(...activeClasses); btnCob.classList.remove(...inactiveClasses);
+        btnRes.classList.add(...inactiveClasses); btnRes.classList.remove(...activeClasses);
+        contCob.classList.remove('hidden'); contRes.classList.add('hidden');
+        window.renderMonthlyDues();
+    }
+};
+
 window.renderFinances = function() {
     let income = 0, expense = 0;
     window.finances.forEach(t => { if (t.type === 'income') income += t.amount || 0; else expense += t.amount || 0; });
@@ -1053,7 +1073,7 @@ window.renderFinances = function() {
     const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+${income.toFixed(2)}`;
     const elE = document.getElementById('fin-expense'); if(elE) elE.textContent = `-${expense.toFixed(2)}`;
 
-    window.renderMonthlyDues();
+    if (window.currentFinTab === 'cobros') window.renderMonthlyDues();
 
     const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
