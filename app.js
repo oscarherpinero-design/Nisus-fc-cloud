@@ -82,8 +82,9 @@ window.getPlayerDebts = function(playerId) {
     if (!p) return { total: 0, debts: [] };
     let rawDebts = [];
     
-    window.finances.filter(t => (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta') && t.playerId === playerId && !t.isPaid).forEach(t => { 
-        rawDebts.push({ type: 'direct', id: t.id, desc: `${t.category}: ${t.description}`, amount: t.amount, date: t.date }); 
+    window.finances.filter(t => (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && t.playerId === playerId && !t.isPaid).forEach(t => { 
+        const desc = t.category === 'Cuota Mensual' ? `Cuota Mensual ${t.duesMonth || t.date || ''}` : `${t.category}: ${t.description}`;
+        rawDebts.push({ type: 'direct', id: t.id, desc, amount: t.amount, date: t.date }); 
     });
     
     window.finances.filter(t => t.category === 'Arbitraje' && t.matchId).forEach(t => {
@@ -1034,7 +1035,7 @@ window.deleteTransaction = function(id) {
     window.showConfirm('¿Eliminar este movimiento?', async () => {
         try {
             const t = window.finances.find(x => x.id === id);
-            if (t && t.playerId && (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta') && !t.isPaid) {
+            if (t && t.playerId && (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && !t.isPaid) {
                 const p = window.players.find(x => x.id === t.playerId);
                 if (p) await db.collection(window.playersPath).doc(t.playerId).set({ debtAmount: Math.max(0, (p.debtAmount || 0) - t.amount) }, { merge: true });
             }
@@ -1119,6 +1120,77 @@ window.paySpecificDebt = async function(playerId, debtId, amount) {
     }
 
     try { await batch.commit(); window.showToast('Deuda pagada'); window.openPaySpecific(playerId); window.renderFinances(); } catch(e) { window.showToast('Error', true); }
+};
+
+window.renderMonthlyDues = function() {
+    const grid = document.getElementById('monthly-dues-grid');
+    if (!grid) return;
+    const monthInput = document.getElementById('dues-month');
+    if (monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
+    const month = monthInput ? monthInput.value : new Date().toISOString().slice(0, 7);
+    const amountInput = document.getElementById('dues-amount');
+    const amount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
+
+    const activePlayers = window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    grid.innerHTML = '';
+    if (activePlayers.length === 0) { grid.innerHTML = '<p class="col-span-full text-center text-sm text-slate-500 py-6">No hay jugadores en el plantel</p>'; return; }
+
+    activePlayers.forEach(p => {
+        const tx = window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id);
+        const paid = tx && tx.isPaid;
+        const img = p.image ? `<img src="${p.image}" class="w-9 h-9 rounded-full object-cover">` : `<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`;
+        let statusBadge;
+        if (paid) { statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; }
+        else if (tx) { statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; }
+        else { statusBadge = '<span class="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded uppercase">Sin cobrar</span>'; }
+        let actionBtn = '';
+        if (tx && !paid) { actionBtn = `<button onclick="window.markDuesPaid('${tx.id}','${p.id}')" class="admin-only bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1"><i class="fas fa-check"></i> Marcar pagada</button>`; }
+        grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
+    });
+
+    const summaryEl = document.getElementById('dues-summary');
+    if (summaryEl) {
+        const charged = activePlayers.filter(p => window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id)).length;
+        const paidCount = activePlayers.filter(p => { const t = window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id); return t && t.isPaid; }).length;
+        summaryEl.textContent = `${paidCount}/${activePlayers.length} pagadas · ${charged} cobradas`;
+    }
+};
+
+window.chargeMonthlyDues = async function() {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const month = document.getElementById('dues-month').value;
+    const amount = parseFloat(document.getElementById('dues-amount').value);
+    if (!month) return window.showToast('Selecciona un mes', true);
+    if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
+
+    const activePlayers = window.players.filter(p => !p.isStaff);
+    if (activePlayers.length === 0) return window.showToast('No hay jugadores', true);
+
+    const existing = window.finances.filter(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId);
+    const alreadyCharged = new Set(existing.map(t => t.playerId));
+    const toCharge = activePlayers.filter(p => !alreadyCharged.has(p.id));
+    if (toCharge.length === 0) return window.showToast('Ya se cobró a todos este mes', true);
+
+    const batch = db.batch();
+    const dateStr = month + '-01';
+    toCharge.forEach(p => {
+        const id = window.generateId();
+        batch.set(db.collection(window.financesPath).doc(id), { id, type: 'income', amount, date: dateStr, category: 'Cuota Mensual', description: 'Cuota mensual ' + month, playerId: p.id, duesMonth: month, isPaid: false });
+        batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
+    });
+
+    try { await batch.commit(); window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); } catch(e) { window.showToast('Error al cobrar', true); }
+};
+
+window.markDuesPaid = async function(txId, playerId) {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const tx = window.finances.find(t => t.id === txId);
+    if (!tx) return;
+    const batch = db.batch();
+    batch.set(db.collection(window.financesPath).doc(txId), { isPaid: true }, { merge: true });
+    const p = window.players.find(x => x.id === playerId);
+    if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - tx.amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
+    try { await batch.commit(); window.showToast('Cuota marcada como pagada'); } catch(e) { window.showToast('Error', true); }
 };
 
 window.copyGroupMessage = function() {
