@@ -803,6 +803,216 @@ window.renderTrainings = function() {
 };
 
 /* -----------------------------------------------------
+   GESTIÓN DE FINANZAS
+------------------------------------------------------ */
+const finCategories = {
+    income: ['Cuota Mensual', 'Inscripción', 'Cobro Manual', 'Abono a Deuda (Jugador)', 'Sponsor', 'Otro Ingreso'],
+    expense: ['Arbitraje', 'Cancha', 'Uniformes', 'Materiales', 'Multa Tarjeta', 'Otro Egreso']
+};
+
+window.newTransaction = function(type) {
+    document.getElementById('finances-form').reset();
+    document.getElementById('f-id').value = '';
+    document.getElementById('f-type').value = type;
+    document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Nuevo Ingreso' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso';
+    const catSelect = document.getElementById('f-category');
+    catSelect.innerHTML = '';
+    finCategories[type].forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSelect.appendChild(o); });
+    document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('f-match-container').classList.add('hidden');
+    document.getElementById('f-player-container').classList.add('hidden');
+    document.getElementById('f-specific-debt-container').classList.add('hidden');
+    const matchSelect = document.getElementById('f-match');
+    matchSelect.innerHTML = '<option value="">Selecciona...</option>';
+    window.matches.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = `${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})} - vs ${m.opponent}`; matchSelect.appendChild(o); });
+    window.toggleMatchSelect();
+    window.updateAdminUI();
+    window.showSection('financesForm');
+};
+
+window.toggleMatchSelect = function() {
+    const cat = document.getElementById('f-category').value;
+    const mc = document.getElementById('f-match-container'), pc = document.getElementById('f-player-container'), sdc = document.getElementById('f-specific-debt-container');
+    if (cat === 'Arbitraje' || cat === 'Multa Tarjeta') mc.classList.remove('hidden');
+    else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
+    if (cat === 'Cobro Manual' || cat === 'Multa Tarjeta' || cat === 'Abono a Deuda (Jugador)') { pc.classList.remove('hidden'); window.populateFinPlayerSelect(); }
+    else { pc.classList.add('hidden'); document.getElementById('f-player').value = ''; }
+    if (cat === 'Abono a Deuda (Jugador)') { sdc.classList.remove('hidden'); window.populateSpecificDebts(); }
+    else { sdc.classList.add('hidden'); document.getElementById('f-specific-debt').value = ''; }
+    window.calcArbitraje();
+};
+
+window.populateFinPlayerSelect = function() {
+    const sel = document.getElementById('f-player');
+    sel.innerHTML = '<option value="">Selecciona...</option>';
+    window.players.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); });
+};
+
+window.calcArbitraje = function() {
+    const cat = document.getElementById('f-category').value, calcDiv = document.getElementById('f-arbitraje-calc');
+    if (cat !== 'Arbitraje') { calcDiv.classList.add('hidden'); return; }
+    const matchId = document.getElementById('f-match').value, amount = parseFloat(document.getElementById('f-amount').value) || 0;
+    if (!matchId || amount <= 0) { calcDiv.classList.add('hidden'); return; }
+    const match = window.matches.find(m => m.id === matchId);
+    if (!match || !match.lineup) { calcDiv.classList.add('hidden'); return; }
+    const valid = match.lineup.filter(l => { const p = window.players.find(x => x.id === l.playerId); return p && !p.isStaff; });
+    if (valid.length === 0) { calcDiv.classList.add('hidden'); return; }
+    const cuota = amount / valid.length;
+    calcDiv.classList.remove('hidden');
+    calcDiv.innerHTML = `<p class="text-xs font-bold"><i class="fas fa-users mr-1"></i> ${valid.length} jugadores convocados</p><p class="text-lg font-black text-brand-600 dark:text-brand-400 mt-1">Cuota por jugador: ${cuota.toFixed(2)}</p>`;
+};
+
+window.handleAmountInput = function() { window.calcArbitraje(); };
+
+window.populateSpecificDebts = function() {
+    const playerId = document.getElementById('f-player').value, sel = document.getElementById('f-specific-debt');
+    sel.innerHTML = '<option value="">Abono general a cuenta</option>';
+    if (!playerId) return;
+    window.getPlayerDebts(playerId).debts.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = `${d.desc.substring(0,35)} - ${d.amount.toFixed(2)}`; sel.appendChild(o); });
+};
+
+window.handleSpecificDebtSelect = function() {
+    const debtId = document.getElementById('f-specific-debt').value;
+    if (!debtId) return;
+    const playerId = document.getElementById('f-player').value;
+    const debt = window.getPlayerDebts(playerId).debts.find(d => d.id === debtId);
+    if (debt) document.getElementById('f-amount').value = debt.amount.toFixed(2);
+};
+
+window.saveTransaction = async function(e) {
+    e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const btn = document.getElementById('btn-save-fin'); btn.disabled = true; btn.textContent = "Guardando...";
+    const docId = document.getElementById('f-id').value || window.generateId();
+    const type = document.getElementById('f-type').value, category = document.getElementById('f-category').value;
+    const amount = parseFloat(document.getElementById('f-amount').value), date = document.getElementById('f-date').value;
+    const description = document.getElementById('f-desc').value;
+    const matchId = document.getElementById('f-match').value || null, playerId = document.getElementById('f-player').value || null;
+    const specificDebtId = document.getElementById('f-specific-debt').value || null;
+    const tData = { id: docId, type: type, amount: amount, date: date, category: category, description: description, matchId: matchId, playerId: playerId };
+    if (specificDebtId) tData.specificDebtId = specificDebtId;
+    if (category === 'Cobro Manual' || category === 'Multa Tarjeta') tData.isPaid = false;
+    if (category === 'Arbitraje') tData.paidBy = [];
+
+    const batch = db.batch();
+    batch.set(db.collection(window.financesPath).doc(docId), tData);
+
+    if (playerId) {
+        const p = window.players.find(x => x.id === playerId);
+        if (p) {
+            if (category === 'Cobro Manual' || category === 'Multa Tarjeta') {
+                batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
+            } else if (category === 'Abono a Deuda (Jugador)' && !specificDebtId) {
+                const newDebt = Math.max(0, (p.debtAmount || 0) - amount);
+                batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true });
+            }
+        }
+    }
+
+    try { await batch.commit(); window.showToast('Movimiento guardado'); window.showSection('finances'); } catch(err) { window.showToast('Error al guardar', true); } finally { btn.disabled = false; btn.textContent = "Guardar"; }
+};
+
+window.deleteTransaction = function(id) {
+    window.showConfirm('¿Eliminar este movimiento?', async () => {
+        try {
+            const t = window.finances.find(x => x.id === id);
+            if (t && t.playerId && (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta') && !t.isPaid) {
+                const p = window.players.find(x => x.id === t.playerId);
+                if (p) await db.collection(window.playersPath).doc(t.playerId).set({ debtAmount: Math.max(0, (p.debtAmount || 0) - t.amount) }, { merge: true });
+            }
+            await db.collection(window.financesPath).doc(id).delete();
+            window.showToast('Movimiento eliminado');
+        } catch(e) { window.showToast('Error', true); }
+    });
+};
+
+window.renderFinances = function() {
+    let income = 0, expense = 0;
+    window.finances.forEach(t => { if (t.type === 'income') income += t.amount || 0; else expense += t.amount || 0; });
+    const balance = income - expense;
+    const elB = document.getElementById('fin-balance'); if(elB) elB.textContent = `${balance.toFixed(2)}`;
+    const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+${income.toFixed(2)}`;
+    const elE = document.getElementById('fin-expense'); if(elE) elE.textContent = `-${expense.toFixed(2)}`;
+
+    const debtorsList = document.getElementById('debtors-list');
+    if (debtorsList) {
+        debtorsList.innerHTML = '';
+        let hasDebtors = false;
+        window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+            const dData = window.getPlayerDebts(p.id);
+            if (dData.total > 0.01) {
+                hasDebtors = true;
+                const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center">${p.name.charAt(0)}</div>`;
+                debtorsList.innerHTML += `<li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer" onclick="window.openPaySpecific('${p.id}')"><div class="flex items-center gap-3">${img}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[10px] text-slate-400 font-bold uppercase">${dData.debts.length} deuda(s)</p></div></div><div class="text-right"><p class="font-black text-red-500">${dData.total.toFixed(2)}</p><p class="text-[10px] text-brand-600 font-bold uppercase">Pagar</p></div></li>`;
+            }
+        });
+        if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">Todos los jugadores están al día</li>';
+    }
+
+    const transList = document.getElementById('transactions-list');
+    if (transList) {
+        transList.innerHTML = '';
+        const sorted = [...window.finances].sort((a,b) => new Date(b.date) - new Date(a.date));
+        if (sorted.length === 0) { transList.innerHTML = '<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin movimientos registrados</td></tr>'; }
+        else sorted.forEach(t => {
+            const isInc = t.type === 'income';
+            const dStr = new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
+            let extra = '';
+            if (t.matchId) { const m = window.matches.find(x => x.id === t.matchId); if (m) extra = ` vs ${m.opponent}`; }
+            if (t.playerId) { const p = window.players.find(x => x.id === t.playerId); if (p) extra += ` · ${p.name}`; }
+            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3"><span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm ${isInc ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'}"><i class="fas ${isInc ? 'fa-arrow-down' : 'fa-arrow-up'}"></i></span><div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${t.description}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap"><p class="font-black ${isInc ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${isInc ? '+' : '-'}${(t.amount||0).toFixed(2)}</p><p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right admin-only"><button onclick="window.deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+    }
+};
+
+window.openPaySpecific = function(playerId) {
+    const p = window.players.find(x => x.id === playerId); if (!p) return;
+    document.getElementById('pay-spec-name').textContent = p.name;
+    const list = document.getElementById('pay-spec-list');
+    const debts = window.getPlayerDebts(playerId);
+    list.innerHTML = '';
+    if (debts.debts.length === 0) { list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; }
+    else debts.debts.forEach(d => {
+        const dStr = new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+        list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700"><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${d.desc}</p><p class="text-[10px] text-slate-400">${dStr}</p></div><div class="flex items-center gap-3 ml-3"><span class="font-black text-red-500 text-sm">${d.amount.toFixed(2)}</span><button onclick="window.paySpecificDebt('${playerId}','${d.id}',${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Pagar</button></div></div>`;
+    });
+    document.getElementById('pay-spec-total').textContent = `${debts.total.toFixed(2)}`;
+    document.getElementById('modalPaySpecific').classList.remove('hidden');
+    window.updateAdminUI();
+};
+
+window.paySpecificDebt = async function(playerId, debtId, amount) {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const finId = window.generateId();
+    const tData = { id: finId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: 'Pago de deuda', playerId: playerId, specificDebtId: debtId };
+    const batch = db.batch();
+    batch.set(db.collection(window.financesPath).doc(finId), tData);
+
+    if (debtId.startsWith('arb_')) {
+        const parentId = debtId.split('_')[1];
+        const arbTx = window.finances.find(x => x.id === parentId);
+        if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true });
+    } else {
+        batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
+        const p = window.players.find(x => x.id === playerId);
+        if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
+    }
+
+    try { await batch.commit(); window.showToast('Deuda pagada'); window.openPaySpecific(playerId); window.renderFinances(); } catch(e) { window.showToast('Error', true); }
+};
+
+window.copyGroupMessage = function() {
+    const debtors = [];
+    window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+        const d = window.getPlayerDebts(p.id);
+        if (d.total > 0.01) debtors.push(`🔴 ${p.name}: ${d.total.toFixed(2)}`);
+    });
+    let msg = '*NISUS FC - Estado de Pagos*\n\n';
+    if (debtors.length === 0) msg += '✅ Todos los jugadores están al día. ¡Gracias!';
+    else { msg += 'Estimados jugadores, recuerden ponerse al día:\n\n' + debtors.join('\n') + '\n\n_Gracias por su compromiso._'; }
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Mensaje copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
+};
+
+/* -----------------------------------------------------
    INICIALIZACIÓN Y LISTENERS
 ------------------------------------------------------ */
 window.checkAutoActivations = async function() {
