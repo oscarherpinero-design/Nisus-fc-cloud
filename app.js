@@ -799,6 +799,43 @@ window.updateDashboard = function() {
             formEl.innerHTML+=`<span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${col}">${r}</span>`;
         });
     }
+
+    const mvpEl=document.getElementById('mvp-card-content');
+    if(mvpEl){
+        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{
+            const g=window.getPlayerStat(p,'goals'),a=window.getPlayerStat(p,'assists'),gp=window.getPlayerStat(p,'games'),m=window.getPlayerStat(p,'mvps');
+            return {p,score:g*2+a+gp+m*3,g,a,gp,m};
+        }).sort((x,y)=>y.score-x.score);
+        if(mvpList.length>0&&mvpList[0].score>0){
+            const t=mvpList[0];
+            const img=t.p.image?`<img src="${t.p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg">`:`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">${t.p.name.charAt(0)}</div>`;
+            const name=t.p.alias&&t.p.showAlias?t.p.alias:t.p.name;
+            mvpEl.innerHTML=`${img}<div><p class="text-white font-black text-xl leading-tight">${name}</p><p class="text-white/80 text-xs font-bold">${t.p.positions&&t.p.positions.length?t.p.positions[0]:'Jugador'}</p></div>`;
+            const sEl=document.getElementById('mvp-stats');
+            if(sEl)sEl.innerHTML=`<div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">PJ</p><p class="text-white font-black text-lg">${t.gp}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Goles</p><p class="text-white font-black text-lg">${t.g}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Asis.</p><p class="text-white font-black text-lg">${t.a}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">MVP</p><p class="text-white font-black text-lg">${t.m}</p></div>`;
+        } else {
+            mvpEl.innerHTML=`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30"><i class="fas fa-trophy"></i></div><div><p class="text-white font-black text-xl leading-tight">Sin datos</p><p class="text-white/80 text-xs font-bold">Registra partidos</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML='';
+        }
+    }
+
+    const rankEl=document.getElementById('attendance-ranking');
+    if(rankEl){
+        const totalTrainings=window.trainings?window.trainings.length:0;
+        if(totalTrainings===0){ rankEl.innerHTML='<p class="text-sm text-slate-500 italic text-center py-6">No hay sesiones registradas</p>'; }
+        else {
+            const ranked=[...pL].filter(p=>!p.isStaff).map(p=>{
+                const attended=window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length;
+                return {p,attended,pct:Math.round((attended/totalTrainings)*100)};
+            }).sort((a,b)=>b.pct-a.pct||b.attended-a.attended).slice(0,5);
+            rankEl.innerHTML=ranked.map((r,i)=>{
+                const img=r.p.image?`<img src="${r.p.image}" class="w-9 h-9 rounded-full object-cover">`:`<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${r.p.name.charAt(0)}</div>`;
+                const barColor=r.pct>=75?'bg-green-500':r.pct>=50?'bg-yellow-500':'bg-red-500';
+                const medal=i===0?'text-yellow-500':i===1?'text-slate-400':i===2?'text-orange-400':'text-slate-300';
+                return `<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><span class="w-5 text-center font-black ${medal}"><i class="fas ${i<3?'fa-medal':'fa-hashtag'} text-sm"></i></span>${img}<div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${r.p.name}</span><span class="text-[10px] font-black text-slate-500 ml-2">${r.attended}/${totalTrainings}</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${r.pct}%"></div></div></div><span class="font-black text-sm ${r.pct>=75?'text-green-600':r.pct>=50?'text-yellow-600':'text-red-600'}">${r.pct}%</span></div>`;
+            }).join('');
+        }
+    }
 };
 
 /* -----------------------------------------------------
