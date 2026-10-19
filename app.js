@@ -311,7 +311,24 @@ window.savePlayer = async function(e) {
     const pStatus = document.getElementById('p-status').value || 'active'; let returnD = null;
     if(pStatus === 'injured' || pStatus === 'absent') { returnD = document.getElementById('p-return-date').value || null; }
     const oldP = window.players.find(x => x.id === id);
-    const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: document.getElementById('p-image-base64').value, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
+    
+    let imageUrl = document.getElementById('p-image-base64').value;
+    
+    // --- NUEVA LÓGICA: SUBIR A STORAGE DIRECTAMENTE ---
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+        try {
+            const res = await fetch(imageUrl);
+            const blob = await res.blob();
+            const ref = firebase.storage().ref(`jugadores/${docId}.jpg`);
+            await ref.put(blob);
+            imageUrl = await ref.getDownloadURL(); // Cambiamos el texto largo por el Link corto
+        } catch (error) {
+            console.error("Error al subir foto:", error);
+            window.showToast('Error al subir la imagen', true);
+        }
+    }
+    
+    const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: imageUrl, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
     if(oldP && oldP.debtAmount !== undefined) pData.debtAmount = oldP.debtAmount;
     try { await db.collection(window.playersPath).doc(docId).set(pData); window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Ficha"; }
 };
@@ -325,7 +342,16 @@ window.editPlayer = function(id) {
     window.toggleReturnDateField(); window.updateAdminUI(); window.showSection('playerForm');
 };
 
-window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador permanentemente?', async () => { try { await db.collection(window.playersPath).doc(id).delete(); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
+window.deletePlayer = function(id) { 
+    window.showConfirm('¿Eliminar jugador permanentemente?', async () => { 
+        try { 
+            await db.collection(window.playersPath).doc(id).delete(); 
+            // Intentar borrar la foto de Storage para liberar espacio
+            try { await firebase.storage().ref(`jugadores/${id}.jpg`).delete(); } catch(err) { /* Ignorar si no tenía foto */ }
+            window.showToast('Eliminado'); 
+        } catch(e) { window.showToast('Error', true); } 
+    }); 
+};
 window.migrarFotosAStorage = async function() {
     if (!window.isAdmin) return window.showToast('Debes ser administrador', true);
     
