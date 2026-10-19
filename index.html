@@ -209,6 +209,39 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 transition-all">
+                    <h3 class="font-black text-slate-800 dark:text-white mb-5 flex items-center text-lg"><i class="fas fa-chart-pie text-brand-500 mr-3"></i>Rendimiento</h3>
+                    <div class="flex items-center gap-6">
+                        <div class="relative shrink-0">
+                            <div id="perf-donut" class="w-32 h-32 rounded-full" style="background: conic-gradient(#10b981 0deg, #64748b 0deg, #ef4444 0deg, #e2e8f0 0deg);"></div>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-2xl font-black text-slate-800 dark:text-white" id="perf-win-pct">0%</span>
+                                <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Victorias</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 space-y-2.5">
+                            <div class="flex items-center justify-between"><span class="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300"><span class="w-3 h-3 rounded-full bg-green-500"></span>Victorias</span><span class="font-black text-slate-800 dark:text-white" id="perf-wins">0</span></div>
+                            <div class="flex items-center justify-between"><span class="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300"><span class="w-3 h-3 rounded-full bg-slate-400"></span>Empates</span><span class="font-black text-slate-800 dark:text-white" id="perf-draws">0</span></div>
+                            <div class="flex items-center justify-between"><span class="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300"><span class="w-3 h-3 rounded-full bg-red-500"></span>Derrotas</span><span class="font-black text-slate-800 dark:text-white" id="perf-losses">0</span></div>
+                        </div>
+                    </div>
+                    <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Racha (últimos 5)</p>
+                        <div class="flex gap-1.5" id="perf-form"></div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 transition-all">
+                    <h3 class="font-black text-slate-800 dark:text-white mb-5 flex items-center text-lg"><i class="fas fa-balance-scale text-brand-500 mr-3"></i>Resumen de Temporada</h3>
+                    <div class="grid grid-cols-2 gap-4" id="perf-season-stats">
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 text-center border border-slate-100 dark:border-slate-800"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">PJ</p><p class="text-2xl font-black text-slate-800 dark:text-white" id="perf-played">0</p></div>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 text-center border border-slate-100 dark:border-slate-800"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Puntos</p><p class="text-2xl font-black text-brand-600 dark:text-brand-400" id="perf-points">0</p></div>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 text-center border border-slate-100 dark:border-slate-800"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Goles Favor</p><p class="text-2xl font-black text-green-600" id="perf-gf">0</p></div>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 text-center border border-slate-100 dark:border-slate-800"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Goles Contra</p><p class="text-2xl font-black text-red-600" id="perf-ga">0</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden transition-all">
                     <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-100 dark:border-slate-800"><h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-fire text-orange-500 mr-2"></i>Top Goleadores</h3></div>
                     <table class="w-full text-left border-collapse"><tbody id="top-scorers-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></tbody></table>

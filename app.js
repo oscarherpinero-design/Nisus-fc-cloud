@@ -767,6 +767,38 @@ window.updateDashboard = function() {
     };
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
+
+    let w=0, d=0, l=0, gf=0, ga=0;
+    list.forEach(m => {
+        if(m.status==='finished' || m.status==='forfait'){
+            if(m.status==='forfait'){ w++; gf+=3; return; }
+            const us=parseInt(m.goalsUs)||0, them=parseInt(m.goalsThem)||0; gf+=us; ga+=them;
+            if(us>them)w++; else if(us<them)l++; else d++;
+        }
+    });
+    const total=w+d+l;
+    const eW=document.getElementById('perf-wins'),eD=document.getElementById('perf-draws'),eL=document.getElementById('perf-losses');
+    if(eW)eW.textContent=w; if(eD)eD.textContent=d; if(eL)eL.textContent=l;
+    const eGF=document.getElementById('perf-gf'),eGA=document.getElementById('perf-ga'),ePP=document.getElementById('perf-played'),ePT=document.getElementById('perf-points');
+    if(eGF)eGF.textContent=gf; if(eGA)eGA.textContent=ga; if(ePP)ePP.textContent=total; if(ePT)ePT.textContent=(w*3+d);
+    const donut=document.getElementById('perf-donut');
+    if(donut){
+        const wDeg=total>0?(w/total)*360:0, dDeg=total>0?(d/total)*360:0, lDeg=total>0?(l/total)*360:0;
+        donut.style.background=`conic-gradient(#10b981 0deg ${wDeg}deg, #64748b ${wDeg}deg ${wDeg+dDeg}deg, #ef4444 ${wDeg+dDeg}deg ${wDeg+dDeg+lDeg}deg, #e2e8f0 ${wDeg+dDeg+lDeg}deg 360deg)`;
+        const ePct=document.getElementById('perf-win-pct'); if(ePct)ePct.textContent=total>0?Math.round((w/total)*100)+'%':'0%';
+    }
+    const formEl=document.getElementById('perf-form');
+    if(formEl){
+        const recent=list.filter(m=>m.status==='finished'||m.status==='forfait').slice(0,5);
+        formEl.innerHTML='';
+        if(recent.length===0)formEl.innerHTML='<p class="text-xs text-slate-400 italic">Sin partidos jugados</p>';
+        else recent.forEach(m=>{
+            let r='E',col='bg-slate-400 text-white';
+            if(m.status==='forfait'||parseInt(m.goalsUs)>parseInt(m.goalsThem)){r='V';col='bg-green-500 text-white';}
+            else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){r='D';col='bg-red-500 text-white';}
+            formEl.innerHTML+=`<span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${col}">${r}</span>`;
+        });
+    }
 };
 
 /* -----------------------------------------------------
