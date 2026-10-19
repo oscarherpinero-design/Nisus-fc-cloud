@@ -381,7 +381,13 @@
         <section id="players" class="hidden space-y-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" id="players-title">Plantilla Oficial</h2><p class="text-slate-500 text-sm mt-1 font-medium">Jugadores y Cuerpo Técnico</p></div>
-                <button onclick="window.newPlayer()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-sm"><i class="fas fa-user-plus"></i> Inscribir Miembro</button>
+                
+                <!-- AQUÍ PEGAS EL NUEVO BLOQUE CON LOS DOS BOTONES -->
+                <div class="admin-only flex flex-wrap gap-3 w-full sm:w-auto">
+                    <button id="btn-migrar-fotos" onclick="window.migrarFotosAStorage()" class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-cloud-upload-alt"></i> Migrar Fotos</button>
+                    <button onclick="window.newPlayer()" class="flex-1 sm:flex-none bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-sm"><i class="fas fa-user-plus"></i> Inscribir Miembro</button>
+                </div>
+                
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mb-2">
                 <div class="relative flex-1">
@@ -743,6 +749,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
     <!-- CONECTAMOS EL ARCHIVO DE LÓGICA JAVASCRIPT -->
     <script src="app.js" defer></script>
