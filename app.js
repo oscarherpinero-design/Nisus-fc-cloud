@@ -754,6 +754,48 @@ window.updateDashboard = function() {
         });
     }
     
+    const allPlayers = window.players.filter(p=>!p.isStaff);
+    const bEl = document.getElementById('birthdays-strip');
+    if(bEl) {
+        const today = new Date(); const ty = today.getFullYear();
+        const upcoming = allPlayers.filter(p=>p.birthdate).map(p => {
+            const parts = p.birthdate.split('-'); const bm = parseInt(parts[1])-1, bd = parseInt(parts[2]);
+            let next = new Date(ty, bm, bd);
+            const days = Math.ceil((next - today) / (1000*60*60*24));
+            if (days < 0) { next = new Date(ty+1, bm, bd); }
+            const dCalc = Math.ceil((next - today) / (1000*60*60*24));
+            return { p, dCalc, next };
+        }).sort((a,b)=>a.dCalc-b.dCalc).slice(0,6);
+        bEl.innerHTML = '';
+        if(upcoming.length===0) bEl.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium py-2 px-1">Sin fechas de nacimiento registradas</p>';
+        else upcoming.forEach(item => {
+            const p = item.p;
+            const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`;
+            const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'});
+            const isToday = item.dCalc === 0;
+            const badge = isToday ? `<span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">¡Hoy!</span>` : `<span class="text-[10px] font-bold text-slate-400">${item.dCalc}d</span>`;
+            bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
+        });
+    }
+
+    const aEl = document.getElementById('availability-strip');
+    if(aEl) {
+        const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' } };
+        const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
+        const activeCount = allPlayers.length - unavailable.length;
+        aEl.innerHTML = '';
+        aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
+        if(unavailable.length === 0) {
+            aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`;
+        } else {
+            unavailable.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
+                const s = statusMap[p.status] || statusMap.absent;
+                const ret = p.returnDate ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : '';
+                aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${p.name} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`;
+            });
+        }
+    }
+
     let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
     let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
     pL.forEach(p => { tG+=window.getPlayerStat(p,'goals'); tA+=window.getPlayerStat(p,'assists'); });
