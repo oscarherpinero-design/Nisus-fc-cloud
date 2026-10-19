@@ -329,8 +329,12 @@ window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador perm
 window.renderPlayers = function() {
     const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
     let list = window.players; if(window.currentFilter==='f11') list = list.filter(p=>p.availableF11); else if(window.currentFilter==='f7') list = list.filter(p=>p.availableF7);
+    const q = (document.getElementById('player-search')?.value || '').trim().toLowerCase();
+    const posF = document.getElementById('player-position-filter')?.value || '';
+    if(q) list = list.filter(p => { const n=(p.name||'').toLowerCase(), al=(p.alias||'').toLowerCase(), num=String(p.number||''); return n.includes(q)||al.includes(q)||num===q; });
+    if(posF) { if(posF==='Staff') list = list.filter(p=>p.isStaff); else list = list.filter(p => { const pos = Array.isArray(p.positions)?p.positions:(p.position?[p.position]:[]); return pos.includes(posF); }); }
     list.sort((a,b) => { if (a.isStaff && !b.isStaff) return 1; if (!a.isStaff && b.isStaff) return -1; const nA = parseInt(a.number) || 9999; const nB = parseInt(b.number) || 9999; if(nA !== nB) return nA - nB; return (a.name||'').localeCompare(b.name||''); });
-    if(list.length===0){ grid.innerHTML='<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay registros</div>'; return; }
+    if(list.length===0){ const q2=(document.getElementById('player-search')?.value||'').trim(), pF=document.getElementById('player-position-filter')?.value; const hasFilters=q2||pF; grid.innerHTML=`<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">${hasFilters?'<i class=\'fas fa-search-minus text-3xl mb-3 block text-slate-300\'></i>No se encontraron jugadores con esos criterios':'No hay registros'}</div>`; return; }
 
     list.forEach(p => {
         const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), yellows = window.getPlayerStat(p, 'yellows'), reds = window.getPlayerStat(p, 'reds'), mvps = window.getPlayerStat(p, 'mvps'), cleanSheets = window.getPlayerStat(p, 'cleanSheets'), attendance = window.trainings?window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length:0;

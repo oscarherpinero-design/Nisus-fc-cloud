@@ -280,6 +280,29 @@
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" id="players-title">Plantilla Oficial</h2><p class="text-slate-500 text-sm mt-1 font-medium">Jugadores y Cuerpo Técnico</p></div>
                 <button onclick="window.newPlayer()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-sm"><i class="fas fa-user-plus"></i> Inscribir Miembro</button>
             </div>
+            <div class="flex flex-col sm:flex-row gap-3 mb-2">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="player-search" oninput="window.renderPlayers()" placeholder="Buscar por nombre, alias o dorsal..." class="input-premium pl-11 py-2.5 text-sm w-full">
+                </div>
+                <select id="player-position-filter" onchange="window.renderPlayers()" class="input-premium py-2.5 text-sm sm:w-56">
+                    <option value="">Todas las posiciones</option>
+                    <option value="Portero">Portero</option>
+                    <option value="Defensa Central">Defensa Central</option>
+                    <option value="Lateral Derecho">Lateral Derecho</option>
+                    <option value="Lateral Izquierdo">Lateral Izquierdo</option>
+                    <option value="Carrilero">Carrilero</option>
+                    <option value="Mediocentro Defensivo">Pivote / MCD</option>
+                    <option value="Mediocentro">Mediocentro / MC</option>
+                    <option value="Interior">Interior</option>
+                    <option value="Mediapunta">Mediapunta / MCO</option>
+                    <option value="Extremo Derecho">Extremo Derecho</option>
+                    <option value="Extremo Izquierdo">Extremo Izquierdo</option>
+                    <option value="Segundo Delantero">Segundo Delantero</option>
+                    <option value="Delantero Centro">Delantero Centro / 9</option>
+                    <option value="Staff">Cuerpo Técnico</option>
+                </select>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="players-grid"></div>
         </section>
 
