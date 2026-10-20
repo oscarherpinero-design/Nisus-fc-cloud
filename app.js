@@ -602,7 +602,6 @@ window.editMatch = function(id) {
     
     window.renderCallupList(); window.toggleScoreFields(); window.updateFormationOptions();
     
-    // --- NUEVO: Cargar el nombre de la formación ---
     if(m.formation) { const f = document.getElementById('m-formation'); if(f) f.value = m.formation; }
     
     if(m.status==='finished' && m.mvp) document.getElementById('m-mvp').value = m.mvp;
@@ -641,6 +640,13 @@ window.saveMatch = async function(e) {
             }
         }
     });
+
+    const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
+    
+    batch.set(db.collection(window.matchesPath).doc(docId), nm);
+
+    try { await batch.commit(); window.showToast(multasAplicadas > 0 ? `Guardado (${multasAplicadas} multas aplicadas)` : 'Partido Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
+};
 
     // --- NUEVO: Se agregó 'formation' al objeto que se guarda ---
     const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
