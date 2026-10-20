@@ -954,9 +954,17 @@ window.updateDashboard = function() {
     pL.forEach(p => { tG+=window.getPlayerStat(p,'goals'); tA+=window.getPlayerStat(p,'assists'); });
     const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
     const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
-    let tGames=0, tCS=0;
-    pL.forEach(p => { tGames+=window.getPlayerStat(p,'games'); tCS+=window.getPlayerStat(p,'cleanSheets'); });
-    const eTGm = document.getElementById('stat-total-games'); if(eTGm) eTGm.textContent = tGames;
+    let tCS=0, maxGames=0, ironMan="--";
+    pL.forEach(p => { 
+        const g = window.getPlayerStat(p,'games');
+        if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : p.name.split(' ')[0]; }
+        tCS+=window.getPlayerStat(p,'cleanSheets'); 
+    });
+    const eTGm = document.getElementById('stat-total-games'); 
+    if(eTGm) { 
+        eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; 
+        eTGm.innerHTML = `${maxGames} <span class="text-sm font-bold text-brand-500 ml-1 truncate">${ironMan}</span>`; 
+    }
     const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
     
     const rL = (arr, k, el) => {
