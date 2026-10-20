@@ -61,6 +61,11 @@
 
         .modal-animate { animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .section-fade-in { animation: sectionFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes sectionFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .match-result-win { @apply bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/50; }
+        .match-result-loss { @apply bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50; }
+        .match-result-draw { @apply bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50; }
 
         /* Estilos de la Pizarra Táctica */
         .pitch-container { width: 100%; max-width: 320px; height: 480px; margin: 0 auto; background-color: #22c55e; position: relative; border-radius: 12px; overflow: hidden; background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 48px, transparent 48px, transparent 96px); touch-action: none; border: 3px solid #16a34a; box-shadow: inset 0 0 20px rgba(0,0,0,0.1); }
@@ -115,8 +120,8 @@
             <div class="flex bg-brand-900/50 dark:bg-slate-800/80 backdrop-blur rounded-xl p-1 items-center border border-brand-700/50 dark:border-slate-700/50">
                 <div class="flex items-center">
                     <button onclick="window.setFilter('all')" id="btn-filter-all" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg bg-white dark:bg-brand-600 text-brand-900 dark:text-white font-bold shadow-sm transition">GRL</button>
-                    <button onclick="window.setFilter('f11')" id="btn-filter-f11" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-400 hover:text-white transition font-medium">F11</button>
-                    <button onclick="window.setFilter('f7')" id="btn-filter-f7" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-400 hover:text-white transition font-medium">F7</button>
+                    <button onclick="window.setFilter('f11')" id="btn-filter-f11" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-300 hover:text-white transition font-medium">F11</button>
+                    <button onclick="window.setFilter('f7')" id="btn-filter-f7" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-300 hover:text-white transition font-medium">F7</button>
                 </div>
                 <div class="w-px h-5 bg-brand-700 dark:bg-slate-600 mx-2 sm:mx-3"></div>
                 <div class="hidden sm:flex items-center gap-2 mr-3 px-2" title="Usuarios activos">
@@ -143,8 +148,8 @@
             <p class="text-[10px] text-slate-400 font-bold uppercase mb-3 tracking-widest">Filtros Móvil</p>
             <div class="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1 text-sm items-center justify-between mb-3 border border-slate-200 dark:border-slate-800">
                 <button onclick="window.setFilter('all')" id="btn-side-filter-all" class="flex-1 py-2 rounded-lg bg-white dark:bg-brand-600 text-slate-900 dark:text-white font-bold shadow-sm transition text-center">GRL</button>
-                <button onclick="window.setFilter('f11')" id="btn-side-filter-f11" class="flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-medium text-center">F11</button>
-                <button onclick="window.setFilter('f7')" id="btn-side-filter-f7" class="flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-medium text-center">F7</button>
+                <button onclick="window.setFilter('f11')" id="btn-side-filter-f11" class="flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition font-medium text-center">F11</button>
+                <button onclick="window.setFilter('f7')" id="btn-side-filter-f7" class="flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition font-medium text-center">F7</button>
             </div>
             <select id="season-filter-side" onchange="window.setSeasonFilter(this.value)" class="input-premium py-2 text-xs cursor-pointer"><option value="all">Todas las Temporadas</option></select>
             <select id="season-filter" class="hidden"><option value="all">Todas Temp.</option></select>
@@ -153,11 +158,11 @@
         <nav class="flex-1 overflow-y-auto py-5 px-4 space-y-2">
             <p class="text-[10px] text-slate-400 font-bold uppercase px-2 mb-3 tracking-widest">Navegación</p>
             <button onclick="window.showSection('dashboard')" id="nav-side-dashboard" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-bold text-left transition-colors"><i class="fas fa-chart-pie w-5 text-lg"></i> Resumen</button>
-            <button onclick="window.showSection('players')" id="nav-side-players" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-users w-5 text-lg"></i> Plantilla</button>
-            <button onclick="window.showSection('attendance')" id="nav-side-attendance" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-clipboard-check w-5 text-lg"></i> Entrenamientos</button>
-            <button onclick="window.showSection('matches')" id="nav-side-matches" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-calendar-alt w-5 text-lg"></i> Partidos</button>
-            <button onclick="window.showSection('stats')" id="nav-side-stats" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-trophy w-5 text-lg"></i> Estadísticas</button>
-            <button onclick="window.showSection('finances')" id="nav-side-finances" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-wallet w-5 text-lg"></i> Finanzas</button>
+            <button onclick="window.showSection('players')" id="nav-side-players" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-users w-5 text-lg"></i> Plantilla</button>
+            <button onclick="window.showSection('attendance')" id="nav-side-attendance" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-clipboard-check w-5 text-lg"></i> Entrenamientos</button>
+            <button onclick="window.showSection('matches')" id="nav-side-matches" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-calendar-alt w-5 text-lg"></i> Partidos</button>
+            <button onclick="window.showSection('stats')" id="nav-side-stats" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-trophy w-5 text-lg"></i> Estadísticas</button>
+            <button onclick="window.showSection('finances')" id="nav-side-finances" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-wallet w-5 text-lg"></i> Finanzas</button>
         </nav>
         
         <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col gap-3">
@@ -210,6 +215,14 @@
                 <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark">
                     <div class="w-14 h-14 rounded-xl bg-blue-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-shoe-prints"></i></div>
                     <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Asistencias</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-assists">0</p></div>
+                </div>
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark">
+                    <div class="w-14 h-14 rounded-xl bg-brand-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-calendar-check"></i></div>
+                    <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Partidos Jugados</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-games">0</p></div>
+                </div>
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark">
+                    <div class="w-14 h-14 rounded-xl bg-teal-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-shield-alt"></i></div>
+                    <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Porterías a Cero</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-cleansheets">0</p></div>
                 </div>
             </div>
 
