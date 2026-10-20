@@ -157,8 +157,19 @@ window.updateAdminUI = function() {
     }
 };
 
-window.toggleAdmin = function() { if(window.isAdmin) { window.isAdmin=false; localStorage.removeItem('nisus_admin'); window.updateAdminUI(); window.showToast("Modo lectura activado"); } else { document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('admin-pin').value=''; document.getElementById('admin-pin').focus(); } };
-window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
+window.toggleAdmin = function() { 
+    if(window.isAdmin) { 
+        window.isAdmin=false; 
+        localStorage.removeItem('nisus_admin'); 
+        window.switchFinancesTab('resumen'); // Esto expulsa de la pestaña cobros al bloquear
+        window.updateAdminUI(); 
+        window.showToast("Modo lectura activado"); 
+    } else { 
+        document.getElementById('pinModal').classList.remove('hidden'); 
+        document.getElementById('admin-pin').value=''; 
+        document.getElementById('admin-pin').focus(); 
+    } 
+};window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
 window.verifyPin = function() { if(document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin=true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("Edición desbloqueada"); } else window.showToast("PIN incorrecto", true); };
 
 window.pendingConfirm = null;
@@ -588,9 +599,15 @@ window.editMatch = function(id) {
     if(m.status === 'finished') { document.getElementById('m-goals-us').value = m.goalsUs; document.getElementById('m-goals-them').value = m.goalsThem; } else { document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = ''; }
     window.currentLineup = JSON.parse(JSON.stringify(m.lineup || [])); window.currentEvents = m.events ? JSON.parse(JSON.stringify(m.events)) : [];
     document.getElementById('match-form-title').innerHTML = '<i class="fas fa-edit text-brand-500 mr-2"></i>Editar Partido';
+    
     window.renderCallupList(); window.toggleScoreFields(); window.updateFormationOptions();
+    
+    // --- NUEVO: Cargar el nombre de la formación ---
+    if(m.formation) { const f = document.getElementById('m-formation'); if(f) f.value = m.formation; }
+    
     if(m.status==='finished' && m.mvp) document.getElementById('m-mvp').value = m.mvp;
     if(m.captain) { const c = document.getElementById('m-captain'); if(c) c.value = m.captain; }
+    
     window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview();
     window.switchMatchTab('pizarra');
     window.updateAdminUI(); window.showSection('matchForm');
@@ -625,7 +642,8 @@ window.saveMatch = async function(e) {
         }
     });
 
-    const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
+    // --- NUEVO: Se agregó 'formation' al objeto que se guarda ---
+    const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
     
     batch.set(db.collection(window.matchesPath).doc(docId), nm);
 
@@ -819,7 +837,7 @@ window.renderMatches = function() {
         
         grid.innerHTML += `
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
-                <div class="flex justify-between items-start mb-5"><div class="flex flex-wrap items-center gap-1">${stat} ${tBadge} ${sBadge} ${kBadge}</div><div class="admin-only flex gap-2"><button onclick="window.editMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div></div>
+                <div class="flex justify-between items-start mb-5"><div class="flex flex-wrap items-center gap-1">${stat} ${tBadge} ${sBadge} ${kBadge}</div><div class="admin-only flex gap-2"><button onclick="('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div></div>
                 <div class="flex flex-col items-center justify-center py-4 mb-4 border-y border-slate-100 dark:border-slate-800 ${resBorder}">
                     <div class="text-center mb-5"><p class="text-[11px] text-slate-500 font-black tracking-widest uppercase">${dStr}</p>${loc}</div>
                     <div class="flex items-center justify-between w-full">
@@ -829,7 +847,7 @@ window.renderMatches = function() {
                     </div>
                     <div class="text-center mt-2">${evs}</div>
                 </div>
-                ${btn}<button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 border border-slate-200 dark:border-slate-700"><i class="fas fa-list-ul"></i> Detalles</button>
+                ${btn}<button onclick="('${m.id}')" class="mt-2 w-full py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 border border-slate-200 dark:border-slate-700"><i class="fas fa-list-ul"></i> Detalles</button>
             </div>`;
     });
 };
@@ -928,7 +946,7 @@ window.updateDashboard = function() {
         let loc=''; if(nx.location) loc=nx.location.startsWith('http')?`<a href="${nx.location}" target="_blank" class="text-white hover:text-brand-100 flex items-center justify-center gap-1 mt-2 text-xs bg-white/10 px-3 py-1 rounded-full w-fit mx-auto"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-brand-100/70 flex items-center justify-center gap-1 mt-2 text-[10px] uppercase tracking-widest"><i class="fas fa-map-marker-alt"></i> ${nx.location}</p>`;
         document.getElementById('next-match-date').innerHTML = new Date(nx.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
         document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament}`;
-        btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
+        btn.classList.remove('hidden'); btn.onclick = () => (nx.id);
     } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
     
     const fin = list.filter(m => m.status === 'finished' || m.status === 'forfait').slice(0, 3); const rD = document.getElementById('latest-results');
