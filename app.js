@@ -161,7 +161,7 @@ window.toggleAdmin = function() {
     if(window.isAdmin) { 
         window.isAdmin=false; 
         localStorage.removeItem('nisus_admin'); 
-        window.switchFinancesTab('resumen'); // Esto expulsa de la pestaña cobros al bloquear
+        window.switchFinancesTab('resumen');
         window.updateAdminUI(); 
         window.showToast("Modo lectura activado"); 
     } else { 
@@ -169,7 +169,9 @@ window.toggleAdmin = function() {
         document.getElementById('admin-pin').value=''; 
         document.getElementById('admin-pin').focus(); 
     } 
-};window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
+};
+
+window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
 window.verifyPin = function() { if(document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin=true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("Edición desbloqueada"); } else window.showToast("PIN incorrecto", true); };
 
 window.pendingConfirm = null;
@@ -392,7 +394,7 @@ window.savePlayer = async function(e) {
     
     let imageUrl = document.getElementById('p-image-base64').value;
     
-    // --- LÓGICA: SUBIR BLOB DIRECTO A STORAGE (SIN BASE64 INTERMEDIO) ---
+    // --- LÓGICA: SUBIR BLOB DIRECTO A STORAGE ---
     if (window._removePhotoFlag) {
         imageUrl = '';
         try { await firebase.storage().ref(`jugadores/${docId}.jpg`).delete(); } catch(err) {}
@@ -429,53 +431,41 @@ window.deletePlayer = function(id) {
     window.showConfirm('¿Eliminar jugador permanentemente?', async () => { 
         try { 
             await db.collection(window.playersPath).doc(id).delete(); 
-            // Intentar borrar la foto de Storage para liberar espacio
             try { await firebase.storage().ref(`jugadores/${id}.jpg`).delete(); } catch(err) { /* Ignorar si no tenía foto */ }
             window.showToast('Eliminado'); 
         } catch(e) { window.showToast('Error', true); } 
     }); 
 };
+
 window.migrarFotosAStorage = async function() {
     if (!window.isAdmin) return window.showToast('Debes ser administrador', true);
-    
-    // Buscar fotos viejas en formato Base64
     const jugadoresConBase64 = window.players.filter(p => p.image && p.image.startsWith('data:image'));
-    
     if (jugadoresConBase64.length === 0) {
         return window.showToast('No hay fotos antiguas para migrar.');
     }
-
     window.showConfirm(`Se encontraron ${jugadoresConBase64.length} fotos antiguas. ¿Subirlas al servidor Storage?`, async () => {
         const btn = document.getElementById('btn-migrar-fotos');
         if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Migrando...'; }
-        
         let migradas = 0; let errores = 0;
-        
         for (const p of jugadoresConBase64) {
             try {
-                // 1. Convertir texto a imagen real
                 const res = await fetch(p.image);
                 const blob = await res.blob();
-                
-                // 2. Subir a Firebase Storage
                 const ref = firebase.storage().ref(`jugadores/${p.id}.jpg`);
                 await ref.put(blob);
-                
-                // 3. Conseguir URL ligera y actualizar base de datos
                 const url = await ref.getDownloadURL();
                 await db.collection(window.playersPath).doc(p.id).update({ image: url });
                 migradas++;
-                
             } catch(e) {
                 console.error(`Error foto ${p.name}:`, e);
                 errores++;
             }
         }
-        
         window.showToast(`Migración lista: ${migradas} fotos subidas.`);
         if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Listo'; btn.classList.replace('bg-orange-500', 'bg-green-500'); }
     });
 };
+
 window.renderPlayers = function() {
     const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
     let list = window.players; if(window.currentFilter==='f11') list = list.filter(p=>p.availableF11); else if(window.currentFilter==='f7') list = list.filter(p=>p.availableF7);
@@ -641,14 +631,6 @@ window.saveMatch = async function(e) {
         }
     });
 
-    const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
-    
-    batch.set(db.collection(window.matchesPath).doc(docId), nm);
-
-    try { await batch.commit(); window.showToast(multasAplicadas > 0 ? `Guardado (${multasAplicadas} multas aplicadas)` : 'Partido Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
-};
-
-    // --- NUEVO: Se agregó 'formation' al objeto que se guarda ---
     const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
     
     batch.set(db.collection(window.matchesPath).doc(docId), nm);
@@ -843,7 +825,7 @@ window.renderMatches = function() {
         
         grid.innerHTML += `
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
-                <div class="flex justify-between items-start mb-5"><div class="flex flex-wrap items-center gap-1">${stat} ${tBadge} ${sBadge} ${kBadge}</div><div class="admin-only flex gap-2"><button onclick="('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div></div>
+                <div class="flex justify-between items-start mb-5"><div class="flex flex-wrap items-center gap-1">${stat} ${tBadge} ${sBadge} ${kBadge}</div><div class="admin-only flex gap-2"><button onclick="window.editMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div></div>
                 <div class="flex flex-col items-center justify-center py-4 mb-4 border-y border-slate-100 dark:border-slate-800 ${resBorder}">
                     <div class="text-center mb-5"><p class="text-[11px] text-slate-500 font-black tracking-widest uppercase">${dStr}</p>${loc}</div>
                     <div class="flex items-center justify-between w-full">
@@ -853,7 +835,7 @@ window.renderMatches = function() {
                     </div>
                     <div class="text-center mt-2">${evs}</div>
                 </div>
-                ${btn}<button onclick="('${m.id}')" class="mt-2 w-full py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 border border-slate-200 dark:border-slate-700"><i class="fas fa-list-ul"></i> Detalles</button>
+                ${btn}<button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 border border-slate-200 dark:border-slate-700"><i class="fas fa-list-ul"></i> Detalles</button>
             </div>`;
     });
 };
@@ -952,7 +934,7 @@ window.updateDashboard = function() {
         let loc=''; if(nx.location) loc=nx.location.startsWith('http')?`<a href="${nx.location}" target="_blank" class="text-white hover:text-brand-100 flex items-center justify-center gap-1 mt-2 text-xs bg-white/10 px-3 py-1 rounded-full w-fit mx-auto"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-brand-100/70 flex items-center justify-center gap-1 mt-2 text-[10px] uppercase tracking-widest"><i class="fas fa-map-marker-alt"></i> ${nx.location}</p>`;
         document.getElementById('next-match-date').innerHTML = new Date(nx.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
         document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament}`;
-        btn.classList.remove('hidden'); btn.onclick = () => (nx.id);
+        btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
     } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
     
     const fin = list.filter(m => m.status === 'finished' || m.status === 'forfait').slice(0, 3); const rD = document.getElementById('latest-results');
@@ -1088,7 +1070,7 @@ window.renderTrainings = function() {
         if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir ubicación en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`;
         else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
 
-        const totalPlayers = window.players.filter(p=>!p.isStaff).length;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length;
         const attCount = t.attendees?t.attendees.length:0;
         const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0;
         const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
@@ -1103,7 +1085,7 @@ window.renderTrainings = function() {
         if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir ubicación en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`;
         else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
 
-        const totalPlayers = window.players.filter(p=>!p.isStaff).length;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length;
         const attCount = t.attendees?t.attendees.length:0;
         const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0;
         const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
