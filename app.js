@@ -300,8 +300,75 @@ window.renderKitsPreview = function() {
 ------------------------------------------------------ */
 window.toggleReturnDateField = function() { const s = document.getElementById('p-status').value; const c = document.getElementById('p-return-date-container'); if(s==='injured'||s==='absent') c.classList.remove('hidden'); else c.classList.add('hidden'); };
 
-window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').innerHTML = '<i class="fas fa-user-plus text-brand-500 mr-2"></i>Inscribir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.toggleReturnDateField(); window.showSection('playerForm'); };
-window.handleImageUpload = function(e) { const f = e.target.files[0]; if(!f)return; const r = new FileReader(); r.onload=function(ev){ const img=new Image(); img.onload=function(){ const cv=document.createElement('canvas'); const ct=cv.getContext('2d'); let w=img.width,h=img.height; if(w>h&&w>150){h*=150/w;w=150;}else if(h>150){w*=150/h;h=150;} cv.width=w;cv.height=h;ct.drawImage(img,0,0,w,h); const url=cv.toDataURL('image/jpeg',0.8); document.getElementById('p-image-base64').value=url; document.getElementById('p-image-preview').src=url; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); }; img.src=ev.target.result; }; r.readAsDataURL(f); };
+window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').innerHTML = '<i class="fas fa-user-plus text-brand-500 mr-2"></i>Inscribir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; window._pendingPhotoBlob = null; window._removePhotoFlag = false; const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.toggleReturnDateField(); window._setupPhotoDropzone(); window.showSection('playerForm'); };
+window.handleImageUpload = function(e) {
+    const f = e.target.files[0];
+    if(!f) return;
+    if(!f.type.startsWith('image/')) return window.showToast('Solo imágenes', true);
+    window._compressPlayerImage(f);
+};
+window._compressPlayerImage = function(file) {
+    const spinner = document.getElementById('p-image-spinner');
+    const preview = document.getElementById('p-image-preview');
+    const placeholder = document.getElementById('p-image-placeholder');
+    const overlay = document.getElementById('p-image-overlay');
+    if(spinner) spinner.classList.add('flex-show');
+    const r = new FileReader();
+    r.onload = function(ev) {
+        const img = new Image();
+        img.onload = function() {
+            const maxDim = 400;
+            let w = img.width, h = img.height;
+            if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            const ct = cv.getContext('2d');
+            ct.imageSmoothingQuality = 'high';
+            ct.drawImage(img, 0, 0, w, h);
+            cv.toBlob(function(blob) {
+                if(!blob) { if(spinner) spinner.classList.remove('flex-show'); return window.showToast('Error al procesar imagen', true); }
+                window._pendingPhotoBlob = blob;
+                const url = URL.createObjectURL(blob);
+                preview.src = url;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                if(overlay) overlay.classList.add('flex-show');
+                if(spinner) spinner.classList.remove('flex-show');
+                document.getElementById('p-image-base64').value = '';
+                const hint = document.getElementById('p-photo-hint');
+                if(hint) hint.textContent = 'Imagen lista. Se subirá al guardar la ficha.';
+            }, 'image/jpeg', 0.85);
+        };
+        img.onerror = function() { if(spinner) spinner.classList.remove('flex-show'); window.showToast('Imagen corrupta', true); };
+        img.src = ev.target.result;
+    };
+    r.readAsDataURL(file);
+};
+window.removePlayerPhoto = function() {
+    window._pendingPhotoBlob = null;
+    document.getElementById('p-image-base64').value = '';
+    document.getElementById('p-image-preview').src = '';
+    document.getElementById('p-image-preview').classList.add('hidden');
+    document.getElementById('p-image-placeholder').classList.remove('hidden');
+    const overlay = document.getElementById('p-image-overlay');
+    if(overlay) overlay.classList.remove('flex-show');
+    window._removePhotoFlag = true;
+    const hint = document.getElementById('p-photo-hint');
+    if(hint) hint.textContent = 'Arrastra una imagen o haz clic. Se guarda en el servidor, no en Base64.';
+};
+window._setupPhotoDropzone = function() {
+    const dz = document.getElementById('p-photo-dropzone');
+    if(!dz || dz._dropzoneReady) return;
+    dz._dropzoneReady = true;
+    ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); dz.classList.add('border-brand-500','bg-brand-50','dark:bg-brand-900/20'); }));
+    ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); dz.classList.remove('border-brand-500','bg-brand-50','dark:bg-brand-900/20'); }));
+    dz.addEventListener('drop', function(e) {
+        const f = e.dataTransfer.files[0];
+        if(f && f.type.startsWith('image/')) window._compressPlayerImage(f);
+    });
+    dz.addEventListener('click', function() { if(document.getElementById('p-image-preview').classList.contains('hidden')) document.getElementById('p-image-upload').click(); });
+};
 
 window.savePlayer = async function(e) {
     e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
@@ -314,30 +381,35 @@ window.savePlayer = async function(e) {
     
     let imageUrl = document.getElementById('p-image-base64').value;
     
-    // --- NUEVA LÓGICA: SUBIR A STORAGE DIRECTAMENTE ---
-    if (imageUrl && imageUrl.startsWith('data:image')) {
+    // --- LÓGICA: SUBIR BLOB DIRECTO A STORAGE (SIN BASE64 INTERMEDIO) ---
+    if (window._removePhotoFlag) {
+        imageUrl = '';
+        try { await firebase.storage().ref(`jugadores/${docId}.jpg`).delete(); } catch(err) {}
+    } else if (window._pendingPhotoBlob) {
         try {
-            const res = await fetch(imageUrl);
-            const blob = await res.blob();
             const ref = firebase.storage().ref(`jugadores/${docId}.jpg`);
-            await ref.put(blob);
-            imageUrl = await ref.getDownloadURL(); // Cambiamos el texto largo por el Link corto
+            await ref.put(window._pendingPhotoBlob);
+            imageUrl = await ref.getDownloadURL();
         } catch (error) {
             console.error("Error al subir foto:", error);
             window.showToast('Error al subir la imagen', true);
+            imageUrl = oldP ? (oldP.image || '') : '';
         }
+    } else if (!imageUrl && oldP && oldP.image && !oldP.image.startsWith('data:image')) {
+        imageUrl = oldP.image;
     }
     
     const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: imageUrl, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
     if(oldP && oldP.debtAmount !== undefined) pData.debtAmount = oldP.debtAmount;
-    try { await db.collection(window.playersPath).doc(docId).set(pData); window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Ficha"; }
+    try { await db.collection(window.playersPath).doc(docId).set(pData); window._pendingPhotoBlob = null; window._removePhotoFlag = false; window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Ficha"; }
 };
 
 window.editPlayer = function(id) {
     const p = window.players.find(x => x.id === id); if(!p) return;
     document.getElementById('p-id').value = p.id; document.getElementById('p-name').value = p.name; document.getElementById('p-alias').value = p.alias||''; document.getElementById('p-show-alias').checked = p.showAlias||false; document.getElementById('p-number').value = p.number||''; document.getElementById('p-image-base64').value = p.image||''; document.getElementById('p-birthdate').value = p.birthdate||''; document.getElementById('p-foot').value = p.foot||''; document.getElementById('p-status').value = p.status||'active'; document.getElementById('p-return-date').value = p.returnDate||''; document.getElementById('p-avail-f11').checked = p.availableF11; document.getElementById('p-avail-f7').checked = p.availableF7; document.getElementById('p-is-staff').checked = p.isStaff||false; document.getElementById('p-is-paid-up').checked = p.isPaidUp!==false;
     const sel = document.getElementById('p-position'); const pos = p.positions||(p.position?[p.position]:[]); for(let i=0;i<sel.options.length;i++) sel.options[i].selected = pos.includes(sel.options[i].value);
-    if(p.image){ document.getElementById('p-image-preview').src=p.image; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); } else { document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); }
+    if(p.image){ document.getElementById('p-image-preview').src=p.image; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.add('flex-show'); } else { document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); }
+    window._pendingPhotoBlob = null; window._removePhotoFlag = false; window._setupPhotoDropzone();
     document.getElementById('form-title').innerHTML = '<i class="fas fa-user-edit text-brand-500 mr-2"></i>Editar Ficha';
     window.toggleReturnDateField(); window.updateAdminUI(); window.showSection('playerForm');
 };
