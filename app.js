@@ -954,6 +954,8 @@ window.updateDashboard = function() {
     pL.forEach(p => { tG+=window.getPlayerStat(p,'goals'); tA+=window.getPlayerStat(p,'assists'); });
     const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
     const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
+    
+    // --- LÓGICA DE PARTIDOS JUGADOS ("IRON MAN") CORREGIDA ---
     let tCS=0, maxGames=0, ironMan="--";
     pL.forEach(p => { 
         const g = window.getPlayerStat(p,'games');
@@ -962,25 +964,24 @@ window.updateDashboard = function() {
     });
     const eTGm = document.getElementById('stat-total-games'); 
     if(eTGm) { 
-        eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; 
+        if(eTGm.previousElementSibling) eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; 
         eTGm.innerHTML = `${maxGames} <span class="text-sm font-bold text-brand-500 ml-1 truncate">${ironMan}</span>`; 
     }
     const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
     
-    cconst rL = (arr, k, el) => {
+    const rL = (arr, k, el) => {
         const d = document.getElementById(el); if(!d)return; d.innerHTML='';
         arr.forEach((p,i) => { const v=window.getPlayerStat(p,k); if(v===0)return; const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${p.name.charAt(0)}</div>`; d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${p.name}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; });
         if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
     };
     
-    // Tablas del Dashboard (Inicio) - Muestran 4 jugadores
+    // --- LÓGICA DE TABLAS NUEVAS ---
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
-
-    // Tablas de Estadísticas Completas (Nuevas) - Muestran 5 jugadores
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'games')-window.getPlayerStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
+
     let w=0, d=0, l=0, gf=0, ga=0;
     list.forEach(m => {
         if(m.status==='finished' || m.status==='forfait'){
