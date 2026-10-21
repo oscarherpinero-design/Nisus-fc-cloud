@@ -118,6 +118,20 @@ window.getPlayerDebts = function(playerId) {
     return { total: rawDebts.reduce((sum, d) => sum + d.amount, 0), debts: rawDebts };
 };
 
+window.getMorosityStatus = function(playerId) {
+    const dData = window.getPlayerDebts(playerId);
+    if (dData.total <= 0.01) return { status: 'ok', label: 'Al día', color: 'green' };
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7);
+    const hasOldDebt = dData.debts.some(d => {
+        const dMonth = (d.date || '').slice(0, 7);
+        return dMonth < currentMonth;
+    });
+    if (hasOldDebt) return { status: 'mora', label: 'En Mora', color: 'red' };
+    if (now.getDate() > 25) return { status: 'mora', label: 'En Mora', color: 'red' };
+    return { status: 'plazo', label: 'En Plazo', color: 'yellow' };
+};
+
 window.showToast = function(msg, isError = false) {
     const t = document.getElementById('toast'); if(!t) return; document.getElementById('toast-msg').textContent = msg;
     t.className = `fixed top-20 right-4 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 z-[80] flex items-center gap-3 ${isError ? 'bg-red-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'}`;
@@ -187,7 +201,7 @@ window.showSection = function(sectionId) {
     ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances'].forEach(id => { const s = document.getElementById('nav-side-' + id); if(s) { s.classList.remove('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); s.classList.add('text-slate-600', 'dark:text-slate-300'); } });
     const aS = document.getElementById('nav-side-' + sectionId); if(aS) { aS.classList.add('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); aS.classList.remove('text-slate-600', 'dark:text-slate-300'); }
     const m = document.getElementById('side-menu'); if(m && !m.classList.contains('-translate-x-full')) window.toggleMenu();
-    if(sectionId === 'players') { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(sectionId === 'matches') window.renderMatches(); if(sectionId === 'attendance') window.renderTrainings(); if(sectionId === 'dashboard') window.updateDashboard(); if(sectionId === 'stats') window.updateDashboard(); if(sectionId === 'finances') { if(!window.currentFinTab) window.switchFinancesTab('resumen'); window.renderFinances(); }
+    if(sectionId === 'players') { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(sectionId === 'matches') window.renderMatches(); if(sectionId === 'attendance') window.renderTrainings(); if(sectionId === 'dashboard') window.updateDashboard(); if(sectionId === 'stats') window.updateDashboard(); if(sectionId === 'finances') { if(!window.currentFinTab) window.switchFinancesTab('resumen'); window.renderFinances(); window.renderCashflowChart(); }
     window.scrollTo(0,0);
 };
 
@@ -1268,8 +1282,10 @@ window.renderFinances = function() {
             const dData = window.getPlayerDebts(p.id);
             if (dData.total > 0.01) {
                 hasDebtors = true;
+                const mor = window.getMorosityStatus(p.id);
+                const badgeColors = mor.color === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : mor.color === 'yellow' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
                 const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center">${p.name.charAt(0)}</div>`;
-                debtorsList.innerHTML += `<li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer" onclick="window.openPaySpecific('${p.id}')"><div class="flex items-center gap-3">${img}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-[10px] text-slate-400 font-bold uppercase">${dData.debts.length} deuda(s)</p></div></div><div class="text-right"><p class="font-black text-red-500">${dData.total.toFixed(2)}</p><p class="text-[10px] text-brand-600 font-bold uppercase">Pagar</p></div></li>`;
+                debtorsList.innerHTML += `<li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer" onclick="window.openPaySpecific('${p.id}')"><div class="flex items-center gap-3">${img}<div><div class="flex items-center gap-2"><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${p.name}</p><span class="${badgeColors} text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide">${mor.label}</span></div><p class="text-[10px] text-slate-400 font-bold uppercase">${dData.debts.length} deuda(s)</p></div></div><div class="text-right"><p class="font-black text-red-500">${dData.total.toFixed(2)}</p><p class="text-[10px] text-brand-600 font-bold uppercase">Pagar</p></div></li>`;
             }
         });
         if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">Todos los jugadores están al día</li>';
@@ -1324,7 +1340,14 @@ window.paySpecificDebt = async function(playerId, debtId, amount) {
         if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
     }
 
-    try { await batch.commit(); window.showToast('Deuda pagada'); window.openPaySpecific(playerId); window.renderFinances(); } catch(e) { window.showToast('Error', true); }
+    try {
+        await batch.commit();
+        const p = window.players.find(x => x.id === playerId);
+        const concept = window.getPlayerDebts(playerId).debts.length === 0 ? 'Pago de deuda' : 'Abono a deuda';
+        window.generatePaymentReceipt(playerId, debtId, amount, concept);
+        window.showToast('Deuda pagada');
+        window.openPaySpecific(playerId); window.renderFinances();
+    } catch(e) { window.showToast('Error', true); }
 };
 
 window.renderMonthlyDues = function() {
@@ -1399,15 +1422,191 @@ window.markDuesPaid = async function(txId, playerId) {
 };
 
 window.copyGroupMessage = function() {
-    const debtors = [];
+    const enMora = [], enPlazo = [];
     window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
         const d = window.getPlayerDebts(p.id);
-        if (d.total > 0.01) debtors.push(`🔴 ${p.name}: ${d.total.toFixed(2)}`);
+        if (d.total > 0.01) {
+            const mor = window.getMorosityStatus(p.id);
+            if (mor.status === 'mora') enMora.push(`🔴 ${p.name}: ${d.total.toFixed(2)}`);
+            else enPlazo.push(`🟡 ${p.name}: ${d.total.toFixed(2)}`);
+        }
     });
     let msg = '*NISUS FC - Estado de Pagos*\n\n';
-    if (debtors.length === 0) msg += '✅ Todos los jugadores están al día. ¡Gracias!';
-    else { msg += 'Estimados jugadores, recuerden ponerse al día:\n\n' + debtors.join('\n') + '\n\n_Gracias por su compromiso._'; }
+    if (enMora.length === 0 && enPlazo.length === 0) {
+        msg += '✅ Todos los jugadores están al día. ¡Gracias!';
+    } else {
+        if (enMora.length > 0) {
+            msg += '🚨 *EN MORA (Vencido)*\n' + enMora.join('\n') + '\n\n';
+        }
+        if (enPlazo.length > 0) {
+            msg += '⏳ *EN PLAZO (Hasta el día 25)*\n' + enPlazo.join('\n') + '\n\n';
+        }
+        msg += '_Gracias por su compromiso._';
+    }
     navigator.clipboard.writeText(msg).then(() => window.showToast('Mensaje copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
+};
+
+window.cashflowChart = null;
+window.renderCashflowChart = function() {
+    const canvas = document.getElementById('cashflow-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const now = new Date();
+    const labels = [], incomeData = [], expenseData = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const ym = d.toISOString().slice(0, 7);
+        const monthLabel = d.toLocaleDateString('es-ES', { month: 'short' });
+        labels.push(monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1));
+        let inc = 0, exp = 0;
+        window.finances.forEach(t => {
+            const tMonth = (t.date || '').slice(0, 7);
+            if (tMonth === ym) { if (t.type === 'income') inc += t.amount || 0; else exp += t.amount || 0; }
+        });
+        incomeData.push(inc);
+        expenseData.push(exp);
+    }
+    if (window.cashflowChart) window.cashflowChart.destroy();
+    window.cashflowChart = new Chart(canvas, {
+        type: 'bar',
+        data: { labels, datasets: [
+            { label: 'Ingresos', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 },
+            { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }
+        ]},
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { font: { family: 'Inter', weight: 'bold' } } } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '
+
+/* -----------------------------------------------------
+   INICIALIZACIÓN Y LISTENERS
+------------------------------------------------------ */
+window.checkAutoActivations = async function() {
+    if (!window.isAdmin) return; const t = new Date().toISOString().split('T')[0]; const u = [];
+    window.players.forEach(p => { if ((p.status === 'injured' || p.status === 'absent') && p.returnDate && t >= p.returnDate) u.push(db.collection(window.playersPath).doc(p.id).set({ status: 'active', returnDate: null }, { merge: true })); });
+    if (u.length > 0) { try { await Promise.all(u); window.showToast(`Se activaron automáticamente ${u.length} jugador(es)`); } catch (e) { console.error(e); } }
+};
+
+async function loadInitialData() {
+    const el = document.getElementById('next-match-date'); if(el) el.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Descargando datos...';
+    try {
+        const [p, m, t, f] = await Promise.all([ db.collection(window.playersPath).get(), db.collection(window.matchesPath).get(), db.collection(window.trainingsPath).get(), db.collection(window.financesPath).get() ]);
+        window.players=[]; p.forEach(d=>window.players.push({...d.data(), id:d.id}));
+        window.matches=[]; m.forEach(d=>window.matches.push({...d.data(), id:d.id}));
+        window.trainings=[]; t.forEach(d=>window.trainings.push({...d.data(), id:d.id}));
+        window.finances=[]; f.forEach(d=>window.finances.push({...d.data(), id:d.id}));
+        window.isReady = true; window.updateSeasonDropdown(); window.checkAutoActivations();
+        window.showSection('dashboard');
+        if(el) el.innerHTML = '<i class="fas fa-check-circle mr-2 text-green-400"></i> Datos listos';
+    } catch(e) { if(el) el.innerHTML = '<i class="fas fa-exclamation-triangle mr-2 text-red-400"></i> Error de conexión'; console.error(e); }
+}
+
+function setupRealtimeListeners() {
+    const sId = window.generateId(); const pRef = db.collection('sistema').doc('presencia_' + sId);
+    setInterval(() => { if(document.visibilityState === 'visible') pRef.set({ lastSeen: Date.now() }).catch(()=>{}); }, 30000);
+    pRef.set({ lastSeen: Date.now() });
+    
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pRef.delete().catch(()=>{}); else pRef.set({ lastSeen: Date.now() }).catch(()=>{}); });
+    window.addEventListener('beforeunload', () => pRef.delete());
+    
+    db.collection('sistema').onSnapshot((s) => {
+        let o = 0; const n = Date.now();
+        s.forEach(d => { if(d.id.startsWith('presencia_')) { if (n - d.data().lastSeen < 120000) o++; else d.ref.delete(); } });
+        const c = document.getElementById('online-count'); if(c) c.textContent = o;
+    });
+
+    db.collection(window.playersPath).onSnapshot((s) => { if(!window.isReady) return; window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id })); window.checkAutoActivations(); if(!document.getElementById('players').classList.contains('hidden')) { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList(); if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+    db.collection(window.matchesPath).onSnapshot((s) => { if(!window.isReady) return; window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); window.updateSeasonDropdown(); if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+    db.collection(window.trainingsPath).onSnapshot((s) => { if(!window.isReady) return; window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id })); if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); });
+    db.collection(window.financesPath).onSnapshot((s) => { if(!window.isReady) return; window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); if(!document.getElementById('finances').classList.contains('hidden')) { window.renderFinances(); window.renderCashflowChart(); } });
+}
+
+window.initApp = async function() { await loadInitialData(); setupRealtimeListeners(); window.setupPWA(); window.updateAdminUI(); document.addEventListener('mousemove', window.dragMove); document.addEventListener('mouseup', window.dragEnd); const p = document.getElementById('tactical-pitch'); if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } };
+window.onload = window.initApp;
+ + v } } } }
+    });
+};
+
+window.monthlyCloseReport = function() {
+    const now = new Date();
+    const ym = now.toISOString().slice(0, 7);
+    const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    let inc = 0, exp = 0;
+    window.finances.forEach(t => {
+        if ((t.date || '').slice(0, 7) === ym) { if (t.type === 'income') inc += t.amount || 0; else exp += t.amount || 0; }
+    });
+    const balance = inc - exp;
+    const msg = `📊 *NISUS FC - Cierre Mensual*\n\n📅 ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}\n\n💰 Ingresos: ${inc.toFixed(2)}\n💸 Egresos: ${exp.toFixed(2)}\n📈 Balance Neto: ${balance.toFixed(2)}\n\n_Generado automáticamente._`;
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Reporte de cierre copiado')).catch(() => window.showToast('Error al copiar', true));
+};
+
+window.generatePaymentReceipt = async function(playerId, debtId, amount, concept) {
+    const p = window.players.find(x => x.id === playerId);
+    if (!p || typeof html2canvas === 'undefined') return;
+    const tpl = document.getElementById('receipt-template');
+    document.getElementById('receipt-player').textContent = p.name;
+    document.getElementById('receipt-concept').textContent = concept || 'Pago de deuda';
+    document.getElementById('receipt-amount').textContent = '
+
+/* -----------------------------------------------------
+   INICIALIZACIÓN Y LISTENERS
+------------------------------------------------------ */
+window.checkAutoActivations = async function() {
+    if (!window.isAdmin) return; const t = new Date().toISOString().split('T')[0]; const u = [];
+    window.players.forEach(p => { if ((p.status === 'injured' || p.status === 'absent') && p.returnDate && t >= p.returnDate) u.push(db.collection(window.playersPath).doc(p.id).set({ status: 'active', returnDate: null }, { merge: true })); });
+    if (u.length > 0) { try { await Promise.all(u); window.showToast(`Se activaron automáticamente ${u.length} jugador(es)`); } catch (e) { console.error(e); } }
+};
+
+async function loadInitialData() {
+    const el = document.getElementById('next-match-date'); if(el) el.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Descargando datos...';
+    try {
+        const [p, m, t, f] = await Promise.all([ db.collection(window.playersPath).get(), db.collection(window.matchesPath).get(), db.collection(window.trainingsPath).get(), db.collection(window.financesPath).get() ]);
+        window.players=[]; p.forEach(d=>window.players.push({...d.data(), id:d.id}));
+        window.matches=[]; m.forEach(d=>window.matches.push({...d.data(), id:d.id}));
+        window.trainings=[]; t.forEach(d=>window.trainings.push({...d.data(), id:d.id}));
+        window.finances=[]; f.forEach(d=>window.finances.push({...d.data(), id:d.id}));
+        window.isReady = true; window.updateSeasonDropdown(); window.checkAutoActivations();
+        window.showSection('dashboard');
+        if(el) el.innerHTML = '<i class="fas fa-check-circle mr-2 text-green-400"></i> Datos listos';
+    } catch(e) { if(el) el.innerHTML = '<i class="fas fa-exclamation-triangle mr-2 text-red-400"></i> Error de conexión'; console.error(e); }
+}
+
+function setupRealtimeListeners() {
+    const sId = window.generateId(); const pRef = db.collection('sistema').doc('presencia_' + sId);
+    setInterval(() => { if(document.visibilityState === 'visible') pRef.set({ lastSeen: Date.now() }).catch(()=>{}); }, 30000);
+    pRef.set({ lastSeen: Date.now() });
+    
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pRef.delete().catch(()=>{}); else pRef.set({ lastSeen: Date.now() }).catch(()=>{}); });
+    window.addEventListener('beforeunload', () => pRef.delete());
+    
+    db.collection('sistema').onSnapshot((s) => {
+        let o = 0; const n = Date.now();
+        s.forEach(d => { if(d.id.startsWith('presencia_')) { if (n - d.data().lastSeen < 120000) o++; else d.ref.delete(); } });
+        const c = document.getElementById('online-count'); if(c) c.textContent = o;
+    });
+
+    db.collection(window.playersPath).onSnapshot((s) => { if(!window.isReady) return; window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id })); window.checkAutoActivations(); if(!document.getElementById('players').classList.contains('hidden')) { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList(); if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+    db.collection(window.matchesPath).onSnapshot((s) => { if(!window.isReady) return; window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); window.updateSeasonDropdown(); if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+    db.collection(window.trainingsPath).onSnapshot((s) => { if(!window.isReady) return; window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id })); if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); });
+    db.collection(window.financesPath).onSnapshot((s) => { if(!window.isReady) return; window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); if(!document.getElementById('finances').classList.contains('hidden')) { window.renderFinances(); window.renderCashflowChart(); } });
+}
+
+window.initApp = async function() { await loadInitialData(); setupRealtimeListeners(); window.setupPWA(); window.updateAdminUI(); document.addEventListener('mousemove', window.dragMove); document.addEventListener('mouseup', window.dragEnd); const p = document.getElementById('tactical-pitch'); if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } };
+window.onload = window.initApp;
+ + amount.toFixed(2);
+    document.getElementById('receipt-date').textContent = 'Fecha: ' + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('receipt-id').textContent = 'N°: ' + debtId.slice(-6).toUpperCase();
+    tpl.style.left = '0';
+    tpl.style.top = '0';
+    tpl.style.zIndex = '-1';
+    tpl.style.opacity = '1';
+    try {
+        const canvas = await html2canvas(tpl, { scale: 2, backgroundColor: null });
+        const link = document.createElement('a');
+        link.download = `recibo_${p.name.replace(/\s/g, '_')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        window.showToast('Recibo descargado');
+    } catch(e) { window.showToast('Error al generar recibo', true); }
+    tpl.style.left = '-9999px';
+    tpl.style.zIndex = '';
+    tpl.style.opacity = '';
 };
 
 /* -----------------------------------------------------
@@ -1450,7 +1649,7 @@ function setupRealtimeListeners() {
     db.collection(window.playersPath).onSnapshot((s) => { if(!window.isReady) return; window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id })); window.checkAutoActivations(); if(!document.getElementById('players').classList.contains('hidden')) { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList(); if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
     db.collection(window.matchesPath).onSnapshot((s) => { if(!window.isReady) return; window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); window.updateSeasonDropdown(); if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
     db.collection(window.trainingsPath).onSnapshot((s) => { if(!window.isReady) return; window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id })); if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); });
-    db.collection(window.financesPath).onSnapshot((s) => { if(!window.isReady) return; window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+    db.collection(window.financesPath).onSnapshot((s) => { if(!window.isReady) return; window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); if(!document.getElementById('finances').classList.contains('hidden')) { window.renderFinances(); window.renderCashflowChart(); } });
 }
 
 window.initApp = async function() { await loadInitialData(); setupRealtimeListeners(); window.setupPWA(); window.updateAdminUI(); document.addEventListener('mousemove', window.dragMove); document.addEventListener('mouseup', window.dragEnd); const p = document.getElementById('tactical-pitch'); if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } };

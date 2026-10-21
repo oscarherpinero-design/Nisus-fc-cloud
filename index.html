@@ -15,6 +15,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -322,6 +323,14 @@
                     </div>
                 </div>
 
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja (6 meses)</h3>
+                        <button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button>
+                    </div>
+                    <canvas id="cashflow-chart" height="220"></canvas>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-1 flex flex-col">
                         <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
@@ -469,6 +478,30 @@
                 </form>
             </div>
         </section>
+
+        <div id="receipt-template" style="position:fixed;left:-9999px;top:0;width:380px;background:linear-gradient(135deg,#0c4a6e,#082f49);border-radius:20px;padding:28px 24px;color:#fff;font-family:'Inter',sans-serif;box-sizing:border-box;">
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="width:50px;height:50px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;"><img src="escudo.png" style="width:100%;height:100%;object-fit:cover;"></div>
+                <h2 style="font-size:22px;font-weight:900;margin:0;letter-spacing:-0.5px;">NISUS FC</h2>
+                <p style="font-size:10px;opacity:0.7;text-transform:uppercase;letter-spacing:2px;margin:2px 0 0;">Recibo de Pago</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:16px;margin-bottom:14px;">
+                <p style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 4px;">Jugador</p>
+                <p id="receipt-player" style="font-size:18px;font-weight:800;margin:0;">-</p>
+                <p id="receipt-concept" style="font-size:12px;opacity:0.8;margin:6px 0 0;">-</p>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.15);border-radius:12px;padding:16px 20px;margin-bottom:14px;">
+                <span style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:1.5px;">Monto</span>
+                <span id="receipt-amount" style="font-size:28px;font-weight:900;">$0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.7;">
+                <span id="receipt-date">Fecha: -</span>
+                <span id="receipt-id">N°: -</span>
+            </div>
+            <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.15);">
+                <p style="font-size:10px;opacity:0.5;margin:0;">¡Gracias por tu compromiso con el equipo!</p>
+            </div>
+        </div>
 
         <div id="modalPaySpecific" class="hidden fixed inset-0 bg-slate-900/80 z-[70] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-md overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 transition-colors">
