@@ -1438,8 +1438,7 @@ window.renderMonthlyDues = function() {
         let statusBadge;
         if (paid) { statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; }
         else if (tx) { statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; }
-        else { statusBadge = '<span class="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded uppercase">Sin cobrar</span>'; }
-        let actionBtn = '';
+else { statusBadge = `<label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded w-fit border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="dues-charge-cb rounded text-brand-600 w-3.5 h-3.5 cursor-pointer bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" value="${p.id}" checked><span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Cobrar</span></label>`; }        let actionBtn = '';
         if (tx && !paid) { actionBtn = `<button onclick="window.markDuesPaid('${tx.id}','${p.id}')" class="admin-only bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1"><i class="fas fa-check"></i> Marcar pagada</button>`; }
         grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
     });
@@ -1459,23 +1458,30 @@ window.chargeMonthlyDues = async function() {
     if (!month) return window.showToast('Selecciona un mes', true);
     if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
 
-    const activePlayers = window.players.filter(p => !p.isStaff);
-    if (activePlayers.length === 0) return window.showToast('No hay jugadores', true);
+    // 1. Buscar qué checkboxes están marcados en la interfaz
+    const checkboxes = document.querySelectorAll('.dues-charge-cb:checked');
+    if (checkboxes.length === 0) return window.showToast('Selecciona al menos un jugador para cobrar', true);
 
-    const existing = window.finances.filter(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId);
-    const alreadyCharged = new Set(existing.map(t => t.playerId));
-    const toCharge = activePlayers.filter(p => !alreadyCharged.has(p.id));
-    if (toCharge.length === 0) return window.showToast('Ya se cobró a todos este mes', true);
+    // 2. Extraer los IDs de los seleccionados
+    const toChargeIds = Array.from(checkboxes).map(cb => cb.value);
+    const toCharge = window.players.filter(p => toChargeIds.includes(p.id));
 
     const batch = db.batch();
     const dateStr = month + '-01';
+    
+    // 3. Generar las deudas solo para ese grupo
     toCharge.forEach(p => {
         const id = window.generateId();
         batch.set(db.collection(window.financesPath).doc(id), { id, type: 'income', amount, date: dateStr, category: 'Cuota Mensual', description: 'Cuota mensual ' + month, playerId: p.id, duesMonth: month, isPaid: false });
         batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
     });
 
-    try { await batch.commit(); window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); } catch(e) { window.showToast('Error al cobrar', true); }
+    try { 
+        await batch.commit(); 
+        window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); 
+    } catch(e) { 
+        window.showToast('Error al cobrar', true); 
+    }
 };
 
 window.markDuesPaid = async function(txId, playerId) {
