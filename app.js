@@ -325,7 +325,7 @@ window.renderKitsPreview = function() {
 /* -----------------------------------------------------
    GESTIÓN DE JUGADORES
 ------------------------------------------------------ */
-window.toggleReturnDateField = function() { const s = document.getElementById('p-status').value; const c = document.getElementById('p-return-date-container'); if(s==='injured'||s==='absent') c.classList.remove('hidden'); else c.classList.add('hidden'); };
+window.toggleReturnDateField = function() { const s = document.getElementById('p-status').value; const c = document.getElementById('p-return-date-container'); if(s==='injured'||s==='absent'||s==='inactive') c.classList.remove('hidden'); else c.classList.add('hidden'); };
 
 window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').innerHTML = '<i class="fas fa-user-plus text-brand-500 mr-2"></i>Inscribir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; window._pendingPhotoBlob = null; window._removePhotoFlag = false; const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.toggleReturnDateField(); window._setupPhotoDropzone(); window.showSection('playerForm'); };
 
@@ -407,7 +407,7 @@ window.savePlayer = async function(e) {
     const id = document.getElementById('p-id').value; const docId = id || window.generateId();
     const positions = Array.from(document.getElementById('p-position').selectedOptions).map(o=>o.value);
     const pStatus = document.getElementById('p-status').value || 'active'; let returnD = null;
-    if(pStatus === 'injured' || pStatus === 'absent') { returnD = document.getElementById('p-return-date').value || null; }
+    if(pStatus === 'injured' || pStatus === 'absent' || pStatus === 'inactive') { returnD = document.getElementById('p-return-date').value || null; }
     const oldP = window.players.find(x => x.id === id);
     
     let imageUrl = document.getElementById('p-image-base64').value;
@@ -508,8 +508,8 @@ window.renderPlayers = function() {
         if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
         else if(p.status==='suspended'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-ban mr-1"></i> Sanción</span>`; oc='opacity-75 hover:opacity-100'; }
         else if(p.status==='absent'){ sb=`<span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-600 block mt-2 text-center w-full"><i class="fas fa-plane mr-1"></i> Ausente${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
-else if(p.status==='inactive'){ sb=`<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-700 block mt-2 text-center w-full"><i class="fas fa-pause-circle mr-1"></i> Inactivo / En duda</span>`; oc='opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all'; }
-       
+        else if(p.status==='inactive'){ sb=`<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-700 block mt-2 text-center w-full"><i class="fas fa-pause-circle mr-1"></i> Inactivo / En duda</span>`; oc='opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all'; }
+
         let pb='', sh='';
         if(p.isStaff){
             pb = `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-3 py-1 rounded font-bold text-[10px] uppercase tracking-widest"><i class="fas fa-user-tie"></i> Cuerpo Técnico</span>`;
@@ -552,7 +552,8 @@ window.openPlayerCard = function(id) {
     let statusBanner = '';
     if (p.status !== 'active') {
         let sCol = p.status === 'injured' || p.status === 'suspended' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600';
-let sTxt = p.status === 'injured' ? 'LESIÓN' : p.status === 'suspended' ? 'SANCIÓN' : p.status === 'inactive' ? 'INACTIVO' : 'AUSENTE';        let sDate = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
+        let sTxt = p.status === 'injured' ? 'LESIÓN' : p.status === 'suspended' ? 'SANCIÓN' : p.status === 'inactive' ? 'INACTIVO' : 'AUSENTE';
+        let sDate = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
         statusBanner = `<div class="mt-1 mb-2 px-4 py-1 rounded-full border ${sCol} text-[9px] font-black tracking-widest uppercase shadow-sm"><i class="fas fa-info-circle mr-1"></i> ${sTxt} | ${sDate}</div>`;
     }
 
@@ -918,7 +919,13 @@ window.renderBirthdaysAvailability = function() {
 
     const aEl = document.getElementById('availability-strip');
     if(aEl) {
-const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' } };        const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
+        const statusMap = { 
+            injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, 
+            suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, 
+            absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' },
+            inactive: { lbl:'Inactivo', icon:'fa-pause-circle', col:'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700' } 
+        };
+        const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
         const activeCount = allPlayers.length - unavailable.length;
         aEl.innerHTML = '';
         aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
@@ -965,7 +972,6 @@ window.updateDashboard = function() {
     const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
     const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
     
-    // --- LÓGICA DE PARTIDOS JUGADOS ("IRON MAN") CORREGIDA ---
     let tCS=0, maxGames=0, ironMan="--";
     pL.forEach(p => { 
         const g = window.getPlayerStat(p,'games');
@@ -985,7 +991,6 @@ window.updateDashboard = function() {
         if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
     };
     
-    // --- LÓGICA DE TABLAS NUEVAS ---
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
@@ -1288,6 +1293,7 @@ window.generatePaymentReceipt = function(playerId, debtId, amount, concept) {
         });
     }, 300);
 };
+
 window.getValidCashAmount = function(t) {
     if (t.type === 'expense') return t.amount || 0;
     if (t.type === 'income') {
@@ -1301,6 +1307,7 @@ window.getValidCashAmount = function(t) {
     }
     return 0;
 };
+
 window.monthlyCloseReport = function() {
     const now = new Date();
     const currentMonth = now.toISOString().slice(0, 7);
@@ -1406,27 +1413,6 @@ window.renderFinances = function() {
     }
 };
 
-    const transList = document.getElementById('transactions-list');
-    if (transList) {
-        transList.innerHTML = '';
-        const sorted = [...window.finances].sort((a,b) => new Date(b.date) - new Date(a.date));
-        if (sorted.length === 0) { transList.innerHTML = '<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin movimientos registrados</td></tr>'; }
-        else sorted.forEach(t => {
-            const isInc = t.type === 'income';
-            const dStr = new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
-            let extra = '';
-            if (t.matchId) { const m = window.matches.find(x => x.id === t.matchId); if (m) extra = ` vs ${m.opponent}`; }
-            if (t.playerId) { const p = window.players.find(x => x.id === t.playerId); if (p) extra += ` · ${p.name}`; }
-            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3"><span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm ${isInc ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'}"><i class="fas ${isInc ? 'fa-arrow-down' : 'fa-arrow-up'}"></i></span><div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${t.description}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap"><p class="font-black ${isInc ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${isInc ? '+' : '-'}${(t.amount||0).toFixed(2)}</p><p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right admin-only"><button onclick="window.deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition"><i class="fas fa-trash"></i></button></td></tr>`;
-        });
-    }
-    
-    // Renderizamos el gráfico siempre que estemos en resumen
-    if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
-        setTimeout(window.renderCashflowChart, 100);
-    }
-};
-
 window.openPaySpecific = function(playerId) {
     const p = window.players.find(x => x.id === playerId); if (!p) return;
     document.getElementById('pay-spec-name').textContent = p.name;
@@ -1487,19 +1473,27 @@ window.renderMonthlyDues = function() {
         const tx = window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id);
         const paid = tx && tx.isPaid;
         const img = p.image ? `<img src="${p.image}" class="w-9 h-9 rounded-full object-cover">` : `<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`;
+        
         let statusBadge;
-        if (paid) { statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; }
-        else if (tx) { statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; }
-else { statusBadge = `<label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded w-fit border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="dues-charge-cb rounded text-brand-600 w-3.5 h-3.5 cursor-pointer bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" value="${p.id}" checked><span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Cobrar</span></label>`; }        let actionBtn = '';
-if (tx) { 
+        if (paid) { 
+            statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; 
+        } else if (tx) { 
+            statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; 
+        } else { 
+            statusBadge = `<label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded w-fit border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="dues-charge-cb rounded text-brand-600 w-3.5 h-3.5 cursor-pointer bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" value="${p.id}" checked><span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Cobrar</span></label>`; 
+        }
+
+        let actionBtn = '';
+        if (tx) { 
             let btnPagar = !paid ? `<button onclick="window.markDuesPaid('${tx.id}','${p.id}')" class="admin-only bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-check"></i> Pagada</button>` : '';
             
             actionBtn = `<div class="flex items-center justify-end gap-1.5">
                 ${btnPagar}
                 <button onclick="window.deleteTransaction('${tx.id}')" class="admin-only bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 w-8 h-8 rounded-lg text-sm font-bold transition flex items-center justify-center border border-red-100 dark:border-red-800/30 shadow-sm" title="Anular cobro"><i class="fas fa-trash-alt"></i></button>
             </div>`; 
-        }      
-       grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
+        }
+        
+        grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
     });
 
     const summaryEl = document.getElementById('dues-summary');
@@ -1517,18 +1511,15 @@ window.chargeMonthlyDues = async function() {
     if (!month) return window.showToast('Selecciona un mes', true);
     if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
 
-    // 1. Buscar qué checkboxes están marcados en la interfaz
     const checkboxes = document.querySelectorAll('.dues-charge-cb:checked');
     if (checkboxes.length === 0) return window.showToast('Selecciona al menos un jugador para cobrar', true);
 
-    // 2. Extraer los IDs de los seleccionados
     const toChargeIds = Array.from(checkboxes).map(cb => cb.value);
     const toCharge = window.players.filter(p => toChargeIds.includes(p.id));
 
     const batch = db.batch();
     const dateStr = month + '-01';
     
-    // 3. Generar las deudas solo para ese grupo
     toCharge.forEach(p => {
         const id = window.generateId();
         batch.set(db.collection(window.financesPath).doc(id), { id, type: 'income', amount, date: dateStr, category: 'Cuota Mensual', description: 'Cuota mensual ' + month, playerId: p.id, duesMonth: month, isPaid: false });
@@ -1629,7 +1620,7 @@ window.renderCashflowChart = function() {
 ------------------------------------------------------ */
 window.checkAutoActivations = async function() {
     if (!window.isAdmin) return; const t = new Date().toISOString().split('T')[0]; const u = [];
-    window.players.forEach(p => { if ((p.status === 'injured' || p.status === 'absent') && p.returnDate && t >= p.returnDate) u.push(db.collection(window.playersPath).doc(p.id).set({ status: 'active', returnDate: null }, { merge: true })); });
+    window.players.forEach(p => { if ((p.status === 'injured' || p.status === 'absent' || p.status === 'inactive') && p.returnDate && t >= p.returnDate) u.push(db.collection(window.playersPath).doc(p.id).set({ status: 'active', returnDate: null }, { merge: true })); });
     if (u.length > 0) { try { await Promise.all(u); window.showToast(`Se activaron automáticamente ${u.length} jugador(es)`); } catch (e) { console.error(e); } }
 };
 
