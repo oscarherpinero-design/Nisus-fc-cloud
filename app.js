@@ -508,7 +508,8 @@ window.renderPlayers = function() {
         if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
         else if(p.status==='suspended'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-ban mr-1"></i> Sanción</span>`; oc='opacity-75 hover:opacity-100'; }
         else if(p.status==='absent'){ sb=`<span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-600 block mt-2 text-center w-full"><i class="fas fa-plane mr-1"></i> Ausente${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
-
+else if(p.status==='inactive'){ sb=`<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-700 block mt-2 text-center w-full"><i class="fas fa-pause-circle mr-1"></i> Inactivo / En duda</span>`; oc='opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all'; }
+       
         let pb='', sh='';
         if(p.isStaff){
             pb = `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-3 py-1 rounded font-bold text-[10px] uppercase tracking-widest"><i class="fas fa-user-tie"></i> Cuerpo Técnico</span>`;
@@ -551,8 +552,7 @@ window.openPlayerCard = function(id) {
     let statusBanner = '';
     if (p.status !== 'active') {
         let sCol = p.status === 'injured' || p.status === 'suspended' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600';
-        let sTxt = p.status === 'injured' ? 'LESIÓN' : p.status === 'suspended' ? 'SANCIÓN' : 'AUSENTE';
-        let sDate = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
+let sTxt = p.status === 'injured' ? 'LESIÓN' : p.status === 'suspended' ? 'SANCIÓN' : p.status === 'inactive' ? 'INACTIVO' : 'AUSENTE';        let sDate = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
         statusBanner = `<div class="mt-1 mb-2 px-4 py-1 rounded-full border ${sCol} text-[9px] font-black tracking-widest uppercase shadow-sm"><i class="fas fa-info-circle mr-1"></i> ${sTxt} | ${sDate}</div>`;
     }
 
@@ -918,8 +918,7 @@ window.renderBirthdaysAvailability = function() {
 
     const aEl = document.getElementById('availability-strip');
     if(aEl) {
-        const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' } };
-        const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
+const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' } };        const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
         const activeCount = allPlayers.length - unavailable.length;
         aEl.innerHTML = '';
         aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
