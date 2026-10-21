@@ -159,7 +159,10 @@ window.toggleDarkMode = function() {
 
 window.updateAdminUI = function() {
     const btn = document.getElementById('btn-admin');
-    const inputs = document.querySelectorAll('input:not(#admin-pin), select, textarea');
+    
+    // Aquí está la magia: Usamos :not() para excluir la barra de búsqueda y los filtros de la lista de bloqueo
+    const inputs = document.querySelectorAll('input:not(#admin-pin):not(#player-search), select:not(#player-position-filter):not(#season-filter):not(#season-filter-side), textarea');
+    
     if (window.isAdmin) { 
         document.body.classList.remove('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>'; 
         inputs.forEach(el => { el.disabled = false; el.classList.remove('opacity-60', 'cursor-not-allowed'); });
