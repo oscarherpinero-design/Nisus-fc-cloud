@@ -1288,7 +1288,19 @@ window.generatePaymentReceipt = function(playerId, debtId, amount, concept) {
         });
     }, 300);
 };
-
+window.getValidCashAmount = function(t) {
+    if (t.type === 'expense') return t.amount || 0;
+    if (t.type === 'income') {
+        if (t.isPaid === false) return 0; // Deudas pendientes no suman a caja
+        if (t.isPaid === true && (t.category === 'Cuota Mensual' || t.category === 'Cobro Manual')) {
+            // Si la cuota ya se pagó con un "Abono a Deuda", no la sumamos para evitar duplicados
+            const hasAbono = window.finances.some(x => x.category === 'Abono a Deuda (Jugador)' && x.specificDebtId === t.id);
+            if (hasAbono) return 0;
+        }
+        return t.amount || 0;
+    }
+    return 0;
+};
 window.monthlyCloseReport = function() {
     const now = new Date();
     const currentMonth = now.toISOString().slice(0, 7);
@@ -1297,8 +1309,8 @@ window.monthlyCloseReport = function() {
     let inc = 0, exp = 0;
     window.finances.forEach(t => {
         if ((t.date || '').startsWith(currentMonth)) {
-            if (t.type === 'income') inc += t.amount || 0;
-            else exp += t.amount || 0;
+            if (t.type === 'income') inc += window.getValidCashAmount(t);
+            else if (t.type === 'expense') exp += window.getValidCashAmount(t);
         }
     });
 
@@ -1314,7 +1326,10 @@ window.monthlyCloseReport = function() {
 
 window.renderFinances = function() {
     let income = 0, expense = 0;
-    window.finances.forEach(t => { if (t.type === 'income') income += t.amount || 0; else expense += t.amount || 0; });
+    window.finances.forEach(t => { 
+        if (t.type === 'income') income += window.getValidCashAmount(t); 
+        else if (t.type === 'expense') expense += window.getValidCashAmount(t); 
+    });
     const balance = income - expense;
     const elB = document.getElementById('fin-balance'); if(elB) elB.textContent = `${balance.toFixed(2)}`;
     const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+${income.toFixed(2)}`;
@@ -1353,6 +1368,43 @@ window.renderFinances = function() {
         });
         if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">Todos los jugadores están al día</li>';
     }
+
+    const transList = document.getElementById('transactions-list');
+    if (transList) {
+        transList.innerHTML = '';
+        const sorted = [...window.finances].sort((a,b) => new Date(b.date) - new Date(a.date));
+        if (sorted.length === 0) { transList.innerHTML = '<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin movimientos registrados</td></tr>'; }
+        else sorted.forEach(t => {
+            const dStr = new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
+            let extra = '';
+            if (t.matchId) { const m = window.matches.find(x => x.id === t.matchId); if (m) extra = ` vs ${m.opponent}`; }
+            if (t.playerId) { const p = window.players.find(x => x.id === t.playerId); if (p) extra += ` · ${p.name}`; }
+            
+            const validAmt = window.getValidCashAmount(t);
+            let displayAmt = ''; let iconBadge = '';
+            
+            if (t.type === 'expense') {
+                displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`;
+            } else if (t.isPaid === false) {
+                displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t.amount||0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`;
+            } else if (validAmt === 0) {
+                displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t.amount||0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`;
+            } else {
+                displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`;
+            }
+
+            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${t.description}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right admin-only"><button onclick="window.deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+    }
+    
+    if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
+        setTimeout(window.renderCashflowChart, 100);
+    }
+};
 
     const transList = document.getElementById('transactions-list');
     if (transList) {
@@ -1541,7 +1593,10 @@ window.renderCashflowChart = function() {
         let inc = 0, exp = 0;
         window.finances.forEach(t => {
             const tMonth = (t.date || '').slice(0, 7);
-            if (tMonth === ym) { if (t.type === 'income') inc += t.amount || 0; else exp += t.amount || 0; }
+            if (tMonth === ym) { 
+                if (t.type === 'income') inc += window.getValidCashAmount(t); 
+                else if (t.type === 'expense') exp += window.getValidCashAmount(t); 
+            }
         });
         incomeData.push(inc);
         expenseData.push(exp);
@@ -1555,7 +1610,7 @@ window.renderCashflowChart = function() {
     window.cashflowChart = new Chart(canvas, {
         type: 'bar',
         data: { labels, datasets: [
-            { label: 'Ingresos', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 },
+            { label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 },
             { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }
         ]},
         options: {
