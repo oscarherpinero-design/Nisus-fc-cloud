@@ -976,8 +976,6 @@ window.updateDashboard = function() {
     };
     
     // --- LÓGICA DE TABLAS NUEVAS ---
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
     rL([...pL].sort((a,b)=>window.getPlayerStat(b,'games')-window.getPlayerStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
