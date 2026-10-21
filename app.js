@@ -1439,12 +1439,15 @@ window.renderMonthlyDues = function() {
         if (paid) { statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; }
         else if (tx) { statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; }
 else { statusBadge = `<label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded w-fit border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="dues-charge-cb rounded text-brand-600 w-3.5 h-3.5 cursor-pointer bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" value="${p.id}" checked><span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Cobrar</span></label>`; }        let actionBtn = '';
-if (tx && !paid) { 
-            actionBtn = `<div class="flex items-center gap-1.5">
-                <button onclick="window.markDuesPaid('${tx.id}','${p.id}')" class="admin-only bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-check"></i> Pagada</button>
+if (tx) { 
+            let btnPagar = !paid ? `<button onclick="window.markDuesPaid('${tx.id}','${p.id}')" class="admin-only bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-check"></i> Pagada</button>` : '';
+            
+            actionBtn = `<div class="flex items-center justify-end gap-1.5">
+                ${btnPagar}
                 <button onclick="window.deleteTransaction('${tx.id}')" class="admin-only bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 w-8 h-8 rounded-lg text-sm font-bold transition flex items-center justify-center border border-red-100 dark:border-red-800/30 shadow-sm" title="Anular cobro"><i class="fas fa-trash-alt"></i></button>
             </div>`; 
-        }        grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
+        }      
+       grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
     });
 
     const summaryEl = document.getElementById('dues-summary');
