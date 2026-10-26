@@ -1825,7 +1825,117 @@ window.sendDirectWhatsApp = function(playerName, debtAmount) {
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
 };
+// ==========================================
+// MOTOR DE GRÁFICOS (FLUJO Y DONA)
+// ==========================================
+window.cashflowCharts = [];
+window.renderCashflowChart = function() {
+    // Limpiamos gráficos viejos para que no se superpongan
+    if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
+    window.cashflowCharts = [];
 
+    if (typeof Chart === 'undefined') return;
+
+    const now = new Date(); const labels = [], incomeData = [], expenseData = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const ym = d.toISOString().slice(0, 7);
+        const monthLabel = d.toLocaleDateString('es-ES', { month: 'short' });
+        labels.push(monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1));
+        let inc = 0, exp = 0;
+        window.finances.forEach(t => {
+            const tMonth = (t.date || '').slice(0, 7);
+            if (tMonth === ym) { 
+                if (t.type === 'income') inc += window.getValidCashAmount(t); 
+                else if (t.type === 'expense') exp += window.getValidCashAmount(t); 
+            }
+        });
+        incomeData.push(inc); expenseData.push(exp);
+    }
+    
+    const isDark = document.documentElement.classList.contains('dark'); 
+    const textColor = isDark ? '#94a3b8' : '#64748b'; 
+    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+    const chartConfig = {
+        type: 'bar',
+        data: { labels, datasets: [
+            { label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 },
+            { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }
+        ]},
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } },
+            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } }
+        }
+    };
+
+    // Renderizamos en el Dashboard y en Finanzas simultáneamente
+    ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig));
+    });
+};
+
+window.donutCharts = [];
+window.renderExpensesDonutChart = function() {
+    if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
+    window.donutCharts = [];
+
+    if (typeof Chart === 'undefined') return;
+    
+    const expenseCategories = {};
+    window.finances.forEach(t => {
+        if (t.type === 'expense') {
+            const amt = window.getValidCashAmount(t);
+            if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
+        }
+    });
+
+    const labels = Object.keys(expenseCategories); const data = Object.values(expenseCategories);
+    const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    
+    const chartConfig = {
+        type: 'doughnut',
+        data: {
+            labels: labels.length ? labels : ['Sin egresos registrados'],
+            datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '75%',
+            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } }
+        }
+    };
+
+    // Renderizamos en el Dashboard y en Finanzas simultáneamente
+    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
+    });
+};
+
+// Nos aseguramos de que renderFinances llame a ambos gráficos
+const originalRenderFinances = window.renderFinances;
+window.renderFinances = function() {
+    if(originalRenderFinances) originalRenderFinances();
+    if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
+        setTimeout(() => {
+            window.renderCashflowChart();
+            window.renderExpensesDonutChart();
+        }, 150);
+    }
+};
+
+const originalUpdateDashboard = window.updateDashboard;
+window.updateDashboard = function() {
+    if(originalUpdateDashboard) originalUpdateDashboard();
+    setTimeout(() => {
+        window.renderCashflowChart();
+        window.renderExpensesDonutChart();
+    }, 150);
+};
 // Autoejecución a prueba de fallos
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', window.initApp);
