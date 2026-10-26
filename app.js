@@ -150,10 +150,19 @@ window.showToast = function(msg, isError = false) {
 };
 
 window.setupPWA = function() {
+    // 1. Configurar el Manifiesto (El icono de la app)
     const manifestStr = JSON.stringify({ name: "NISUS FC Premium", short_name: "NISUS FC", start_url: ".", display: "standalone", background_color: "#0f172a", theme_color: "#082f49", icons: [{ src: "https://placehold.co/192x192/0ea5e9/ffffff?text=NFC", sizes: "192x192", type: "image/png" }, { src: "https://placehold.co/512x512/0ea5e9/ffffff?text=NFC", sizes: "512x512", type: "image/png" }] });
     const manifestBlob = new Blob([manifestStr], {type: 'application/json'}); const manifestUrl = URL.createObjectURL(manifestBlob);
     const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl; document.head.appendChild(link);
+    
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const btn = document.getElementById('btn-install-pwa'); if (btn) btn.classList.remove('hidden'); });
+
+    // 2. Registrar el Service Worker (Para que abra sin internet)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('App lista para funcionar sin conexión'))
+            .catch(err => console.log('Error al registrar Service Worker:', err));
+    }
 };
 window.installPWA = async function() { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { deferredPrompt = null; document.getElementById('btn-install-pwa').classList.add('hidden'); } } };
 
