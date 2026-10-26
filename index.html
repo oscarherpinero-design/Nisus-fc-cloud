@@ -321,17 +321,37 @@
             </div>
             
             <div id="fin-tab-resumen" class="space-y-8">
+                <div id="fin-tab-resumen" class="space-y-8">
+                <!-- Tarjetas Superiores (Saldos) -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 transition-colors">
                         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2" id="lbl-balance">Saldo Total en Caja</p><h3 class="text-4xl font-black text-slate-800 dark:text-white" id="fin-balance">$0.00</h3>
                     </div>
                     <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                        <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2" id="lbl-income"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+$0.00</h3>
+                        <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2" id="lbl-income"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+0.00</h3>
                     </div>
                     <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                        <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2" id="lbl-expense"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-$0.00</h3>
+                        <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2" id="lbl-expense"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-0.00</h3>
                     </div>
                 </div>
+
+                <!-- Gráficos (Flujo y Dona) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja (6 meses)</h3>
+                            <button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button>
+                        </div>
+                        <div class="relative w-full h-56"><canvas id="cashflow-chart"></canvas></div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
+                        <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg mb-4"><i class="fas fa-chart-pie text-red-500 mr-3"></i>Distribución de Egresos</h3>
+                        <div class="relative w-full h-56 flex justify-center"><canvas id="expenses-donut-chart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- (AQUÍ ABAJO CONTINÚA TU CÓDIGO ORIGINAL CON LA LISTA DE DEUDORES) -->
 
               <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
                     <div class="flex justify-between items-center mb-4">
