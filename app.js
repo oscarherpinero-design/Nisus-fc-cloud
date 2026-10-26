@@ -762,7 +762,6 @@ window.updateDashboard = function() {
         }
     }
     
-    // Llamar gráficos en el dashboard
     setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
 };
 
@@ -922,7 +921,7 @@ window.renderFinances = function() {
                 debtorsList.innerHTML += `
                 <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0" onclick="window.openPaySpecific('${p.id}')">
                     <div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${p.name}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border ${badgeColors}"><i class="fas ${icon}"></i> ${mor.label}</span></div></div>
-                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5"><p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p><div class="flex items-center gap-2"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.name}', ${dData.total})" class="admin-only w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5"><p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p><div class="flex items-center gap-2"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.name}', ${dData.total})" class="admin-only w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span></div></div>
                 </li>`;
             }
         });
@@ -953,7 +952,7 @@ window.renderFinances = function() {
         });
     }
     
-    // Llamada a gráficos (usamos setTimeout para asegurar que el HTML está listo)
+    // Llamada a gráficos
     if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
         setTimeout(() => {
             if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
@@ -1100,39 +1099,9 @@ window.copyGroupMessage = function() {
     }
     navigator.clipboard.writeText(msg).then(() => window.showToast('Mensaje copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
 };
-window.downloadReceiptFromTx = function(txId) {
-    const tx = window.finances.find(t => t.id === txId);
-    if (!tx || !tx.playerId) return window.showToast('Solo aplica para cobros a jugadores', true);
-    const p = window.players.find(x => x.id === tx.playerId);
-    if (!p) return;
-    
-    const dateStr = new Date(tx.date+'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
-    
-    document.getElementById('receipt-player').textContent = p.name;
-    document.getElementById('receipt-concept').textContent = tx.description || tx.category;
-    document.getElementById('receipt-amount').textContent = `$${tx.amount.toFixed(2)}`;
-    document.getElementById('receipt-date').textContent = `FECHA: ${dateStr}`;
-    document.getElementById('receipt-id').textContent = `REF: ${tx.id.substring(0,8).toUpperCase()}`;
 
-    const node = document.getElementById('receipt-template');
-    node.style.display = 'block';
-    window.showToast('Generando recibo...');
-
-    setTimeout(() => {
-        html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true }).then(cv => {
-            const a = document.createElement('a');
-            a.download = `Recibo_NISUS_${p.name.replace(/\s+/g, '_')}_${dateStr.replace(/\s+/g, '')}.png`;
-            a.href = cv.toDataURL('image/png');
-            a.click();
-            node.style.display = 'none';
-        }).catch(e => {
-            node.style.display = 'none';
-            window.showToast('Error al generar', true);
-        });
-    }, 300);
-};
 // ==========================================
-// MOTOR DE GRÁFICOS (FLUJO Y DONA) - VERSIÓN LIMPIA
+// MOTOR DE GRÁFICOS (FLUJO Y DONA)
 // ==========================================
 window.cashflowCharts = [];
 window.renderCashflowChart = function() {
