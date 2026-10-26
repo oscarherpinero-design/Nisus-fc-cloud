@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NISUS FC">
     <link rel="apple-touch-icon" href="escudo.png">
-    
     <title>NISUS FC</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,68 +31,24 @@
                 }
             }
         }
-        if (localStorage.getItem('nisus_theme') === 'dark' || (!('nisus_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        if (localStorage.getItem('nisus_theme') === 'dark' || (!('nisus_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.documentElement.classList.add('dark'); } else { document.documentElement.classList.remove('dark'); }
     </script>
     
     <style type="text/tailwindcss">
         :root { color-scheme: light dark; }
         body { font-family: 'Inter', sans-serif; padding-bottom: 80px; overscroll-behavior-y: none; @apply bg-slate-100 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-300; }
-        
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-slate-600 rounded-full; }
-        
-        body.read-only .admin-only { display: none !important; }
-        .force-hidden { display: none !important; }
-        
+        .hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; } .custom-scroll::-webkit-scrollbar-track { background: transparent; } .custom-scroll::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-slate-600 rounded-full; }
+        body.read-only .admin-only { display: none !important; } .force-hidden { display: none !important; }
         .input-premium { @apply w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-sm font-medium; }
-        
-        .color-picker-premium { appearance: none; -webkit-appearance: none; width: 40px; height: 40px; border: none; padding: 0; background: transparent; cursor: pointer; border-radius: 50%; }
-        .color-picker-premium::-webkit-color-swatch-wrapper { padding: 0; }
-        .color-picker-premium::-webkit-color-swatch { border: 3px solid #e2e8f0; border-radius: 50%; }
-        .dark .color-picker-premium::-webkit-color-swatch { border-color: #475569; }
-
-        .modal-animate { animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .section-fade-in { animation: sectionFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes sectionFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .match-result-win { @apply bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/50; }
-        .match-result-loss { @apply bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50; }
-        .match-result-draw { @apply bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50; }
-
+        .color-picker-premium { appearance: none; -webkit-appearance: none; width: 40px; height: 40px; border: none; padding: 0; background: transparent; cursor: pointer; border-radius: 50%; } .color-picker-premium::-webkit-color-swatch-wrapper { padding: 0; } .color-picker-premium::-webkit-color-swatch { border: 3px solid #e2e8f0; border-radius: 50%; } .dark .color-picker-premium::-webkit-color-swatch { border-color: #475569; }
+        .modal-animate { animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .section-fade-in { animation: sectionFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes sectionFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .pitch-container { width: 100%; max-width: 320px; height: 480px; margin: 0 auto; background-color: #22c55e; position: relative; border-radius: 12px; overflow: hidden; background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 48px, transparent 48px, transparent 96px); touch-action: none; border: 3px solid #16a34a; box-shadow: inset 0 0 20px rgba(0,0,0,0.1); }
-        .pitch-outline { position: absolute; top: 12px; bottom: 12px; left: 12px; right: 12px; border: 2px solid rgba(255,255,255,0.8); pointer-events: none; }
-        .pitch-line-center { position: absolute; top: 50%; left: 12px; right: 12px; height: 2px; background: rgba(255,255,255,0.8); transform: translateY(-50%); pointer-events: none; }
-        .pitch-circle-center { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-        .center-spot { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-        .penalty-area-top { position: absolute; top: 12px; left: 50%; width: 140px; height: 70px; border: 2px solid rgba(255,255,255,0.8); border-top: none; transform: translateX(-50%); pointer-events: none; }
-        .penalty-area-bottom { position: absolute; bottom: 12px; left: 50%; width: 140px; height: 70px; border: 2px solid rgba(255,255,255,0.8); border-bottom: none; transform: translateX(-50%); pointer-events: none; }
-        .goal-area-top { position: absolute; top: 12px; left: 50%; width: 60px; height: 30px; border: 2px solid rgba(255,255,255,0.8); border-top: none; transform: translateX(-50%); pointer-events: none; }
-        .goal-area-bottom { position: absolute; bottom: 12px; left: 50%; width: 60px; height: 30px; border: 2px solid rgba(255,255,255,0.8); border-bottom: none; transform: translateX(-50%); pointer-events: none; }
-        .penalty-spot-top, .penalty-spot-bottom { position: absolute; left: 50%; width: 4px; height: 4px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translateX(-50%); pointer-events: none; }
-        .penalty-spot-top { top: 60px; } .penalty-spot-bottom { bottom: 60px; }
-        .corner-tl, .corner-tr, .corner-bl, .corner-br { position: absolute; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.8); pointer-events: none; }
-        .corner-tl { top: 12px; left: 12px; border-radius: 0 0 100% 0; border-top: none; border-left: none; }
-        .corner-tr { top: 12px; right: 12px; border-radius: 0 0 0 100%; border-top: none; border-right: none; }
-        .corner-bl { bottom: 12px; left: 12px; border-radius: 0 100% 0 0; border-bottom: none; border-left: none; }
-        .corner-br { bottom: 12px; right: 12px; border-radius: 100% 0 0 0; border-bottom: none; border-right: none; }
-
+        .pitch-outline { position: absolute; top: 12px; bottom: 12px; left: 12px; right: 12px; border: 2px solid rgba(255,255,255,0.8); pointer-events: none; } .pitch-line-center { position: absolute; top: 50%; left: 12px; right: 12px; height: 2px; background: rgba(255,255,255,0.8); transform: translateY(-50%); pointer-events: none; } .pitch-circle-center { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; } .center-spot { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; } .penalty-area-top { position: absolute; top: 12px; left: 50%; width: 140px; height: 70px; border: 2px solid rgba(255,255,255,0.8); border-top: none; transform: translateX(-50%); pointer-events: none; } .penalty-area-bottom { position: absolute; bottom: 12px; left: 50%; width: 140px; height: 70px; border: 2px solid rgba(255,255,255,0.8); border-bottom: none; transform: translateX(-50%); pointer-events: none; } .goal-area-top { position: absolute; top: 12px; left: 50%; width: 60px; height: 30px; border: 2px solid rgba(255,255,255,0.8); border-top: none; transform: translateX(-50%); pointer-events: none; } .goal-area-bottom { position: absolute; bottom: 12px; left: 50%; width: 60px; height: 30px; border: 2px solid rgba(255,255,255,0.8); border-bottom: none; transform: translateX(-50%); pointer-events: none; } .penalty-spot-top, .penalty-spot-bottom { position: absolute; left: 50%; width: 4px; height: 4px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translateX(-50%); pointer-events: none; } .penalty-spot-top { top: 60px; } .penalty-spot-bottom { bottom: 60px; } .corner-tl, .corner-tr, .corner-bl, .corner-br { position: absolute; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.8); pointer-events: none; } .corner-tl { top: 12px; left: 12px; border-radius: 0 0 100% 0; border-top: none; border-left: none; } .corner-tr { top: 12px; right: 12px; border-radius: 0 0 0 100%; border-top: none; border-right: none; } .corner-bl { bottom: 12px; left: 12px; border-radius: 0 100% 0 0; border-bottom: none; border-left: none; } .corner-br { bottom: 12px; right: 12px; border-radius: 100% 0 0 0; border-bottom: none; border-right: none; }
         .formation-slot { position: absolute; width: 45px; height: 45px; border: 2px dashed rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.7); }
         .bench-container { @apply bg-slate-200 dark:bg-slate-700/50; border-radius: 12px; padding: 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; min-height: 80px; }
-
-        .player-token { width: 42px; height: 42px; border-radius: 50%; background: white; border: 2px solid #075985; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; position: absolute; cursor: grab; user-select: none; touch-action: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); transform: translate(-50%, -50%); transition: transform 0.1s, box-shadow 0.1s; z-index: 10; }
-        .player-token:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 50; }
-        .player-token img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .player-token .name-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); color: white; padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; white-space: nowrap; pointer-events: none; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .captain-armband { position: absolute; top: -6px; right: -6px; background-color: #fbbf24; color: black; font-size: 9px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; z-index: 30; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .dorsal-badge { position: absolute; top: -6px; left: -6px; background-color: #f8fafc; color: #0f172a; font-size: 9px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #cbd5e1; z-index: 30; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
+        .player-token { width: 42px; height: 42px; border-radius: 50%; background: white; border: 2px solid #075985; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; position: absolute; cursor: grab; user-select: none; touch-action: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); transform: translate(-50%, -50%); transition: transform 0.1s, box-shadow 0.1s; z-index: 10; } .player-token:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 50; } .player-token img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; } .player-token .name-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); color: white; padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; white-space: nowrap; pointer-events: none; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.2); } .captain-armband { position: absolute; top: -6px; right: -6px; background-color: #fbbf24; color: black; font-size: 9px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; z-index: 30; box-shadow: 0 2px 4px rgba(0,0,0,0.2); } .dorsal-badge { position: absolute; top: -6px; left: -6px; background-color: #f8fafc; color: #0f172a; font-size: 9px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #cbd5e1; z-index: 30; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         #p-image-overlay { display: none; } #p-image-overlay.flex-show { display: flex; } #p-image-spinner { display: none; } #p-image-spinner.flex-show { display: flex; }
         .player-card-export { width: 360px; height: 520px; background: radial-gradient(circle at top right, #1e293b, #0f172a); border-radius: 16px; padding: 20px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 0 4px #fbbf24, inset 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         .match-result-export { width: 400px; height: 400px; background: radial-gradient(circle at top left, #0ea5e9, #082f49); border-radius: 20px; padding: 24px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.4); }
@@ -106,9 +61,7 @@
             <div class="flex items-center gap-4">
                 <button onclick="window.toggleMenu()" class="text-white hover:text-brand-200 text-xl transition"><i class="fas fa-bars"></i></button>
                 <button type="button" class="flex items-center gap-2 transition hover:opacity-80" onclick="window.showSection('dashboard')">
-                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm">
-                        <img src="escudo.png" onerror="this.onerror=null; this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-full h-full object-cover" alt="Escudo">
-                    </div>
+                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm"><img src="escudo.png" onerror="this.onerror=null; this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-full h-full object-cover" alt="Escudo"></div>
                     <h1 class="text-xl font-black tracking-tight hidden sm:block">NISUS FC</h1>
                 </button>
             </div>
@@ -120,11 +73,8 @@
                     <button onclick="window.setFilter('f7')" id="btn-filter-f7" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-300 hover:text-white transition font-medium">F7</button>
                 </div>
                 <div class="w-px h-5 bg-brand-700 dark:bg-slate-600 mx-2 sm:mx-3"></div>
-                <div class="hidden sm:flex items-center gap-2 mr-3 px-2" title="Usuarios activos">
-                    <span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span>
-                    <span id="online-count" class="text-sm font-bold text-green-400">1</span>
-                </div>
-                <button onclick="window.toggleAdmin()" id="btn-admin" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-brand-800 dark:hover:bg-slate-700 transition" title="Modo Administrador"><i class="fas fa-lock"></i></button>
+                <div class="hidden sm:flex items-center gap-2 mr-3 px-2"><span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span><span id="online-count" class="text-sm font-bold text-green-400">1</span></div>
+                <button onclick="window.toggleAdmin()" id="btn-admin" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-brand-800 dark:hover:bg-slate-700 transition"><i class="fas fa-lock"></i></button>
             </div>
         </div>
     </header>
@@ -133,10 +83,7 @@
     
     <div id="side-menu" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-darkcard shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col border-r border-slate-200 dark:border-slate-800">
         <div class="h-16 flex items-center justify-between px-5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden"><img src="escudo.png" onerror="this.onerror=null; this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-full h-full object-cover"></div>
-                <span class="text-slate-900 dark:text-white font-black text-lg tracking-tight">NISUS FC</span>
-            </div>
+            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden"><img src="escudo.png" onerror="this.onerror=null; this.src='https://placehold.co/100x100/0ea5e9/ffffff?text=NFC'" class="w-full h-full object-cover"></div><span class="text-slate-900 dark:text-white font-black text-lg tracking-tight">NISUS FC</span></div>
             <button onclick="window.toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl p-2 focus:outline-none transition"><i class="fas fa-times"></i></button>
         </div>
         
@@ -173,8 +120,13 @@
 
     <main class="max-w-5xl mx-auto px-4 py-8">
         
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <!-- Tarjeta Próximo Partido (Ocupa 1/3 de la pantalla en PC) -->
+        <section id="dashboard" class="space-y-8">
+            <div class="flex justify-between items-end mb-2">
+                <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Resumen Ejecutivo</h2><p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Estadísticas dinámicas <span id="dash-season-label" class="font-bold text-brand-600 dark:text-brand-400 hidden"></span></p></div>
+            </div>
+            
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- Tarjeta Próximo Partido -->
                 <div class="bg-gradient-to-br from-brand-500 to-brand-700 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-soft dark:shadow-soft-dark border border-brand-400 dark:border-slate-700 p-6 relative overflow-hidden flex flex-col justify-between transition-all hover:-translate-y-1 xl:col-span-1">
                     <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-bl-full -z-0"></div>
                     <div class="relative z-10">
@@ -191,7 +143,7 @@
                     <button id="btn-tactics-next" class="relative z-10 mt-6 w-full bg-white text-brand-800 hover:bg-brand-50 font-black py-3 rounded-xl transition shadow-sm hidden"><i class="fas fa-clipboard-list mr-2"></i>Ver Pizarra</button>
                 </div>
                 
-                <!-- Gráficos del Dashboard (Ocupan 2/3 de la pantalla en PC, divididos en 2 y 1) -->
+                <!-- Gráficos -->
                 <div class="xl:col-span-2 grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-2">
                         <div class="flex justify-between items-center mb-4">
@@ -199,7 +151,6 @@
                         </div>
                         <div class="relative w-full h-56"><canvas id="cashflow-chart-dash"></canvas></div>
                     </div>
-                    
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-1">
                         <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg mb-4"><i class="fas fa-chart-pie text-red-500 mr-3"></i>Egresos</h3>
                         <div class="relative w-full h-56 flex justify-center"><canvas id="expenses-donut-chart-dash"></canvas></div>
@@ -208,44 +159,22 @@
             </div>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark">
-                    <div class="w-14 h-14 rounded-xl bg-green-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-futbol"></i></div>
-                    <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Goles Totales</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-goals">0</p></div>
-                </div>
-                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark">
-                    <div class="w-14 h-14 rounded-xl bg-blue-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-shoe-prints"></i></div>
-                    <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Asistencias</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-assists">0</p></div>
-                </div>
-                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark">
-                    <div class="w-14 h-14 rounded-xl bg-brand-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-calendar-check"></i></div>
-                    <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Partidos Jugados</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-games">0</p></div>
-                </div>
-                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark">
-                    <div class="w-14 h-14 rounded-xl bg-teal-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-shield-alt"></i></div>
-                    <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Porterías a Cero</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-cleansheets">0</p></div>
-                </div>
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark"><div class="w-14 h-14 rounded-xl bg-green-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-futbol"></i></div><div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Goles Totales</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-goals">0</p></div></div>
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark"><div class="w-14 h-14 rounded-xl bg-blue-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-shoe-prints"></i></div><div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Asistencias</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-assists">0</p></div></div>
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark"><div class="w-14 h-14 rounded-xl bg-brand-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-calendar-check"></i></div><div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Partidos</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-games">0</p></div></div>
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-all hover:shadow-soft dark:hover:shadow-soft-dark"><div class="w-14 h-14 rounded-xl bg-teal-500 text-white flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-shield-alt"></i></div><div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Porterías a Cero</p><p class="text-3xl font-black text-slate-800 dark:text-white leading-none mt-1" id="stat-total-cleansheets">0</p></div></div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 transition-all">
                     <h3 class="font-black text-slate-800 dark:text-white mb-5 flex items-center text-lg"><i class="fas fa-chart-pie text-brand-500 mr-3"></i>Rendimiento</h3>
                     <div class="flex items-center gap-6">
-                        <div class="relative shrink-0">
-                            <div id="perf-donut" class="w-32 h-32 rounded-full" style="background: conic-gradient(#10b981 0deg, #64748b 0deg, #ef4444 0deg, #e2e8f0 0deg);"></div>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                <span class="text-2xl font-black text-slate-800 dark:text-white" id="perf-win-pct">0%</span>
-                                <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Victorias</span>
-                            </div>
-                        </div>
+                        <div class="relative shrink-0"><div id="perf-donut" class="w-32 h-32 rounded-full" style="background: conic-gradient(#10b981 0deg, #64748b 0deg, #ef4444 0deg, #e2e8f0 0deg);"></div><div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-2xl font-black text-slate-800 dark:text-white" id="perf-win-pct">0%</span><span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Victorias</span></div></div>
                         <div class="flex-1 space-y-2.5">
                             <div class="flex items-center justify-between"><span class="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300"><span class="w-3 h-3 rounded-full bg-green-500"></span>Victorias</span><span class="font-black text-slate-800 dark:text-white" id="perf-wins">0</span></div>
                             <div class="flex items-center justify-between"><span class="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300"><span class="w-3 h-3 rounded-full bg-slate-400"></span>Empates</span><span class="font-black text-slate-800 dark:text-white" id="perf-draws">0</span></div>
                             <div class="flex items-center justify-between"><span class="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300"><span class="w-3 h-3 rounded-full bg-red-500"></span>Derrotas</span><span class="font-black text-slate-800 dark:text-white" id="perf-losses">0</span></div>
                         </div>
-                    </div>
-                    <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Racha (últimos 5)</p>
-                        <div class="flex gap-1.5" id="perf-form"></div>
                     </div>
                 </div>
                 <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 transition-all">
@@ -306,34 +235,23 @@
 
             <div class="flex gap-2 bg-white dark:bg-darkcard p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full sm:w-auto sm:inline-flex">
                 <button onclick="window.switchFinancesTab('resumen')" id="fin-tab-btn-resumen" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 bg-brand-600 text-white shadow-sm"><i class="fas fa-chart-pie"></i> Resumen</button>
-<button onclick="window.switchFinancesTab('cobros')" id="fin-tab-btn-cobros" class="admin-only flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fas fa-hand-holding-dollar"></i> Cobros</button>            
+                <button onclick="window.switchFinancesTab('cobros')" id="fin-tab-btn-cobros" class="admin-only flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fas fa-hand-holding-dollar"></i> Cobros</button>            
             </div>
             
             <div id="fin-tab-resumen" class="space-y-8">
-                <!-- Tarjetas Superiores (Saldos) -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 transition-colors">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2" id="lbl-balance">Saldo Total en Caja</p><h3 class="text-4xl font-black text-slate-800 dark:text-white" id="fin-balance">$0.00</h3>
-                    </div>
-                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                        <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2" id="lbl-income"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+0.00</h3>
-                    </div>
-                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all">
-                        <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2" id="lbl-expense"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-0.00</h3>
-                    </div>
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 transition-colors"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2" id="lbl-balance">Saldo Total en Caja</p><h3 class="text-4xl font-black text-slate-800 dark:text-white" id="fin-balance">$0.00</h3></div>
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all"><p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-2" id="lbl-income"><i class="fas fa-arrow-up mr-1"></i> Ingresos Totales</p><h3 class="text-3xl font-black text-green-600 dark:text-green-400" id="fin-income">+0.00</h3></div>
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-all"><p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2" id="lbl-expense"><i class="fas fa-arrow-down mr-1"></i> Egresos Totales</p><h3 class="text-3xl font-black text-red-600 dark:text-red-400" id="fin-expense">-0.00</h3></div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja (6 meses)</h3>
-                            <button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button>
-                        </div>
+                        <div class="flex justify-between items-center mb-4"><h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja</h3><button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button></div>
                         <div class="relative w-full h-56"><canvas id="cashflow-chart-fin"></canvas></div>
                     </div>
-                    
-                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
-                        <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg mb-4"><i class="fas fa-chart-pie text-red-500 mr-3"></i>Distribución de Egresos</h3>
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-1">
+                        <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg mb-4"><i class="fas fa-chart-pie text-red-500 mr-3"></i>Egresos</h3>
                         <div class="relative w-full h-56 flex justify-center"><canvas id="expenses-donut-chart-fin"></canvas></div>
                     </div>
                 </div>
@@ -388,7 +306,8 @@
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cuota $</label>
                                 <input type="number" step="0.01" min="0" id="dues-amount" placeholder="0.00" class="input-premium py-2 text-sm w-24" onchange="window.renderMonthlyDues()">
                             </div>
-<button onclick="window.chargeMonthlyDues()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"><i class="fas fa-bolt"></i> Generar a Seleccionados</button>                        </div>
+                            <button onclick="window.chargeMonthlyDues()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"><i class="fas fa-bolt"></i> Generar a Seleccionados</button>                        
+                        </div>
                     </div>
                     <div id="monthly-dues-grid" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
                     <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-bold text-slate-500 dark:text-slate-400" id="dues-summary"></div>
@@ -414,13 +333,10 @@
         <section id="players" class="hidden space-y-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" id="players-title">Plantilla Oficial</h2><p class="text-slate-500 text-sm mt-1 font-medium">Jugadores y Cuerpo Técnico</p></div>
-                
-                <!-- AQUÍ PEGAS EL NUEVO BLOQUE CON LOS DOS BOTONES -->
                 <div class="admin-only flex flex-wrap gap-3 w-full sm:w-auto">
                     <button id="btn-migrar-fotos" onclick="window.migrarFotosAStorage()" class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-cloud-upload-alt"></i> Migrar Fotos</button>
                     <button onclick="window.newPlayer()" class="flex-1 sm:flex-none bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-sm"><i class="fas fa-user-plus"></i> Inscribir Miembro</button>
                 </div>
-                
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mb-2">
                 <div class="relative flex-1">
@@ -429,20 +345,7 @@
                 </div>
                 <select id="player-position-filter" onchange="window.renderPlayers()" class="input-premium py-2.5 text-sm sm:w-56">
                     <option value="">Todas las posiciones</option>
-                    <option value="Portero">Portero</option>
-                    <option value="Defensa Central">Defensa Central</option>
-                    <option value="Lateral Derecho">Lateral Derecho</option>
-                    <option value="Lateral Izquierdo">Lateral Izquierdo</option>
-                    <option value="Carrilero">Carrilero</option>
-                    <option value="Mediocentro Defensivo">Pivote / MCD</option>
-                    <option value="Mediocentro">Mediocentro / MC</option>
-                    <option value="Interior">Interior</option>
-                    <option value="Mediapunta">Mediapunta / MCO</option>
-                    <option value="Extremo Derecho">Extremo Derecho</option>
-                    <option value="Extremo Izquierdo">Extremo Izquierdo</option>
-                    <option value="Segundo Delantero">Segundo Delantero</option>
-                    <option value="Delantero Centro">Delantero Centro / 9</option>
-                    <option value="Staff">Cuerpo Técnico</option>
+                    <option value="Portero">Portero</option><option value="Defensa Central">Defensa Central</option><option value="Lateral Derecho">Lateral Derecho</option><option value="Lateral Izquierdo">Lateral Izquierdo</option><option value="Carrilero">Carrilero</option><option value="Mediocentro Defensivo">Pivote / MCD</option><option value="Mediocentro">Mediocentro / MC</option><option value="Interior">Interior</option><option value="Mediapunta">Mediapunta / MCO</option><option value="Extremo Derecho">Extremo Derecho</option><option value="Extremo Izquierdo">Extremo Izquierdo</option><option value="Segundo Delantero">Segundo Delantero</option><option value="Delantero Centro">Delantero Centro / 9</option><option value="Staff">Cuerpo Técnico</option>
                 </select>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="players-grid"></div>
@@ -467,18 +370,12 @@
                         <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Fecha *</label><input type="date" id="f-date" required class="input-premium"></div>
                     </div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría *</label><select id="f-category" onchange="window.toggleMatchSelect()" required class="input-premium"></select></div>
-                    
                     <div id="f-match-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Partido asociado *</label><select id="f-match" onchange="window.calcArbitraje()" class="input-premium"><option value="">Selecciona...</option></select><div id="f-arbitraje-calc" class="mt-3 text-sm text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 hidden"></div></div>
-                    
                     <div id="f-player-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jugador *</label><select id="f-player" onchange="window.populateSpecificDebts()" class="input-premium"><option value="">Selecciona...</option></select></div>
-                    
                     <div id="f-specific-debt-container" class="hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 text-brand-600 dark:text-brand-400">Vincular a deuda (Opcional)</label>
-                        <select id="f-specific-debt" onchange="window.handleSpecificDebtSelect()" class="input-premium text-xs mb-1">
-                            <option value="">Abono general a cuenta</option>
-                        </select>
+                        <select id="f-specific-debt" onchange="window.handleSpecificDebtSelect()" class="input-premium text-xs mb-1"><option value="">Abono general a cuenta</option></select>
                     </div>
-
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Descripción *</label><input type="text" id="f-desc" required class="input-premium"></div>
                     <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-2"><button type="button" onclick="window.showSection('finances')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800" id="btn-cancel-fin">Cerrar</button><button type="submit" id="btn-save-fin" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar</button></div>
                 </form>
@@ -486,40 +383,18 @@
         </section>
 
         <div id="receipt-template" style="position:fixed;left:-9999px;top:0;width:380px;background:linear-gradient(135deg,#0c4a6e,#082f49);border-radius:20px;padding:28px 24px;color:#fff;font-family:'Inter',sans-serif;box-sizing:border-box;">
-            <div style="text-align:center;margin-bottom:20px;">
-                <div style="width:50px;height:50px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;"><img src="escudo.png" style="width:100%;height:100%;object-fit:cover;"></div>
-                <h2 style="font-size:22px;font-weight:900;margin:0;letter-spacing:-0.5px;">NISUS FC</h2>
-                <p style="font-size:10px;opacity:0.7;text-transform:uppercase;letter-spacing:2px;margin:2px 0 0;">Recibo de Pago</p>
-            </div>
-            <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:16px;margin-bottom:14px;">
-                <p style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 4px;">Jugador</p>
-                <p id="receipt-player" style="font-size:18px;font-weight:800;margin:0;">-</p>
-                <p id="receipt-concept" style="font-size:12px;opacity:0.8;margin:6px 0 0;">-</p>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.15);border-radius:12px;padding:16px 20px;margin-bottom:14px;">
-                <span style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:1.5px;">Monto</span>
-                <span id="receipt-amount" style="font-size:28px;font-weight:900;">$0.00</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.7;">
-                <span id="receipt-date">Fecha: -</span>
-                <span id="receipt-id">N°: -</span>
-            </div>
-            <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.15);">
-                <p style="font-size:10px;opacity:0.5;margin:0;">¡Gracias por tu compromiso con el equipo!</p>
-            </div>
+            <div style="text-align:center;margin-bottom:20px;"><div style="width:50px;height:50px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;"><img src="escudo.png" style="width:100%;height:100%;object-fit:cover;"></div><h2 style="font-size:22px;font-weight:900;margin:0;letter-spacing:-0.5px;">NISUS FC</h2><p style="font-size:10px;opacity:0.7;text-transform:uppercase;letter-spacing:2px;margin:2px 0 0;">Recibo de Pago</p></div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:16px;margin-bottom:14px;"><p style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 4px;">Jugador</p><p id="receipt-player" style="font-size:18px;font-weight:800;margin:0;">-</p><p id="receipt-concept" style="font-size:12px;opacity:0.8;margin:6px 0 0;">-</p></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.15);border-radius:12px;padding:16px 20px;margin-bottom:14px;"><span style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:1.5px;">Monto</span><span id="receipt-amount" style="font-size:28px;font-weight:900;">$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.7;"><span id="receipt-date">Fecha: -</span><span id="receipt-id">N°: -</span></div>
+            <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.15);"><p style="font-size:10px;opacity:0.5;margin:0;">¡Gracias por tu compromiso con el equipo!</p></div>
         </div>
 
         <div id="modalPaySpecific" class="hidden fixed inset-0 bg-slate-900/80 z-[70] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-md overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 transition-colors">
-                <div class="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                    <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-user text-brand-500"></i> <span id="pay-spec-name">Jugador</span></h3>
-                    <button onclick="document.getElementById('modalPaySpecific').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-times"></i></button>
-                </div>
+                <div class="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"><h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-user text-brand-500"></i> <span id="pay-spec-name">Jugador</span></h3><button onclick="document.getElementById('modalPaySpecific').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-times"></i></button></div>
                 <div class="p-5 overflow-y-auto max-h-[60vh] custom-scroll" id="pay-spec-list"></div>
-                <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Deuda Total Real:</span>
-                    <span class="text-xl font-black text-red-500" id="pay-spec-total">$0.00</span>
-                </div>
+                <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between items-center"><span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Deuda Total Real:</span><span class="text-xl font-black text-red-500" id="pay-spec-total">$0.00</span></div>
             </div>
         </div>
 
@@ -528,10 +403,7 @@
                 <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white">Sesión Técnica</h2><button onclick="window.showSection('attendance')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
                 <form id="attendance-form" onsubmit="window.saveAttendance(event)" class="space-y-5">
                     <input type="hidden" id="a-id">
-                    <div class="grid grid-cols-1 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Fecha *</label><input type="date" id="a-date" required class="input-premium"></div>
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Ubicación</label><input type="text" id="a-location" class="input-premium"></div>
-                    </div>
+                    <div class="grid grid-cols-1 gap-4"><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Fecha *</label><input type="date" id="a-date" required class="input-premium"></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Ubicación</label><input type="text" id="a-location" class="input-premium"></div></div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Asistentes</label><div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 h-64 overflow-y-auto space-y-2 custom-scroll" id="a-players-list"></div></div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Notas</label><textarea id="a-notes" rows="4" class="input-premium"></textarea></div>
                     <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-2"><button type="button" onclick="window.showSection('attendance')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800" id="btn-cancel-att">Cerrar</button><button type="submit" id="btn-save-attendance" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar Sesión</button></div>
@@ -548,73 +420,23 @@
                         <div id="p-photo-dropzone" class="w-28 h-28 rounded-full bg-slate-100 dark:bg-slate-800 border-4 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden relative group transition-all hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer shrink-0">
                             <img id="p-image-preview" src="" class="w-full h-full object-cover hidden">
                             <div id="p-image-placeholder" class="text-slate-400 flex flex-col items-center gap-1 pointer-events-none"><i class="fas fa-cloud-arrow-up text-3xl transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold uppercase tracking-widest">Subir</span></div>
-                            <div id="p-image-overlay" class="absolute inset-0 bg-slate-900/60 items-center justify-center gap-2 hidden opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                <button type="button" onclick="event.stopPropagation(); document.getElementById('p-image-upload').click()" class="w-8 h-8 rounded-full bg-white text-brand-600 flex items-center justify-center shadow-md hover:bg-brand-50 transition" title="Cambiar"><i class="fas fa-camera text-xs"></i></button>
-                                <button type="button" onclick="event.stopPropagation(); window.removePlayerPhoto()" class="w-8 h-8 rounded-full bg-white text-red-500 flex items-center justify-center shadow-md hover:bg-red-50 transition" title="Quitar"><i class="fas fa-trash text-xs"></i></button>
-                            </div>
+                            <div id="p-image-overlay" class="absolute inset-0 bg-slate-900/60 items-center justify-center gap-2 hidden opacity-0 group-hover:opacity-100 transition-opacity z-20"><button type="button" onclick="event.stopPropagation(); document.getElementById('p-image-upload').click()" class="w-8 h-8 rounded-full bg-white text-brand-600 flex items-center justify-center shadow-md hover:bg-brand-50 transition" title="Cambiar"><i class="fas fa-camera text-xs"></i></button><button type="button" onclick="event.stopPropagation(); window.removePlayerPhoto()" class="w-8 h-8 rounded-full bg-white text-red-500 flex items-center justify-center shadow-md hover:bg-red-50 transition" title="Quitar"><i class="fas fa-trash text-xs"></i></button></div>
                             <div id="p-image-spinner" class="absolute inset-0 bg-slate-900/70 items-center justify-center hidden z-30"><i class="fas fa-spinner fa-spin text-white text-xl"></i></div>
                             <input type="file" id="p-image-upload" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="window.handleImageUpload(event)">
                         </div>
-                        <div class="flex-1 text-center sm:text-left"><p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Foto de Perfil</p><p class="text-xs text-slate-400" id="p-photo-hint">Arrastra una imagen o haz clic. Se guarda en el servidor, no en Base64.</p><input type="hidden" id="p-image-base64"></div>
+                        <div class="flex-1 text-center sm:text-left"><p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Foto de Perfil</p><p class="text-xs text-slate-400" id="p-photo-hint">Arrastra una imagen o haz clic.</p><input type="hidden" id="p-image-base64"></div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nombre Real *</label><input type="text" id="p-name" required class="input-premium"></div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Alias (Opcional)</label><input type="text" id="p-alias" class="input-premium mb-2">
-                            <label class="flex items-center gap-2 cursor-pointer ml-1"><input type="checkbox" id="p-show-alias" class="rounded text-brand-600 w-4 h-4"><span class="text-xs text-slate-600 dark:text-slate-400 font-bold">Usar alias en la pizarra</span></label>
-                        </div>
-                    </div>
+                    <div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nombre Real *</label><input type="text" id="p-name" required class="input-premium"></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Alias (Opcional)</label><input type="text" id="p-alias" class="input-premium mb-2"><label class="flex items-center gap-2 cursor-pointer ml-1"><input type="checkbox" id="p-show-alias" class="rounded text-brand-600 w-4 h-4"><span class="text-xs text-slate-600 dark:text-slate-400 font-bold">Usar alias en la pizarra</span></label></div></div>
+                    <div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Dorsal</label><input type="number" id="p-number" class="input-premium"></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Posición</label><select id="p-position" multiple class="input-premium custom-scroll" style="height: 120px;"><option value="Portero">Portero</option><option value="Defensa Central">Defensa Central</option><option value="Lateral Derecho">Lateral Derecho</option><option value="Lateral Izquierdo">Lateral Izquierdo</option><option value="Carrilero">Carrilero</option><option value="Mediocentro Defensivo">Pivote / MCD</option><option value="Mediocentro">Mediocentro / MC</option><option value="Interior">Interior</option><option value="Mediapunta">Mediapunta / MCO</option><option value="Extremo Derecho">Extremo Derecho</option><option value="Extremo Izquierdo">Extremo Izquierdo</option><option value="Segundo Delantero">Segundo Delantero</option><option value="Delantero Centro">Delantero Centro / 9</option></select></div></div>
+                    <div class="grid grid-cols-3 gap-4"><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nacimiento</label><input type="date" id="p-birthdate" class="input-premium px-2"></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Pie Dom.</label><select id="p-foot" class="input-premium px-2"><option value="">N/E</option><option value="Diestro">Diestro</option><option value="Zurdo">Zurdo</option><option value="Ambidiestro">Ambi.</option></select></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Estado</label><select id="p-status" class="input-premium px-2" onchange="window.toggleReturnDateField()"><option value="active">Activo ✅</option><option value="injured">Lesión 🚑</option><option value="suspended">Sanción 🟥</option><option value="absent">Ausente ✈️</option><option value="inactive">Inactivo ⏸️</option></select></div></div>
                     
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Dorsal</label><input type="number" id="p-number" class="input-premium"></div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Posición</label>
-                            <select id="p-position" multiple class="input-premium custom-scroll" style="height: 120px;">
-                                <option value="Portero">Portero</option><option value="Defensa Central">Defensa Central</option><option value="Lateral Derecho">Lateral Derecho</option><option value="Lateral Izquierdo">Lateral Izquierdo</option><option value="Carrilero">Carrilero</option><option value="Mediocentro Defensivo">Pivote / MCD</option><option value="Mediocentro">Mediocentro / MC</option><option value="Interior">Interior</option><option value="Mediapunta">Mediapunta / MCO</option><option value="Extremo Derecho">Extremo Derecho</option><option value="Extremo Izquierdo">Extremo Izquierdo</option><option value="Segundo Delantero">Segundo Delantero</option><option value="Delantero Centro">Delantero Centro / 9</option>
-                            </select>
-                        </div>
-                    </div>
+                    <div id="p-return-date-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 mt-4">Fecha de Alta / Retorno</label><input type="date" id="p-return-date" class="input-premium"><p class="text-[10px] text-slate-400 mt-1 italic">El estado cambiará automáticamente a "Activo" cuando se cumpla la fecha.</p></div>
+                    
+                    <div class="pt-4 pb-2 border-t border-slate-100 dark:border-slate-800 border-b flex flex-col gap-3 mt-4"><label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="p-is-paid-up" class="rounded text-green-500 w-5 h-5" checked><span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Al día con los pagos</span></label><label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="p-is-staff" class="rounded text-purple-500 w-5 h-5"><span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Es parte del Cuerpo Técnico (DT)</span></label></div>
+                    <div class="pt-4"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Torneos Disponibles</label><div class="flex gap-6 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="p-avail-f11" class="rounded text-brand-600 w-4 h-4" checked><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Fútbol 11</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="p-avail-f7" class="rounded text-brand-600 w-4 h-4" checked><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Fútbol 7</span></label></div></div>
 
-                    <!-- Fila de Nacimiento, Pie y Estado -->
-                    <div class="grid grid-cols-3 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nacimiento</label><input type="date" id="p-birthdate" class="input-premium px-2"></div>
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Pie Dom.</label><select id="p-foot" class="input-premium px-2"><option value="">N/E</option><option value="Diestro">Diestro</option><option value="Zurdo">Zurdo</option><option value="Ambidiestro">Ambi.</option></select></div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Estado</label>
-                            <select id="p-status" class="input-premium px-2" onchange="window.toggleReturnDateField()">
-                                <option value="active">Activo ✅</option>
-                                <option value="injured">Lesión 🚑</option>
-                                <option value="suspended">Sanción 🟥</option>
-                                <option value="absent">Ausente ✈️</option>
-                                <option value="inactive">Inactivo ⏸️</option>
-                            </select>
-                        </div>
-                    </div> <!-- ¡ESTE ES EL DIV DE CIERRE QUE FALTABA! -->
-                    
-                    <div id="p-return-date-container" class="hidden">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 mt-4">Fecha de Alta / Retorno</label>
-                        <input type="date" id="p-return-date" class="input-premium">
-                        <p class="text-[10px] text-slate-400 mt-1 italic">El estado cambiará automáticamente a "Activo" cuando se cumpla la fecha.</p>
-                    </div>
-                    
-                    <div class="pt-4 pb-2 border-t border-slate-100 dark:border-slate-800 border-b flex flex-col gap-3 mt-4">
-                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="p-is-paid-up" class="rounded text-green-500 w-5 h-5" checked><span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Al día con los pagos</span></label>
-                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="p-is-staff" class="rounded text-purple-500 w-5 h-5"><span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Es parte del Cuerpo Técnico (DT)</span></label>
-                    </div>
-
-                    <div class="pt-4">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Torneos Disponibles</label>
-                        <div class="flex gap-6 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="p-avail-f11" class="rounded text-brand-600 w-4 h-4" checked><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Fútbol 11</span></label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="p-avail-f7" class="rounded text-brand-600 w-4 h-4" checked><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Fútbol 7</span></label>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-6">
-                        <button type="button" onclick="window.showSection('players')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition" id="btn-cancel-player">Cerrar</button>
-                        <button type="submit" id="btn-save-player" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar Ficha</button>
-                    </div>
+                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-6"><button type="button" onclick="window.showSection('players')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition" id="btn-cancel-player">Cerrar</button><button type="submit" id="btn-save-player" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar Ficha</button></div>
                 </form>
             </div>
         </section>
@@ -622,10 +444,8 @@
         <section id="matchForm" class="hidden modal-animate">
             <div class="max-w-3xl mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 md:p-8 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white" id="match-form-title"><i class="fas fa-edit text-brand-500 mr-2"></i>Editar Partido</h2><button onclick="window.showSection('matches')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
-                
                 <form id="match-form" onsubmit="window.saveMatch(event)" class="space-y-8">
                     <input type="hidden" id="m-id">
-                    
                     <div class="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
                         <p class="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-4">Información del Encuentro</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -633,7 +453,7 @@
                             <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Fecha *</label><input type="date" id="m-date" required class="input-premium"></div>
                             <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Torneo / Liga *</label><input type="text" id="m-tournament" required class="input-premium" onchange="window.renderCallupList()"></div>
                             <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Modalidad *</label><select id="m-modality" onchange="window.handleModalityChange()" class="input-premium"><option value="f11">Fútbol 11</option><option value="f7">Fútbol 7</option></select></div>
-                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Ubicación / Link Maps</label><input type="text" id="m-location" class="input-premium text-xs"></div>
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Ubicación</label><input type="text" id="m-location" class="input-premium text-xs"></div>
                             <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Temporada</label><input type="text" id="m-season" class="input-premium"></div>
                             <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jornada</label><input type="text" id="m-matchday" class="input-premium"></div>
                             <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Estado</label><select id="m-status" onchange="window.toggleScoreFields()" class="input-premium"><option value="pending">Por Jugar ⏳</option><option value="finished">Finalizado ✅</option><option value="forfait">Victoria Forfait (3-0) ⚖️</option></select></div>
@@ -644,168 +464,76 @@
                         <div class="flex-1 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
                             <p class="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-4"><i class="fas fa-tshirt mr-1"></i> Equipaciones</p>
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Uniforme Nisus FC</label>
-                            <select id="m-kit" onchange="window.renderKitsPreview()" class="input-premium mb-6">
-                                <option value="white_blue">Blanca (Local)</option><option value="black">Negra (Visitante)</option>
-                            </select>
-                            
+                            <select id="m-kit" onchange="window.renderKitsPreview()" class="input-premium mb-6"><option value="white_blue">Blanca (Local)</option><option value="black">Negra (Visitante)</option></select>
                             <div class="admin-only bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center mb-3">Colores del Rival</label>
-                                <div class="flex justify-center gap-4">
-                                    <div class="flex flex-col items-center"><input type="color" id="m-opp-shirt" value="#ff0000" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Camisa</span></div>
-                                    <div class="flex flex-col items-center"><input type="color" id="m-opp-shorts" value="#ff0000" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Short</span></div>
-                                    <div class="flex flex-col items-center"><input type="color" id="m-opp-socks" value="#ff0000" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Medias</span></div>
-                                    <div class="flex flex-col items-center"><input type="color" id="m-opp-gk" value="#00ff00" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Port.</span></div>
-                                </div>
+                                <div class="flex justify-center gap-4"><div class="flex flex-col items-center"><input type="color" id="m-opp-shirt" value="#ff0000" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Camisa</span></div><div class="flex flex-col items-center"><input type="color" id="m-opp-shorts" value="#ff0000" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Short</span></div><div class="flex flex-col items-center"><input type="color" id="m-opp-socks" value="#ff0000" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Medias</span></div><div class="flex flex-col items-center"><input type="color" id="m-opp-gk" value="#00ff00" onchange="window.renderKitsPreview()" class="color-picker-premium mb-1"><span class="text-[8px] font-bold text-slate-500 uppercase">Port.</span></div></div>
                             </div>
                         </div>
-                        
                         <div class="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 flex justify-center items-center shadow-inner">
-                            <div class="flex gap-3 items-center">
-                                <div class="text-center"><div id="kit-nisus-outfield" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500">Nisus</p></div>
-                                <div class="text-center"><div id="kit-nisus-gk" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500">Por</p></div>
-                            </div>
+                            <div class="flex gap-3 items-center"><div class="text-center"><div id="kit-nisus-outfield" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500">Nisus</p></div><div class="text-center"><div id="kit-nisus-gk" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500">Por</p></div></div>
                             <div class="mx-4 text-sm font-black text-slate-300 dark:text-slate-600 italic">VS</div>
-                            <div class="flex gap-3 items-center">
-                                <div class="text-center"><div id="kit-opp-gk" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500">Por</p></div>
-                                <div class="text-center"><div id="kit-opp-outfield" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500 truncate w-16" id="label-opp-kit">Rival</p></div>
-                            </div>
+                            <div class="flex gap-3 items-center"><div class="text-center"><div id="kit-opp-gk" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500">Por</p></div><div class="text-center"><div id="kit-opp-outfield" class="w-14 h-20 mx-auto"></div><p class="text-[8px] font-black mt-2 uppercase text-slate-500 truncate w-16" id="label-opp-kit">Rival</p></div></div>
                         </div>
                     </div>
 
                     <div id="m-score-container" class="hidden bg-slate-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
                         <p class="text-center font-black text-lg text-slate-800 dark:text-white mb-6 uppercase tracking-tight">Resultado Final</p>
                         <div class="flex items-center justify-center gap-8 mb-6">
-                            <div class="text-center">
-                                <label class="block text-sm font-black text-brand-600 dark:text-brand-400 mb-2">NISUS FC</label>
-                                <input type="number" id="m-goals-us" min="0" class="input-premium w-24 text-center text-3xl p-2 font-black">
-                            </div>
+                            <div class="text-center"><label class="block text-sm font-black text-brand-600 dark:text-brand-400 mb-2">NISUS FC</label><input type="number" id="m-goals-us" min="0" class="input-premium w-24 text-center text-3xl p-2 font-black"></div>
                             <span class="text-4xl font-black text-slate-300 dark:text-slate-700">-</span>
-                            <div class="text-center">
-                                <label class="block text-sm font-black text-slate-700 dark:text-slate-300 mb-2 truncate max-w-[100px]" id="label-opponent">Rival</label>
-                                <input type="number" id="m-goals-them" min="0" class="input-premium w-24 text-center text-3xl p-2 font-black">
-                            </div>
+                            <div class="text-center"><label class="block text-sm font-black text-slate-700 dark:text-slate-300 mb-2 truncate max-w-[100px]" id="label-opponent">Rival</label><input type="number" id="m-goals-them" min="0" class="input-premium w-24 text-center text-3xl p-2 font-black"></div>
                         </div>
-                        <div class="max-w-xs mx-auto">
-                            <label class="block text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase mb-2 text-center tracking-widest"><i class="fas fa-star mr-1"></i> Jugador MVP</label>
-                            <select id="m-mvp" class="input-premium border-yellow-300 dark:border-yellow-700/50 bg-yellow-50 dark:bg-yellow-900/10 text-yellow-800 dark:text-yellow-400" onchange="window.drawTacticalBoard()"><option value="">Ninguno</option></select>
-                        </div>
+                        <div class="max-w-xs mx-auto"><label class="block text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase mb-2 text-center tracking-widest"><i class="fas fa-star mr-1"></i> Jugador MVP</label><select id="m-mvp" class="input-premium border-yellow-300 dark:border-yellow-700/50 bg-yellow-50 dark:bg-yellow-900/10 text-yellow-800 dark:text-yellow-400" onchange="window.drawTacticalBoard()"><option value="">Ninguno</option></select></div>
                     </div>
 
                     <div class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-                        <div class="flex bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                            <button type="button" onclick="window.switchMatchTab('pizarra')" id="tab-btn-pizarra" class="flex-1 py-3 text-center text-xs font-bold text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-800 border-b-2 border-brand-500 transition-colors"><i class="fas fa-border-all mr-1"></i> Pizarra y Convocatoria</button>
-                            <button type="button" onclick="window.switchMatchTab('eventos')" id="tab-btn-eventos" class="flex-1 py-3 text-center text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent transition-colors"><i class="fas fa-bolt mr-1"></i> Eventos en Vivo</button>
-                        </div>
-                        
+                        <div class="flex bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800"><button type="button" onclick="window.switchMatchTab('pizarra')" id="tab-btn-pizarra" class="flex-1 py-3 text-center text-xs font-bold text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-800 border-b-2 border-brand-500 transition-colors"><i class="fas fa-border-all mr-1"></i> Pizarra y Convocatoria</button><button type="button" onclick="window.switchMatchTab('eventos')" id="tab-btn-eventos" class="flex-1 py-3 text-center text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent transition-colors"><i class="fas fa-bolt mr-1"></i> Eventos en Vivo</button></div>
                         <div class="p-5 bg-white dark:bg-darkcard">
                             <div id="tab-content-pizarra" class="flex flex-col lg:flex-row gap-6">
                                 <div class="w-full lg:w-1/3 space-y-4">
-                                    <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-                                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex justify-between">Convocados <span class="bg-slate-200 dark:bg-slate-700 px-1.5 rounded" id="count-convocados">0</span></p>
-                                        <div id="m-callup-list" class="space-y-1 max-h-[300px] overflow-y-auto custom-scroll pr-2"></div>
-                                    </div>
-                                    <div class="bg-yellow-50 dark:bg-yellow-900/10 rounded-xl p-3 border border-yellow-200 dark:border-yellow-800/30">
-                                        <p class="text-[10px] font-bold text-yellow-700 dark:text-yellow-500 uppercase tracking-widest mb-2"><i class="fas fa-copyright"></i> Capitán</p>
-                                        <select id="m-captain" onchange="window.drawTacticalBoard()" class="input-premium py-2 text-xs border-yellow-300 dark:border-yellow-700/50 bg-white dark:bg-slate-800"></select>
-                                    </div>
-                                    
-                                    <div class="bg-brand-50 dark:bg-brand-900/20 rounded-xl p-4 border border-brand-200 dark:border-brand-800/30 relative overflow-hidden">
-                                        <div class="absolute -right-4 -top-4 text-brand-500/10 text-6xl pointer-events-none"><i class="fas fa-chess"></i></div>
-                                        <p class="text-[10px] font-black text-brand-700 dark:text-brand-400 uppercase tracking-widest mb-3 relative z-10"><i class="fas fa-chess-board mr-1"></i> Sistema Táctico (Auto)</p>
-                                        <div class="flex gap-3 relative z-10">
-                                            <select id="m-formation" onchange="window.drawTacticalBoard()" class="input-premium py-2 text-xs flex-1 border-brand-300 dark:border-brand-700 focus:ring-brand-500 focus:border-brand-500 shadow-sm font-bold text-brand-900 dark:text-brand-100 bg-white dark:bg-slate-800"></select>
-                                            <button type="button" onclick="window.applyFormation()" class="admin-only bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white px-5 rounded-xl transition-all shadow-md flex items-center justify-center group" title="Aplicar Formación Mágica">
-                                                <i class="fas fa-magic text-lg group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300"></i>
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex justify-between">Convocados <span class="bg-slate-200 dark:bg-slate-700 px-1.5 rounded" id="count-convocados">0</span></p><div id="m-callup-list" class="space-y-1 max-h-[300px] overflow-y-auto custom-scroll pr-2"></div></div>
+                                    <div class="bg-yellow-50 dark:bg-yellow-900/10 rounded-xl p-3 border border-yellow-200 dark:border-yellow-800/30"><p class="text-[10px] font-bold text-yellow-700 dark:text-yellow-500 uppercase tracking-widest mb-2"><i class="fas fa-copyright"></i> Capitán</p><select id="m-captain" onchange="window.drawTacticalBoard()" class="input-premium py-2 text-xs border-yellow-300 dark:border-yellow-700/50 bg-white dark:bg-slate-800"></select></div>
+                                    <div class="bg-brand-50 dark:bg-brand-900/20 rounded-xl p-4 border border-brand-200 dark:border-brand-800/30 relative overflow-hidden"><div class="absolute -right-4 -top-4 text-brand-500/10 text-6xl pointer-events-none"><i class="fas fa-chess"></i></div><p class="text-[10px] font-black text-brand-700 dark:text-brand-400 uppercase tracking-widest mb-3 relative z-10"><i class="fas fa-chess-board mr-1"></i> Sistema Táctico</p><div class="flex gap-3 relative z-10"><select id="m-formation" onchange="window.drawTacticalBoard()" class="input-premium py-2 text-xs flex-1 border-brand-300 dark:border-brand-700 focus:ring-brand-500 focus:border-brand-500 shadow-sm font-bold text-brand-900 dark:text-brand-100 bg-white dark:bg-slate-800"></select><button type="button" onclick="window.applyFormation()" class="admin-only bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white px-5 rounded-xl transition-all shadow-md flex items-center justify-center group" title="Aplicar Formación Mágica"><i class="fas fa-magic text-lg group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300"></i></button></div></div>
                                 </div>
-                                
                                 <div class="w-full lg:w-2/3 flex flex-col items-center">
                                     <div class="w-full flex justify-between mb-2 px-2"><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Arrastra para mover</span><span id="pitch-count-badge" class="text-[9px] font-bold text-brand-500 uppercase tracking-widest">0 en cancha</span></div>
-                                    <div class="pitch-container" id="tactical-pitch">
-                                        <div class="pitch-outline"></div><div class="pitch-line-center"></div><div class="pitch-circle-center"></div><div class="center-spot"></div>
-                                        <div class="penalty-area-top"></div><div class="goal-area-top"></div><div class="penalty-spot-top"></div>
-                                        <div class="penalty-area-bottom"></div><div class="goal-area-bottom"></div><div class="penalty-spot-bottom"></div>
-                                        <div class="corner-tl"></div><div class="corner-tr"></div>
-                                        <div class="corner-bl"></div><div class="corner-br"></div>
-                                    </div>
-                                    
-                                    <div class="w-full flex gap-4 mt-6">
-                                        <div class="flex-1"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">Banquillo</p><div class="bench-container justify-center" id="tactical-bench"></div></div>
-                                        <div class="w-24 shrink-0"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">Staff Téc.</p><div class="bench-container justify-center border border-purple-200 dark:border-purple-800/30 bg-purple-50 dark:bg-purple-900/10" id="tactical-staff"></div></div>
-                                    </div>
+                                    <div class="pitch-container" id="tactical-pitch"><div class="pitch-outline"></div><div class="pitch-line-center"></div><div class="pitch-circle-center"></div><div class="center-spot"></div><div class="penalty-area-top"></div><div class="goal-area-top"></div><div class="penalty-spot-top"></div><div class="penalty-area-bottom"></div><div class="goal-area-bottom"></div><div class="penalty-spot-bottom"></div><div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div></div>
+                                    <div class="w-full flex gap-4 mt-6"><div class="flex-1"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">Banquillo</p><div class="bench-container justify-center" id="tactical-bench"></div></div><div class="w-24 shrink-0"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">Staff Téc.</p><div class="bench-container justify-center border border-purple-200 dark:border-purple-800/30 bg-purple-50 dark:bg-purple-900/10" id="tactical-staff"></div></div></div>
                                     <button type="button" onclick="window.exportPitchImage()" class="mt-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-6 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2"><i class="fas fa-camera"></i> Exportar Alineación</button>
                                 </div>
                             </div>
-                            
                             <div id="tab-content-eventos" class="hidden">
                                 <p class="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-3"><i class="fas fa-bolt mr-1"></i> Registro Rápido de Eventos</p>
-                                <div class="flex flex-col sm:flex-row gap-2 mb-4">
-                                    <input type="number" id="m-event-minute" placeholder="Min" class="input-premium sm:w-20 text-center py-2">
-                                    <select id="m-event-player" class="input-premium flex-1 py-2"></select>
-                                    <select id="m-event-type" onchange="window.toggleSubField()" class="input-premium sm:w-48 py-2"><option value="goals">Gol ⚽</option><option value="penalty">Penal 🎯</option><option value="freekick">Tiro Libre 👟</option><option value="assists">Asist. 👟</option><option value="saved">Atajado 🧤</option><option value="yellows">Amarilla 🟨</option><option value="double_yellow">Doble Amarilla 🟨🟥</option><option value="reds">Roja 🟥</option><option value="sub">Cambio 🔄</option></select>
-                                    <select id="m-event-player-out" class="hidden input-premium flex-1 py-2"></select>
-                                    <button type="button" onclick="window.addMatchEvent()" class="admin-only bg-slate-800 dark:bg-slate-700 text-white px-5 py-2 rounded-xl font-bold hover:bg-slate-900 transition"><i class="fas fa-plus"></i></button>
-                                </div>
+                                <div class="flex flex-col sm:flex-row gap-2 mb-4"><input type="number" id="m-event-minute" placeholder="Min" class="input-premium sm:w-20 text-center py-2"><select id="m-event-player" class="input-premium flex-1 py-2"></select><select id="m-event-type" onchange="window.toggleSubField()" class="input-premium sm:w-48 py-2"><option value="goals">Gol ⚽</option><option value="penalty">Penal 🎯</option><option value="freekick">Tiro Libre 👟</option><option value="assists">Asist. 👟</option><option value="saved">Atajado 🧤</option><option value="yellows">Amarilla 🟨</option><option value="double_yellow">Doble Amarilla 🟨🟥</option><option value="reds">Roja 🟥</option><option value="sub">Cambio 🔄</option></select><select id="m-event-player-out" class="hidden input-premium flex-1 py-2"></select><button type="button" onclick="window.addMatchEvent()" class="admin-only bg-slate-800 dark:bg-slate-700 text-white px-5 py-2 rounded-xl font-bold hover:bg-slate-900 transition"><i class="fas fa-plus"></i></button></div>
                                 <div id="m-events-list" class="space-y-2"></div>
                             </div>
                         </div>
                     </div>
                     
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Crónica / Notas del Partido</label><textarea id="m-notes" rows="3" class="input-premium"></textarea></div>
-                    
-                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-                        <button type="button" onclick="window.showSection('matches')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800" id="btn-cancel-match">Cerrar</button>
-                        <button type="submit" id="btn-save-match" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar Partido</button>
-                    </div>
+                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800"><button type="button" onclick="window.showSection('matches')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800" id="btn-cancel-match">Cerrar</button><button type="submit" id="btn-save-match" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar Partido</button></div>
                 </form>
             </div>
         </section>
 
         <!-- Elementos Comunes (Toast, Modales Confirm, etc) -->
         <div id="modalPlayerCard" class="hidden fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-            <div class="relative max-w-sm w-full flex flex-col items-center">
-                <button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition backdrop-blur"><i class="fas fa-times text-xl"></i></button>
-                <div id="card-render-container" class="mb-6 scale-95 md:scale-100 transition-transform"></div>
-                <button id="btn-download-card" class="w-full max-w-[360px] bg-brand-500 hover:bg-brand-600 text-white py-4 rounded-2xl font-black tracking-widest uppercase transition-colors shadow-lg flex justify-center items-center gap-2"><i class="fas fa-download"></i> Guardar Imagen</button>
-            </div>
+            <div class="relative max-w-sm w-full flex flex-col items-center"><button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition backdrop-blur"><i class="fas fa-times text-xl"></i></button><div id="card-render-container" class="mb-6 scale-95 md:scale-100 transition-transform"></div><button id="btn-download-card" class="w-full max-w-[360px] bg-brand-500 hover:bg-brand-600 text-white py-4 rounded-2xl font-black tracking-widest uppercase transition-colors shadow-lg flex justify-center items-center gap-2"><i class="fas fa-download"></i> Guardar Imagen</button></div>
         </div>
-        
         <div id="modalMatchResult" class="hidden fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-            <div class="relative max-w-md w-full flex flex-col items-center">
-                <button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition backdrop-blur"><i class="fas fa-times text-xl"></i></button>
-                <div id="result-render-container" class="mb-6 scale-95 md:scale-100 transition-transform"></div>
-                <button id="btn-download-result" class="w-full max-w-[400px] bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-2xl font-black tracking-widest uppercase transition-colors shadow-lg flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>
-            </div>
+            <div class="relative max-w-md w-full flex flex-col items-center"><button onclick="document.getElementById('modalMatchResult').classList.add('hidden')" class="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition backdrop-blur"><i class="fas fa-times text-xl"></i></button><div id="result-render-container" class="mb-6 scale-95 md:scale-100 transition-transform"></div><button id="btn-download-result" class="w-full max-w-[400px] bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-2xl font-black tracking-widest uppercase transition-colors shadow-lg flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button></div>
         </div>
         
         <div id="toast" class="fixed top-20 right-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 translate-x-[150%] z-[80] flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span id="toast-msg" class="font-bold text-sm"></span></div>
-        
-        <div id="confirmModal" class="hidden fixed inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div id="confirmModalContent" class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200 border border-slate-200 dark:border-slate-800">
-                <div class="p-8 text-center">
-                    <div class="w-20 h-20 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-5 text-3xl"><i class="fas fa-exclamation-triangle"></i></div>
-                    <h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">¿Estás Seguro?</h3>
-                    <p id="confirm-msg" class="text-sm text-slate-500 font-medium mb-8"></p>
-                    <div class="flex gap-3 justify-center">
-                        <button onclick="window.closeConfirm()" class="px-5 py-3 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex-1 font-bold transition">Cancelar</button>
-                        <button onclick="window.executeConfirm()" class="px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl flex-1 font-bold shadow-sm transition">Confirmar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="confirmModal" class="hidden fixed inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm"><div id="confirmModalContent" class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-200 border border-slate-200 dark:border-slate-800"><div class="p-8 text-center"><div class="w-20 h-20 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-5 text-3xl"><i class="fas fa-exclamation-triangle"></i></div><h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">¿Estás Seguro?</h3><p id="confirm-msg" class="text-sm text-slate-500 font-medium mb-8"></p><div class="flex gap-3 justify-center"><button onclick="window.closeConfirm()" class="px-5 py-3 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex-1 font-bold transition">Cancelar</button><button onclick="window.executeConfirm()" class="px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl flex-1 font-bold shadow-sm transition">Confirmar</button></div></div></div></div>
         
         <div id="pinModal" class="hidden fixed inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-sm overflow-hidden p-8 text-center border border-slate-200 dark:border-slate-800 transition-colors">
                 <div class="w-20 h-20 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-500 flex items-center justify-center mx-auto mb-5 text-3xl"><i class="fas fa-lock"></i></div>
-                <h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Modo Edición</h3>
-                <p class="text-sm text-slate-500 font-medium mb-6">Ingresa el código maestro para modificar la base de datos.</p>
+                <h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Modo Edición</h3><p class="text-sm text-slate-500 font-medium mb-6">Ingresa el código maestro para modificar la base de datos.</p>
                 <input type="password" id="admin-pin" class="input-premium text-center mb-8 text-2xl tracking-[0.5em] font-black h-16" maxlength="4" placeholder="••••">
-                <div class="flex gap-3 justify-center">
-                    <button onclick="window.closePinModal()" class="px-5 py-3 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex-1 font-bold transition">Cancelar</button>
-                    <button onclick="window.verifyPin()" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl flex-1 font-bold shadow-sm transition">Desbloquear</button>
-                </div>
+                <div class="flex gap-3 justify-center"><button onclick="window.closePinModal()" class="px-5 py-3 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex-1 font-bold transition">Cancelar</button><button onclick="window.verifyPin()" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl flex-1 font-bold shadow-sm transition">Desbloquear</button></div>
             </div>
         </div>
     </main>
@@ -813,8 +541,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-
-    <!-- CONECTAMOS EL ARCHIVO DE LÓGICA JAVASCRIPT -->
     <script src="app.js" defer></script>
 </body>
 </html>
