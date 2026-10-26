@@ -200,10 +200,20 @@
                     <button id="btn-tactics-next" class="relative z-10 mt-6 w-full bg-white text-brand-800 hover:bg-brand-50 font-black py-3 rounded-xl transition shadow-sm hidden"><i class="fas fa-clipboard-list mr-2"></i>Ver Pizarra</button>
                 </div>
                 
-                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 transition-all">
-                    <h3 class="font-black text-slate-800 dark:text-white mb-5 flex items-center text-lg"><i class="fas fa-history text-brand-500 mr-3"></i>Últimos Resultados</h3>
-                    <div id="latest-results" class="space-y-3">
-                        <p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium"><i class="fas fa-spinner fa-spin mr-2"></i> Sincronizando...</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Gráfico de Flujo de Caja (Ocupa 2 columnas) -->
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja (6 meses)</h3>
+                            <button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button>
+                        </div>
+                        <div class="relative w-full h-56"><canvas id="cashflow-chart"></canvas></div>
+                    </div>
+                    
+                    <!-- NUEVO: Gráfico de Dona para Egresos (Ocupa 1 columna) -->
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
+                        <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg mb-4"><i class="fas fa-chart-pie text-red-500 mr-3"></i>Distribución de Egresos</h3>
+                        <div class="relative w-full h-56 flex justify-center"><canvas id="expenses-donut-chart"></canvas></div>
                     </div>
                 </div>
             </div>
