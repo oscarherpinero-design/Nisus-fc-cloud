@@ -1422,41 +1422,84 @@ window.openPaySpecific = function(playerId) {
     const list = document.getElementById('pay-spec-list');
     const debts = window.getPlayerDebts(playerId);
     list.innerHTML = '';
-    if (debts.debts.length === 0) { list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; }
-    else debts.debts.forEach(d => {
-        const dStr = new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
-        list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700"><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${d.desc}</p><p class="text-[10px] text-slate-400">${dStr}</p></div><div class="flex items-center gap-3 ml-3"><span class="font-black text-red-500 text-sm">${d.amount.toFixed(2)}</span><button onclick="window.paySpecificDebt('${playerId}','${d.id}',${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Pagar</button></div></div>`;
-    });
+    
+    if (debts.debts.length === 0) { 
+        list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; 
+    } else {
+        debts.debts.forEach(d => {
+            const dStr = new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+            list.innerHTML += `
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700">
+                <div class="flex-1 min-w-0 pr-2">
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${d.desc}">${d.desc}</p>
+                    <p class="text-[10px] text-slate-400">${dStr}</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-slate-400 font-bold text-xs">$</span>
+                    <input type="number" id="pay-amt-${d.id}" value="${d.amount.toFixed(2)}" max="${d.amount.toFixed(2)}" step="0.01" class="w-16 sm:w-20 py-1.5 px-2 text-right text-sm font-black text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 shadow-sm">
+                    <button onclick="window.processSpecificPayment('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Abonar</button>
+                </div>
+            </div>`;
+        });
+    }
+    
     document.getElementById('pay-spec-total').textContent = `${debts.total.toFixed(2)}`;
     document.getElementById('modalPaySpecific').classList.remove('hidden');
     window.updateAdminUI();
 };
 
-window.paySpecificDebt = async function(playerId, debtId, amount) {
+window.processSpecificPayment = function(playerId, debtId, maxAmount) {
+    const inputEl = document.getElementById(`pay-amt-${debtId}`);
+    if (!inputEl) return;
+    let payAmount = parseFloat(inputEl.value);
+    
+    if (isNaN(payAmount) || payAmount <= 0) return window.showToast('Ingresa un monto válido', true);
+    if (payAmount > maxAmount) {
+        payAmount = maxAmount; 
+        inputEl.value = maxAmount.toFixed(2);
+    }
+    
+    window.paySpecificDebt(playerId, debtId, payAmount, maxAmount);
+};
+
+window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
     if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    
+    const isFullPayment = Math.abs(maxAmount - amount) < 0.01;
     const finId = window.generateId();
-    const tData = { id: finId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: 'Pago de deuda', playerId: playerId, specificDebtId: debtId };
+    const tData = { id: finId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: isFullPayment ? 'Pago total de deuda' : 'Abono parcial a deuda', playerId: playerId, specificDebtId: debtId };
+    
     const batch = db.batch();
     batch.set(db.collection(window.financesPath).doc(finId), tData);
 
     if (debtId.startsWith('arb_')) {
-        const parentId = debtId.split('_')[1];
-        const arbTx = window.finances.find(x => x.id === parentId);
-        if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true });
+        // En arbitrajes grupales, solo lo marcamos saldado para este jugador si pagó completo
+        if (isFullPayment) {
+            const parentId = debtId.split('_')[1];
+            const arbTx = window.finances.find(x => x.id === parentId);
+            if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true });
+        }
     } else {
-        batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
+        if (isFullPayment) {
+            batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
+        }
         const p = window.players.find(x => x.id === playerId);
-        if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
+        if (p) { 
+            const newDebt = Math.max(0, (p.debtAmount || 0) - amount); 
+            batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); 
+        }
     }
 
     try {
         await batch.commit();
-        const concept = window.getPlayerDebts(playerId).debts.length <= 1 ? 'Pago de deuda total' : 'Abono a deuda';
+        const concept = isFullPayment ? 'Pago de deuda' : 'Abono parcial a deuda';
         window.generatePaymentReceipt(playerId, debtId, amount, concept);
-        window.showToast('Deuda pagada');
+        window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
         window.openPaySpecific(playerId); 
         window.renderFinances();
-    } catch(e) { window.showToast('Error', true); }
+    } catch(e) { 
+        window.showToast('Error al registrar abono', true); 
+    }
 };
 
 window.renderMonthlyDues = function() {
