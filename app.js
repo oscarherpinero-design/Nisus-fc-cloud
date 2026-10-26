@@ -8,16 +8,8 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// Activar Persistencia Offline (Modo Cancha sin señal)
-db.enablePersistence({ synchronizeTabs: true })
-    .then(() => console.log("Modo Offline Activado: Listo para la cancha"))
-    .catch((err) => {
-        if (err.code === 'failed-precondition') {
-            console.warn("Persistencia falló: Múltiples pestañas abiertas");
-        } else if (err.code === 'unimplemented') {
-            console.warn("El navegador no soporta el modo offline");
-        }
-    });
+// Activar Persistencia Offline
+db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
 
 window.playersPath = `jugadores`; window.matchesPath = `partidos`; window.trainingsPath = `entrenamientos`; window.financesPath = `finanzas`;
 window.players = []; window.matches = []; window.trainings = []; window.finances = []; window.isReady = false;
@@ -27,38 +19,124 @@ window.currentSeason = 'all'; window.currentFilter = 'all'; let deferredPrompt;
 window.generateId = function() { return crypto.randomUUID ? crypto.randomUUID() : 'x-x-4-y-x'.replace(/[xy]/g, c => { var r = Math.random()*16|0; return (c==='x'?r:r&0x3|0x8).toString(16); }); };
 
 /* -----------------------------------------------------
-   LÓGICA CORE Y FINANZAS
+   LÓGICA CORE, NAVEGACIÓN Y UTILIDADES
 ------------------------------------------------------ */
-window.clearFinancialHistory = function() {
-    if(!window.isAdmin) return window.showToast('Desbloquea el candado', true);
-    window.showConfirm('¿Hacer un BORRÓN Y CUENTA NUEVA? Se eliminará el historial financiero y TODAS las deudas de los jugadores volverán a 0.', async () => {
-        window.showToast('Limpiando...', false);
-        try {
-            const batch = db.batch();
-            window.finances.forEach(t => {
-                batch.delete(db.collection(window.financesPath).doc(t.id));
-            });
-            window.players.forEach(p => {
-                batch.update(db.collection(window.playersPath).doc(p.id), {
-                    debtAmount: 0,
-                    isPaidUp: true
-                });
-            });
-            await batch.commit();
-            window.showToast('¡Borrón y cuenta nueva exitoso!');
-        } catch(e) {
-            window.showToast('Error al limpiar', true);
-            console.error(e);
-        }
-    });
+window.showToast = function(msg, isError = false) {
+    const t = document.getElementById('toast'); if(!t) return; document.getElementById('toast-msg').textContent = msg;
+    t.className = `fixed top-20 right-4 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 z-[80] flex items-center gap-3 ${isError ? 'bg-red-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'}`;
+    setTimeout(() => t.classList.remove('translate-x-[150%]'), 10); setTimeout(() => t.classList.add('translate-x-[150%]'), 3000);
 };
 
-const posValid = { POR: ['Portero'], DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'], LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'], LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'], CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'], MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'], MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'], MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'], MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'], MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'], ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'], EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'], DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta'] };
-const formations = {
-    f11: { "4-4-2": [{x:50,y:90,valid:posValid.POR},{x:20,y:75,valid:posValid.LI},{x:40,y:75,valid:posValid.DFC},{x:60,y:75,valid:posValid.DFC},{x:80,y:75,valid:posValid.LD},{x:20,y:50,valid:posValid.MI},{x:40,y:50,valid:posValid.MC},{x:60,y:50,valid:posValid.MC},{x:80,y:50,valid:posValid.MD},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}], "4-3-3": [{x:50,y:90,valid:posValid.POR},{x:20,y:75,valid:posValid.LI},{x:40,y:75,valid:posValid.DFC},{x:60,y:75,valid:posValid.DFC},{x:80,y:75,valid:posValid.LD},{x:30,y:55,valid:posValid.MC},{x:50,y:55,valid:posValid.MCD},{x:70,y:55,valid:posValid.MC},{x:20,y:25,valid:posValid.EI},{x:50,y:25,valid:posValid.DC},{x:80,y:25,valid:posValid.ED}], "4-2-3-1": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.LI},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:85,y:75,valid:posValid.LD},{x:35,y:60,valid:posValid.MCD},{x:65,y:60,valid:posValid.MCD},{x:20,y:40,valid:posValid.MI},{x:50,y:40,valid:posValid.MCO},{x:80,y:40,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}], "4-1-4-1": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.LI},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:85,y:75,valid:posValid.LD},{x:50,y:60,valid:posValid.MCD},{x:15,y:45,valid:posValid.MI},{x:35,y:45,valid:posValid.MC},{x:65,y:45,valid:posValid.MC},{x:85,y:45,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}], "4-5-1": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.LI},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:85,y:75,valid:posValid.LD},{x:15,y:50,valid:posValid.MI},{x:35,y:50,valid:posValid.MC},{x:50,y:50,valid:posValid.MCD},{x:65,y:50,valid:posValid.MC},{x:85,y:50,valid:posValid.MD},{x:50,y:25,valid:posValid.DC}], "3-5-2": [{x:50,y:90,valid:posValid.POR},{x:30,y:75,valid:posValid.DFC},{x:50,y:75,valid:posValid.DFC},{x:70,y:75,valid:posValid.DFC},{x:15,y:50,valid:posValid.CAR},{x:35,y:50,valid:posValid.MC},{x:50,y:50,valid:posValid.MCD},{x:65,y:50,valid:posValid.MC},{x:85,y:50,valid:posValid.CAR},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}], "3-4-3": [{x:50,y:90,valid:posValid.POR},{x:30,y:75,valid:posValid.DFC},{x:50,y:75,valid:posValid.DFC},{x:70,y:75,valid:posValid.DFC},{x:15,y:50,valid:posValid.MI},{x:35,y:50,valid:posValid.MC},{x:65,y:50,valid:posValid.MC},{x:85,y:50,valid:posValid.MD},{x:25,y:25,valid:posValid.EI},{x:50,y:25,valid:posValid.DC},{x:75,y:25,valid:posValid.ED}], "5-3-2": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.CAR},{x:30,y:80,valid:posValid.DFC},{x:50,y:80,valid:posValid.DFC},{x:70,y:80,valid:posValid.DFC},{x:85,y:75,valid:posValid.CAR},{x:35,y:55,valid:posValid.MC},{x:50,y:55,valid:posValid.MCD},{x:65,y:55,valid:posValid.MC},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}] },
-    f7: { "3-2-1": [{x:50,y:90,valid:posValid.POR},{x:25,y:70,valid:posValid.LI},{x:50,y:70,valid:posValid.DFC},{x:75,y:70,valid:posValid.LD},{x:35,y:45,valid:posValid.MC},{x:65,y:45,valid:posValid.MC},{x:50,y:20,valid:posValid.DC}], "3-1-2": [{x:50,y:90,valid:posValid.POR},{x:25,y:70,valid:posValid.LI},{x:50,y:70,valid:posValid.DFC},{x:75,y:70,valid:posValid.LD},{x:50,y:45,valid:posValid.MCD},{x:35,y:20,valid:posValid.DC},{x:65,y:20,valid:posValid.DC}], "2-3-1": [{x:50,y:90,valid:posValid.POR},{x:35,y:70,valid:posValid.DFC},{x:65,y:70,valid:posValid.DFC},{x:20,y:45,valid:posValid.MI},{x:50,y:45,valid:posValid.MC},{x:80,y:45,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}], "2-2-2": [{x:50,y:90,valid:posValid.POR},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:30,y:45,valid:posValid.MC},{x:70,y:45,valid:posValid.MC},{x:35,y:20,valid:posValid.DC},{x:65,y:20,valid:posValid.DC}], "1-3-2": [{x:50,y:90,valid:posValid.POR},{x:50,y:75,valid:posValid.DFC},{x:20,y:50,valid:posValid.MI},{x:50,y:50,valid:posValid.MC},{x:80,y:50,valid:posValid.MD},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}], "1-4-1": [{x:50,y:90,valid:posValid.POR},{x:50,y:75,valid:posValid.DFC},{x:15,y:45,valid:posValid.MI},{x:35,y:45,valid:posValid.MC},{x:65,y:45,valid:posValid.MC},{x:85,y:45,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}] }
+window.toggleMenu = function() { const m = document.getElementById('side-menu'); const o = document.getElementById('side-menu-overlay'); if(m.classList.contains('-translate-x-full')) { m.classList.remove('-translate-x-full'); o.classList.remove('force-hidden'); } else { m.classList.add('-translate-x-full'); o.classList.add('force-hidden'); } };
+
+window.showSection = function(sectionId) {
+    ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances', 'playerForm', 'matchForm', 'attendanceForm', 'financesForm'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); });
+    const sec = document.getElementById(sectionId); if(sec) { sec.classList.remove('hidden'); sec.classList.remove('section-fade-in'); void sec.offsetWidth; sec.classList.add('section-fade-in'); }
+    ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances'].forEach(id => { const s = document.getElementById('nav-side-' + id); if(s) { s.classList.remove('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); s.classList.add('text-slate-600', 'dark:text-slate-300'); } });
+    const aS = document.getElementById('nav-side-' + sectionId); if(aS) { aS.classList.add('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); aS.classList.remove('text-slate-600', 'dark:text-slate-300'); }
+    const m = document.getElementById('side-menu'); if(m && !m.classList.contains('-translate-x-full')) window.toggleMenu();
+    
+    if(sectionId === 'players') { window.renderPlayers(); window.renderBirthdaysAvailability(); } 
+    if(sectionId === 'matches') window.renderMatches(); 
+    if(sectionId === 'attendance') window.renderTrainings(); 
+    if(sectionId === 'dashboard' || sectionId === 'stats') window.updateDashboard(); 
+    if(sectionId === 'finances') { if(!window.currentFinTab) window.switchFinancesTab('resumen'); window.renderFinances(); }
+    window.scrollTo(0,0);
 };
 
+window.setupPWA = function() {
+    const manifestStr = JSON.stringify({ name: "NISUS FC Premium", short_name: "NISUS FC", start_url: ".", display: "standalone", background_color: "#0f172a", theme_color: "#082f49", icons: [{ src: "https://placehold.co/192x192/0ea5e9/ffffff?text=NFC", sizes: "192x192", type: "image/png" }, { src: "https://placehold.co/512x512/0ea5e9/ffffff?text=NFC", sizes: "512x512", type: "image/png" }] });
+    const manifestBlob = new Blob([manifestStr], {type: 'application/json'}); const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl; document.head.appendChild(link);
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const btn = document.getElementById('btn-install-pwa'); if (btn) btn.classList.remove('hidden'); });
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+};
+window.installPWA = async function() { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { deferredPrompt = null; document.getElementById('btn-install-pwa').classList.add('hidden'); } } };
+
+window.toggleDarkMode = function() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('nisus_theme', isDark ? 'dark' : 'light');
+    const label = document.getElementById('theme-label'); const ball = document.getElementById('theme-toggle-ball');
+    if(label && ball) {
+        label.innerHTML = isDark ? '<i class="fas fa-moon text-blue-400 mr-2"></i>Modo Oscuro' : '<i class="fas fa-sun text-yellow-500 mr-2"></i>Modo Claro';
+        if(isDark) { ball.classList.remove('translate-x-0.5'); ball.classList.add('translate-x-5'); } else { ball.classList.remove('translate-x-5'); ball.classList.add('translate-x-0.5'); }
+    }
+    if (typeof window.renderKitsPreview === 'function') window.renderKitsPreview();
+    if (typeof window.renderCashflowChart === 'function') { window.renderCashflowChart(); window.renderExpensesDonutChart(); }
+};
+
+window.updateAdminUI = function() {
+    const btn = document.getElementById('btn-admin');
+    const inputs = document.querySelectorAll('input:not(#admin-pin):not(#player-search), select:not(#player-position-filter):not(#season-filter):not(#season-filter-side), textarea');
+    if (window.isAdmin) { 
+        document.body.classList.remove('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>'; 
+        inputs.forEach(el => { el.disabled = false; el.classList.remove('opacity-60', 'cursor-not-allowed'); });
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('force-hidden'));
+    } else { 
+        document.body.classList.add('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-lock text-slate-400"></i>'; 
+        inputs.forEach(el => { el.disabled = true; el.classList.add('opacity-60', 'cursor-not-allowed'); });
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.add('force-hidden'));
+    }
+};
+
+window.toggleAdmin = function() { 
+    if(window.isAdmin) { window.isAdmin=false; localStorage.removeItem('nisus_admin'); window.updateAdminUI(); window.showToast("Modo lectura activado"); } 
+    else { document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('admin-pin').value=''; document.getElementById('admin-pin').focus(); } 
+};
+window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
+window.verifyPin = function() { if(document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin=true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("Edición desbloqueada"); } else window.showToast("PIN incorrecto", true); };
+
+window.pendingConfirm = null;
+window.showConfirm = function(msg, action) { document.getElementById('confirm-msg').textContent = msg; window.pendingConfirm = action; const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent'); m.classList.remove('hidden'); setTimeout(() => { c.classList.remove('scale-95', 'opacity-0'); c.classList.add('scale-100', 'opacity-100'); }, 10); };
+window.closeConfirm = function() { const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent'); c.classList.remove('scale-100', 'opacity-100'); c.classList.add('scale-95', 'opacity-0'); setTimeout(() => { m.classList.add('hidden'); window.pendingConfirm = null; }, 200); };
+window.executeConfirm = function() { if(window.pendingConfirm) window.pendingConfirm(); window.closeConfirm(); };
+
+window.setFilter = function(f) { 
+    window.currentFilter = f; 
+    ['all','f11','f7'].forEach(x=>{ 
+        const bT = document.getElementById(`btn-filter-${x}`); if(bT) bT.className = x===f ? "text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg bg-white dark:bg-brand-600 text-brand-900 dark:text-white font-bold shadow-sm transition" : "text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-400 hover:text-white transition font-medium";
+        const bS = document.getElementById(`btn-side-filter-${x}`); if(bS) bS.className = x===f ? "flex-1 py-2 rounded-lg bg-white dark:bg-brand-600 text-slate-900 dark:text-white font-bold shadow-sm transition text-center" : "flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-medium text-center";
+    }); 
+    if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); 
+    if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); 
+    if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); 
+    if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); 
+    if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances();
+};
+
+window.setSeasonFilter = function(s) { window.currentSeason = s; const d = document.getElementById('dash-season-label'); if(d) { if(s==='all') d.classList.add('hidden'); else { d.textContent=`(T. ${s})`; d.classList.remove('hidden'); } } const dS = document.getElementById('stats-season-label'); if(dS) { if(s==='all') dS.classList.add('hidden'); else { dS.textContent=`(T. ${s})`; dS.classList.remove('hidden'); } } const sT = document.getElementById('season-filter'); if(sT && sT.value !== s) sT.value = s; const sS = document.getElementById('season-filter-side'); if(sS && sS.value !== s) sS.value = s; window.setFilter(window.currentFilter); };
+window.updateSeasonDropdown = function() { const cur = window.currentSeason; const unique = [...new Set(window.matches.map(m => String(m.season||'')).filter(s=>s.trim()!==''))].sort((a,b)=>b.localeCompare(a)); const rS = (id) => { const s = document.getElementById(id); if(!s) return; s.innerHTML = '<option value="all">Todas las Temporadas</option>'; unique.forEach(x => s.innerHTML += `<option value="${x}">T. ${x}</option>`); if(cur==='all'||unique.includes(cur)) s.value = cur; else s.value='all'; }; rS('season-filter'); rS('season-filter-side'); if(cur!=='all' && !unique.includes(cur)) window.currentSeason='all'; };
+
+/* -----------------------------------------------------
+   DISEÑO Y KITS
+------------------------------------------------------ */
+window.generateKitSVG = function(shirt, accent, short, sock, accent2 = null) {
+    const cid = 'clip-' + Math.random().toString(36).substr(2, 9); const isDark = document.documentElement.classList.contains('dark');
+    const isLightKit = (shirt.toLowerCase() === '#ffffff' || shirt.toLowerCase() === '#fff'); const isDarkKit = (shirt.toLowerCase() === '#050505' || shirt.toLowerCase() === '#000' || shirt.toLowerCase() === '#111827');
+    let strokeColor = 'rgba(0,0,0,0.1)', strokeWidth = '1', shadowFilter = 'drop-shadow(0px 2px 3px rgba(0,0,0,0.15))';
+    if (isDark) { if (isDarkKit) { strokeColor = 'rgba(255,255,255,0.4)'; strokeWidth = '2.5'; shadowFilter = 'drop-shadow(0px 0px 5px rgba(255,255,255,0.2))'; } } else { if (isLightKit) { strokeColor = 'rgba(0,0,0,0.35)'; strokeWidth = '2.5'; shadowFilter = 'drop-shadow(0px 3px 4px rgba(0,0,0,0.25))'; } }
+    let extraPaths = '';
+    if (accent2) {
+        extraPaths += `<rect x="35" y="0" width="30" height="100" fill="${accent}"/><rect x="33" y="0" width="2" height="100" fill="${accent2}"/><rect x="65" y="0" width="2" height="100" fill="${accent2}"/><polygon points="0,0 25,0 25,50 0,50" fill="${accent}"/><polygon points="75,0 100,0 100,50 75,50" fill="${accent}"/><path d="M35 15 Q50 35 65 15 Z" fill="${accent2}"/><polygon points="0,35 25,45 25,55 0,45" fill="${accent2}"/><polygon points="100,35 75,45 75,55 100,45" fill="${accent2}"/><rect x="20" y="75" width="60" height="5" fill="${accent2}"/>`;
+    } else { extraPaths += `<path d="M40 15 C45 25, 55 25, 60 15 Z" fill="${accent}"/>`; }
+
+    return `<svg viewBox="0 0 100 120" style="width:100%;height:100%;filter:${shadowFilter};"><defs><clipPath id="${cid}"><path d="M25 15 C35 15, 65 15, 75 15 L90 35 L75 45 L75 80 L25 80 L25 45 L10 35 Z"/></clipPath></defs><path d="M25 15 C35 15, 65 15, 75 15 L90 35 L75 45 L75 80 L25 80 L25 45 L10 35 Z" fill="${shirt}"/><g clip-path="url(#${cid})">${extraPaths}</g><path d="M25 15 C35 15, 65 15, 75 15 L90 35 L75 45 L75 80 L25 80 L25 45 L10 35 Z" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}"/><path d="M25 82 L75 82 L75 105 L53 105 L50 90 L47 105 L25 105 Z" fill="${short}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/><rect x="28" y="108" width="16" height="12" rx="2" fill="${sock}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/><rect x="56" y="108" width="16" height="12" rx="2" fill="${sock}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/></svg>`;
+};
+window.renderKitsPreview = function() {
+    const kit = document.getElementById('m-kit')?.value || 'white_blue';
+    let nS='#ffffff', nA='#0284c7', nSh='#111827', nSo='#111827', nAc2='#111827'; 
+    if (kit === 'black') { nS='#050505'; nA='#050505'; nAc2=null; nSh='#050505'; nSo='#050505'; }
+    const oS = document.getElementById('m-opp-shirt')?.value || '#ff0000', oSh = document.getElementById('m-opp-shorts')?.value || '#ff0000', oSo = document.getElementById('m-opp-socks')?.value || '#ff0000', oGk = document.getElementById('m-opp-gk')?.value || '#00ff00';
+    const dN = document.getElementById('kit-nisus-outfield'); if(dN) dN.innerHTML = window.generateKitSVG(nS, nA, nSh, nSo, nAc2);
+    const dNG = document.getElementById('kit-nisus-gk'); if(dNG) dNG.innerHTML = window.generateKitSVG('#eab308', '#050505', '#050505', '#050505');
+    const dO = document.getElementById('kit-opp-outfield'); if(dO) dO.innerHTML = window.generateKitSVG(oS, oS, oSh, oSo);
+    const dOG = document.getElementById('kit-opp-gk'); if(dOG) dOG.innerHTML = window.generateKitSVG(oGk, oGk, oGk, oGk);
+    const lbl = document.getElementById('label-opp-kit'); if(lbl) lbl.textContent = document.getElementById('m-opponent')?.value || 'Rival';
+};
+
+/* -----------------------------------------------------
+   ESTADÍSTICAS Y CÁLCULOS
+------------------------------------------------------ */
 window.getDiscipline = function(playerId, tournament) {
     if (!tournament) return { suspended: false, yellows: 0, suspensionsLeft: 0 };
     const tourneyMatches = window.matches.filter(m => (m.status === 'finished' || m.status === 'forfait') && (m.tournament || '').trim().toLowerCase() === tournament.trim().toLowerCase()).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -88,342 +166,47 @@ window.getPlayerStat = function(player, statKey) {
     }); return count;
 };
 
-window.getPlayerDebts = function(playerId) {
-    const p = window.players.find(x => x.id === playerId);
-    if (!p) return { total: 0, debts: [] };
-    let rawDebts = [];
-    
-    window.finances.filter(t => (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && t.playerId === playerId && !t.isPaid).forEach(t => { 
-        const desc = t.category === 'Cuota Mensual' ? `Cuota Mensual ${t.duesMonth || t.date || ''}` : `${t.category}: ${t.description}`;
-        rawDebts.push({ type: 'direct', id: t.id, desc, amount: t.amount, date: t.date }); 
-    });
-    
-    window.finances.filter(t => t.category === 'Arbitraje' && t.matchId).forEach(t => {
-        const match = window.matches.find(m => m.id === t.matchId);
-        if (match && match.lineup && match.lineup.some(l => l.playerId === playerId)) {
-            const validPlayers = match.lineup.filter(l => { const py = window.players.find(x => x.id === l.playerId); return py && !py.isStaff; });
-            if (validPlayers.length > 0) {
-                const cuota = t.amount / validPlayers.length;
-                const paidId = `arb_${t.id}_${playerId}`;
-                if (!t.paidBy || !t.paidBy.includes(playerId)) { rawDebts.push({ type: 'arbitraje', id: paidId, parentId: t.id, desc: `Arbitraje: vs ${match.opponent}`, amount: cuota, date: t.date }); }
-            }
-        }
-    });
-
-    window.finances.filter(t => t.category === 'Abono a Deuda (Jugador)' && t.playerId === playerId && t.specificDebtId).forEach(t => {
-        const targetDebt = rawDebts.find(d => d.id === t.specificDebtId);
-        if (targetDebt) { targetDebt.amount -= t.amount; }
-    });
-
-    rawDebts = rawDebts.filter(d => d.amount > 0.01).sort((a,b) => new Date(a.date) - new Date(b.date));
-    
-    let surplus = rawDebts.reduce((sum, d) => sum + d.amount, 0) - (p.debtAmount || 0);
-    if (surplus > 0.01) {
-        rawDebts = rawDebts.filter(d => {
-            if (surplus >= d.amount) { surplus -= d.amount; return false; }
-            else if (surplus > 0) { d.amount -= surplus; surplus = 0; return true; }
-            return true;
-        });
-    }
-
-    return { total: rawDebts.reduce((sum, d) => sum + d.amount, 0), debts: rawDebts };
-};
-
-window.getMorosityStatus = function(playerId) {
-    const dData = window.getPlayerDebts(playerId);
-    if (dData.total <= 0.01) return { status: 'ok', label: 'Al día', color: 'green' };
-    const now = new Date();
-    const currentMonth = now.toISOString().slice(0, 7);
-    const hasOldDebt = dData.debts.some(d => {
-        const dMonth = (d.date || '').slice(0, 7);
-        return dMonth < currentMonth;
-    });
-    if (hasOldDebt) return { status: 'mora', label: 'En Mora', color: 'red' };
-    if (now.getDate() > 25) return { status: 'mora', label: 'En Mora', color: 'red' };
-    return { status: 'plazo', label: 'En Plazo', color: 'yellow' };
-};
-
-window.showToast = function(msg, isError = false) {
-    const t = document.getElementById('toast'); if(!t) return; document.getElementById('toast-msg').textContent = msg;
-    t.className = `fixed top-20 right-4 px-5 py-4 rounded-2xl shadow-soft transform transition-all duration-300 z-[80] flex items-center gap-3 ${isError ? 'bg-red-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'}`;
-    setTimeout(() => t.classList.remove('translate-x-[150%]'), 10); setTimeout(() => t.classList.add('translate-x-[150%]'), 3000);
-};
-
-window.setupPWA = function() {
-    // 1. Configurar el Manifiesto (El icono de la app)
-    const manifestStr = JSON.stringify({ name: "NISUS FC Premium", short_name: "NISUS FC", start_url: ".", display: "standalone", background_color: "#0f172a", theme_color: "#082f49", icons: [{ src: "https://placehold.co/192x192/0ea5e9/ffffff?text=NFC", sizes: "192x192", type: "image/png" }, { src: "https://placehold.co/512x512/0ea5e9/ffffff?text=NFC", sizes: "512x512", type: "image/png" }] });
-    const manifestBlob = new Blob([manifestStr], {type: 'application/json'}); const manifestUrl = URL.createObjectURL(manifestBlob);
-    const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl; document.head.appendChild(link);
-    
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const btn = document.getElementById('btn-install-pwa'); if (btn) btn.classList.remove('hidden'); });
-
-    // 2. Registrar el Service Worker (Para que abra sin internet)
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('App lista para funcionar sin conexión'))
-            .catch(err => console.log('Error al registrar Service Worker:', err));
-    }
-};
-window.installPWA = async function() { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { deferredPrompt = null; document.getElementById('btn-install-pwa').classList.add('hidden'); } } };
-
-window.toggleDarkMode = function() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('nisus_theme', isDark ? 'dark' : 'light');
-    const label = document.getElementById('theme-label'); const ball = document.getElementById('theme-toggle-ball');
-    if(label && ball) {
-        label.innerHTML = isDark ? '<i class="fas fa-moon text-blue-400 mr-2"></i>Modo Oscuro' : '<i class="fas fa-sun text-yellow-500 mr-2"></i>Modo Claro';
-        if(isDark) { ball.classList.remove('translate-x-0.5'); ball.classList.add('translate-x-5'); } else { ball.classList.remove('translate-x-5'); ball.classList.add('translate-x-0.5'); }
-    }
-    window.renderKitsPreview();
-};
-
-window.updateAdminUI = function() {
-    const btn = document.getElementById('btn-admin');
-    
-    // Aquí está la magia: Usamos :not() para excluir la barra de búsqueda y los filtros de la lista de bloqueo
-    const inputs = document.querySelectorAll('input:not(#admin-pin):not(#player-search), select:not(#player-position-filter):not(#season-filter):not(#season-filter-side), textarea');
-    
-    if (window.isAdmin) { 
-        document.body.classList.remove('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>'; 
-        inputs.forEach(el => { el.disabled = false; el.classList.remove('opacity-60', 'cursor-not-allowed'); });
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('force-hidden'));
-    } else { 
-        document.body.classList.add('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-lock text-slate-400"></i>'; 
-        inputs.forEach(el => { el.disabled = true; el.classList.add('opacity-60', 'cursor-not-allowed'); });
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.add('force-hidden'));
-    }
-};
-
-window.toggleAdmin = function() { 
-    if(window.isAdmin) { 
-        window.isAdmin=false; 
-        localStorage.removeItem('nisus_admin'); 
-        window.switchFinancesTab('resumen');
-        window.updateAdminUI(); 
-        window.showToast("Modo lectura activado"); 
-    } else { 
-        document.getElementById('pinModal').classList.remove('hidden'); 
-        document.getElementById('admin-pin').value=''; 
-        document.getElementById('admin-pin').focus(); 
-    } 
-};
-
-window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
-window.verifyPin = function() { if(document.getElementById('admin-pin').value === window.SECRET_PIN) { window.isAdmin=true; localStorage.setItem('nisus_admin', 'true'); window.closePinModal(); window.updateAdminUI(); window.showToast("Edición desbloqueada"); } else window.showToast("PIN incorrecto", true); };
-
-window.pendingConfirm = null;
-window.showConfirm = function(msg, action) { document.getElementById('confirm-msg').textContent = msg; window.pendingConfirm = action; const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent'); m.classList.remove('hidden'); setTimeout(() => { c.classList.remove('scale-95', 'opacity-0'); c.classList.add('scale-100', 'opacity-100'); }, 10); };
-window.closeConfirm = function() { const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent'); c.classList.remove('scale-100', 'opacity-100'); c.classList.add('scale-95', 'opacity-0'); setTimeout(() => { m.classList.add('hidden'); window.pendingConfirm = null; }, 200); };
-window.executeConfirm = function() { if(window.pendingConfirm) window.pendingConfirm(); window.closeConfirm(); };
-
-window.toggleMenu = function() { const m = document.getElementById('side-menu'); const o = document.getElementById('side-menu-overlay'); if(m.classList.contains('-translate-x-full')) { m.classList.remove('-translate-x-full'); o.classList.remove('force-hidden'); } else { m.classList.add('-translate-x-full'); o.classList.add('force-hidden'); } };
-
-window.showSection = function(sectionId) {
-    ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances', 'playerForm', 'matchForm', 'attendanceForm', 'financesForm'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); });
-    const sec = document.getElementById(sectionId); if(sec) { sec.classList.remove('hidden'); sec.classList.remove('section-fade-in'); void sec.offsetWidth; sec.classList.add('section-fade-in'); }
-    ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances'].forEach(id => { const s = document.getElementById('nav-side-' + id); if(s) { s.classList.remove('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); s.classList.add('text-slate-600', 'dark:text-slate-300'); } });
-    const aS = document.getElementById('nav-side-' + sectionId); if(aS) { aS.classList.add('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); aS.classList.remove('text-slate-600', 'dark:text-slate-300'); }
-    const m = document.getElementById('side-menu'); if(m && !m.classList.contains('-translate-x-full')) window.toggleMenu();
-    if(sectionId === 'players') { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(sectionId === 'matches') window.renderMatches(); if(sectionId === 'attendance') window.renderTrainings(); if(sectionId === 'dashboard') window.updateDashboard(); if(sectionId === 'stats') window.updateDashboard(); if(sectionId === 'finances') { if(!window.currentFinTab) window.switchFinancesTab('resumen'); window.renderFinances(); window.renderCashflowChart(); }
-    window.scrollTo(0,0);
-};
-
-window.setFilter = function(f) { 
-    window.currentFilter = f; 
-    ['all','f11','f7'].forEach(x=>{ 
-        const bT = document.getElementById(`btn-filter-${x}`); if(bT) bT.className = x===f ? "text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg bg-white dark:bg-brand-600 text-brand-900 dark:text-white font-bold shadow-sm transition" : "text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-400 hover:text-white transition font-medium";
-        const bS = document.getElementById(`btn-side-filter-${x}`); if(bS) bS.className = x===f ? "flex-1 py-2 rounded-lg bg-white dark:bg-brand-600 text-slate-900 dark:text-white font-bold shadow-sm transition text-center" : "flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-medium text-center";
-    }); 
-    if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances();
-};
-
-window.setSeasonFilter = function(s) { window.currentSeason = s; const d = document.getElementById('dash-season-label'); if(d) { if(s==='all') d.classList.add('hidden'); else { d.textContent=`(T. ${s})`; d.classList.remove('hidden'); } } const dS = document.getElementById('stats-season-label'); if(dS) { if(s==='all') dS.classList.add('hidden'); else { dS.textContent=`(T. ${s})`; dS.classList.remove('hidden'); } } const sT = document.getElementById('season-filter'); if(sT && sT.value !== s) sT.value = s; const sS = document.getElementById('season-filter-side'); if(sS && sS.value !== s) sS.value = s; window.setFilter(window.currentFilter); };
-
-window.updateSeasonDropdown = function() { 
-    const cur = window.currentSeason; const unique = [...new Set(window.matches.map(m => String(m.season||'')).filter(s=>s.trim()!==''))].sort((a,b)=>b.localeCompare(a)); 
-    const rS = (id) => { const s = document.getElementById(id); if(!s) return; s.innerHTML = '<option value="all">Todas las Temporadas</option>'; unique.forEach(x => s.innerHTML += `<option value="${x}">T. ${x}</option>`); if(cur==='all'||unique.includes(cur)) s.value = cur; else s.value='all'; };
-    rS('season-filter'); rS('season-filter-side'); if(cur!=='all' && !unique.includes(cur)) window.currentSeason='all';
-};
-
-window.switchMatchTab = function(tabName) {
-    const btnPizarra = document.getElementById('tab-btn-pizarra');
-    const btnEventos = document.getElementById('tab-btn-eventos');
-    const contentPizarra = document.getElementById('tab-content-pizarra');
-    const contentEventos = document.getElementById('tab-content-eventos');
-    
-    if (tabName === 'pizarra') {
-        btnPizarra.classList.replace('text-slate-500', 'text-brand-600');
-        btnPizarra.classList.replace('dark:text-slate-400', 'dark:text-brand-400');
-        btnPizarra.classList.replace('bg-transparent', 'bg-white');
-        btnPizarra.classList.replace('dark:bg-transparent', 'dark:bg-slate-800');
-        btnPizarra.classList.replace('border-transparent', 'border-brand-500');
-        
-        btnEventos.classList.replace('text-brand-600', 'text-slate-500');
-        btnEventos.classList.replace('dark:text-brand-400', 'dark:text-slate-400');
-        btnEventos.classList.replace('bg-white', 'bg-transparent');
-        btnEventos.classList.replace('dark:bg-slate-800', 'dark:bg-transparent');
-        btnEventos.classList.replace('border-brand-500', 'border-transparent');
-        
-        contentPizarra.classList.remove('hidden');
-        contentPizarra.classList.add('flex');
-        contentEventos.classList.add('hidden');
-        window.drawTacticalBoard();
-    } else {
-        btnEventos.classList.replace('text-slate-500', 'text-brand-600');
-        btnEventos.classList.replace('dark:text-slate-400', 'dark:text-brand-400');
-        btnEventos.classList.replace('bg-transparent', 'bg-white');
-        btnEventos.classList.replace('dark:bg-transparent', 'dark:bg-slate-800');
-        btnEventos.classList.replace('border-transparent', 'border-brand-500');
-        
-        btnPizarra.classList.replace('text-brand-600', 'text-slate-500');
-        btnPizarra.classList.replace('dark:text-brand-400', 'dark:text-slate-400');
-        btnPizarra.classList.replace('bg-white', 'bg-transparent');
-        btnPizarra.classList.replace('dark:bg-slate-800', 'dark:bg-transparent');
-        btnPizarra.classList.replace('border-brand-500', 'border-transparent');
-        
-        contentPizarra.classList.add('hidden');
-        contentPizarra.classList.remove('flex');
-        contentEventos.classList.remove('hidden');
-    }
-}
-
-/* -----------------------------------------------------
-   DISEÑO Y KITS
------------------------------------------------------- */
-window.generateKitSVG = function(shirt, accent, short, sock, accent2 = null) {
-    const cid = 'clip-' + Math.random().toString(36).substr(2, 9);
-    const isDark = document.documentElement.classList.contains('dark');
-    
-    const isLightKit = (shirt.toLowerCase() === '#ffffff' || shirt.toLowerCase() === '#fff');
-    const isDarkKit = (shirt.toLowerCase() === '#050505' || shirt.toLowerCase() === '#000' || shirt.toLowerCase() === '#111827');
-    
-    let strokeColor = 'rgba(0,0,0,0.1)';
-    let strokeWidth = '1';
-    let shadowFilter = 'drop-shadow(0px 2px 3px rgba(0,0,0,0.15))';
-    
-    if (isDark) {
-       if (isDarkKit) { strokeColor = 'rgba(255,255,255,0.4)'; strokeWidth = '2.5'; shadowFilter = 'drop-shadow(0px 0px 5px rgba(255,255,255,0.2))'; }
-    } else {
-       if (isLightKit) { strokeColor = 'rgba(0,0,0,0.35)'; strokeWidth = '2.5'; shadowFilter = 'drop-shadow(0px 3px 4px rgba(0,0,0,0.25))'; }
-    }
-
-    let extraPaths = '';
-    if (accent2) {
-        extraPaths += `<rect x="35" y="0" width="30" height="100" fill="${accent}"/>`; 
-        extraPaths += `<rect x="33" y="0" width="2" height="100" fill="${accent2}"/>`; 
-        extraPaths += `<rect x="65" y="0" width="2" height="100" fill="${accent2}"/>`; 
-        extraPaths += `<polygon points="0,0 25,0 25,50 0,50" fill="${accent}"/>`; 
-        extraPaths += `<polygon points="75,0 100,0 100,50 75,50" fill="${accent}"/>`; 
-        extraPaths += `<path d="M35 15 Q50 35 65 15 Z" fill="${accent2}"/>`; 
-        extraPaths += `<polygon points="0,35 25,45 25,55 0,45" fill="${accent2}"/>`; 
-        extraPaths += `<polygon points="100,35 75,45 75,55 100,45" fill="${accent2}"/>`; 
-        extraPaths += `<rect x="20" y="75" width="60" height="5" fill="${accent2}"/>`; 
-    } else {
-        extraPaths += `<path d="M40 15 C45 25, 55 25, 60 15 Z" fill="${accent}"/>`;
-    }
-
-    return `<svg viewBox="0 0 100 120" style="width:100%;height:100%;filter:${shadowFilter};">
-        <defs><clipPath id="${cid}"><path d="M25 15 C35 15, 65 15, 75 15 L90 35 L75 45 L75 80 L25 80 L25 45 L10 35 Z"/></clipPath></defs>
-        <path d="M25 15 C35 15, 65 15, 75 15 L90 35 L75 45 L75 80 L25 80 L25 45 L10 35 Z" fill="${shirt}"/>
-        <g clip-path="url(#${cid})">${extraPaths}</g>
-        <path d="M25 15 C35 15, 65 15, 75 15 L90 35 L75 45 L75 80 L25 80 L25 45 L10 35 Z" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
-        <path d="M25 82 L75 82 L75 105 L53 105 L50 90 L47 105 L25 105 Z" fill="${short}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
-        <rect x="28" y="108" width="16" height="12" rx="2" fill="${sock}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
-        <rect x="56" y="108" width="16" height="12" rx="2" fill="${sock}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
-    </svg>`;
-};
-
-window.renderKitsPreview = function() {
-    const kit = document.getElementById('m-kit')?.value || 'white_blue';
-    let nS='#ffffff', nA='#0284c7', nSh='#111827', nSo='#111827', nAc2='#111827'; 
-    if (kit === 'black') { nS='#050505'; nA='#050505'; nAc2=null; nSh='#050505'; nSo='#050505'; }
-    const oS = document.getElementById('m-opp-shirt')?.value || '#ff0000', oSh = document.getElementById('m-opp-shorts')?.value || '#ff0000', oSo = document.getElementById('m-opp-socks')?.value || '#ff0000', oGk = document.getElementById('m-opp-gk')?.value || '#00ff00';
-    const dN = document.getElementById('kit-nisus-outfield'); if(dN) dN.innerHTML = window.generateKitSVG(nS, nA, nSh, nSo, nAc2);
-    const dNG = document.getElementById('kit-nisus-gk'); if(dNG) dNG.innerHTML = window.generateKitSVG('#eab308', '#050505', '#050505', '#050505');
-    const dO = document.getElementById('kit-opp-outfield'); if(dO) dO.innerHTML = window.generateKitSVG(oS, oS, oSh, oSo);
-    const dOG = document.getElementById('kit-opp-gk'); if(dOG) dOG.innerHTML = window.generateKitSVG(oGk, oGk, oGk, oGk);
-    const lbl = document.getElementById('label-opp-kit'); if(lbl) lbl.textContent = document.getElementById('m-opponent')?.value || 'Rival';
-};
-
 /* -----------------------------------------------------
    GESTIÓN DE JUGADORES
 ------------------------------------------------------ */
 window.toggleReturnDateField = function() { const s = document.getElementById('p-status').value; const c = document.getElementById('p-return-date-container'); if(s==='injured'||s==='absent'||s==='inactive') c.classList.remove('hidden'); else c.classList.add('hidden'); };
-
 window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').innerHTML = '<i class="fas fa-user-plus text-brand-500 mr-2"></i>Inscribir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; window._pendingPhotoBlob = null; window._removePhotoFlag = false; const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.toggleReturnDateField(); window._setupPhotoDropzone(); window.showSection('playerForm'); };
-
-window.handleImageUpload = function(e) {
-    const f = e.target.files[0];
-    if(!f) return;
-    if(!f.type.startsWith('image/')) return window.showToast('Solo imágenes', true);
-    window._compressPlayerImage(f);
-};
-
+window.handleImageUpload = function(e) { const f = e.target.files[0]; if(!f) return; if(!f.type.startsWith('image/')) return window.showToast('Solo imágenes', true); window._compressPlayerImage(f); };
 window._compressPlayerImage = function(file) {
-    const spinner = document.getElementById('p-image-spinner');
-    const preview = document.getElementById('p-image-preview');
-    const placeholder = document.getElementById('p-image-placeholder');
-    const overlay = document.getElementById('p-image-overlay');
+    const spinner = document.getElementById('p-image-spinner'), preview = document.getElementById('p-image-preview'), placeholder = document.getElementById('p-image-placeholder'), overlay = document.getElementById('p-image-overlay');
     if(spinner) spinner.classList.add('flex-show');
     const r = new FileReader();
     r.onload = function(ev) {
         const img = new Image();
         img.onload = function() {
-            const maxDim = 400;
-            let w = img.width, h = img.height;
-            if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
-            else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
-            const cv = document.createElement('canvas');
-            cv.width = w; cv.height = h;
-            const ct = cv.getContext('2d');
-            ct.imageSmoothingQuality = 'high';
-            ct.drawImage(img, 0, 0, w, h);
+            const maxDim = 400; let w = img.width, h = img.height;
+            if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; } else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+            const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+            const ct = cv.getContext('2d'); ct.imageSmoothingQuality = 'high'; ct.drawImage(img, 0, 0, w, h);
             cv.toBlob(function(blob) {
                 if(!blob) { if(spinner) spinner.classList.remove('flex-show'); return window.showToast('Error al procesar imagen', true); }
-                window._pendingPhotoBlob = blob;
-                const url = URL.createObjectURL(blob);
-                preview.src = url;
-                preview.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-                if(overlay) overlay.classList.add('flex-show');
-                if(spinner) spinner.classList.remove('flex-show');
-                document.getElementById('p-image-base64').value = '';
-                const hint = document.getElementById('p-photo-hint');
-                if(hint) hint.textContent = 'Imagen lista. Se subirá al guardar la ficha.';
+                window._pendingPhotoBlob = blob; const url = URL.createObjectURL(blob);
+                preview.src = url; preview.classList.remove('hidden'); placeholder.classList.add('hidden');
+                if(overlay) overlay.classList.add('flex-show'); if(spinner) spinner.classList.remove('flex-show');
+                document.getElementById('p-image-base64').value = ''; const hint = document.getElementById('p-photo-hint'); if(hint) hint.textContent = 'Imagen lista. Se subirá al guardar la ficha.';
             }, 'image/jpeg', 0.85);
         };
-        img.onerror = function() { if(spinner) spinner.classList.remove('flex-show'); window.showToast('Imagen corrupta', true); };
-        img.src = ev.target.result;
+        img.onerror = function() { if(spinner) spinner.classList.remove('flex-show'); window.showToast('Imagen corrupta', true); }; img.src = ev.target.result;
     };
     r.readAsDataURL(file);
 };
-
 window.removePlayerPhoto = function() {
-    window._pendingPhotoBlob = null;
-    document.getElementById('p-image-base64').value = '';
-    document.getElementById('p-image-preview').src = '';
-    document.getElementById('p-image-preview').classList.add('hidden');
-    document.getElementById('p-image-placeholder').classList.remove('hidden');
-    const overlay = document.getElementById('p-image-overlay');
-    if(overlay) overlay.classList.remove('flex-show');
-    window._removePhotoFlag = true;
-    const hint = document.getElementById('p-photo-hint');
-    if(hint) hint.textContent = 'Arrastra una imagen o haz clic. Se guarda en el servidor, no en Base64.';
+    window._pendingPhotoBlob = null; document.getElementById('p-image-base64').value = ''; document.getElementById('p-image-preview').src = ''; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden');
+    const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show');
+    window._removePhotoFlag = true; const hint = document.getElementById('p-photo-hint'); if(hint) hint.textContent = 'Arrastra una imagen o haz clic.';
 };
-
 window._setupPhotoDropzone = function() {
-    const dz = document.getElementById('p-photo-dropzone');
-    if(!dz || dz._dropzoneReady) return;
-    dz._dropzoneReady = true;
+    const dz = document.getElementById('p-photo-dropzone'); if(!dz || dz._dropzoneReady) return; dz._dropzoneReady = true;
     ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); dz.classList.add('border-brand-500','bg-brand-50','dark:bg-brand-900/20'); }));
     ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); dz.classList.remove('border-brand-500','bg-brand-50','dark:bg-brand-900/20'); }));
-    dz.addEventListener('drop', function(e) {
-        const f = e.dataTransfer.files[0];
-        if(f && f.type.startsWith('image/')) window._compressPlayerImage(f);
-    });
+    dz.addEventListener('drop', function(e) { const f = e.dataTransfer.files[0]; if(f && f.type.startsWith('image/')) window._compressPlayerImage(f); });
     dz.addEventListener('click', function() { if(document.getElementById('p-image-preview').classList.contains('hidden')) document.getElementById('p-image-upload').click(); });
 };
-
 window.savePlayer = async function(e) {
     e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
     const btn = document.getElementById('btn-save-player'); btn.disabled=true; btn.textContent="Guardando...";
@@ -432,71 +215,36 @@ window.savePlayer = async function(e) {
     const pStatus = document.getElementById('p-status').value || 'active'; let returnD = null;
     if(pStatus === 'injured' || pStatus === 'absent' || pStatus === 'inactive') { returnD = document.getElementById('p-return-date').value || null; }
     const oldP = window.players.find(x => x.id === id);
-    
     let imageUrl = document.getElementById('p-image-base64').value;
-    
-    if (window._removePhotoFlag) {
-        imageUrl = '';
-        try { await firebase.storage().ref(`jugadores/${docId}.jpg`).delete(); } catch(err) {}
-    } else if (window._pendingPhotoBlob) {
-        try {
-            const ref = firebase.storage().ref(`jugadores/${docId}.jpg`);
-            await ref.put(window._pendingPhotoBlob);
-            imageUrl = await ref.getDownloadURL();
-        } catch (error) {
-            console.error("Error al subir foto:", error);
-            window.showToast('Error al subir la imagen', true);
-            imageUrl = oldP ? (oldP.image || '') : '';
-        }
-    } else if (!imageUrl && oldP && oldP.image && !oldP.image.startsWith('data:image')) {
-        imageUrl = oldP.image;
-    }
+    if (window._removePhotoFlag) { imageUrl = ''; try { await firebase.storage().ref(`jugadores/${docId}.jpg`).delete(); } catch(err) {} } 
+    else if (window._pendingPhotoBlob) {
+        try { const ref = firebase.storage().ref(`jugadores/${docId}.jpg`); await ref.put(window._pendingPhotoBlob); imageUrl = await ref.getDownloadURL(); } catch (error) { window.showToast('Error subiendo imagen', true); imageUrl = oldP ? (oldP.image || '') : ''; }
+    } else if (!imageUrl && oldP && oldP.image && !oldP.image.startsWith('data:image')) { imageUrl = oldP.image; }
     
     const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: imageUrl, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
     if(oldP && oldP.debtAmount !== undefined) pData.debtAmount = oldP.debtAmount;
     try { await db.collection(window.playersPath).doc(docId).set(pData); window._pendingPhotoBlob = null; window._removePhotoFlag = false; window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Ficha"; }
 };
-
 window.editPlayer = function(id) {
     const p = window.players.find(x => x.id === id); if(!p) return;
     document.getElementById('p-id').value = p.id; document.getElementById('p-name').value = p.name; document.getElementById('p-alias').value = p.alias||''; document.getElementById('p-show-alias').checked = p.showAlias||false; document.getElementById('p-number').value = p.number||''; document.getElementById('p-image-base64').value = p.image||''; document.getElementById('p-birthdate').value = p.birthdate||''; document.getElementById('p-foot').value = p.foot||''; document.getElementById('p-status').value = p.status||'active'; document.getElementById('p-return-date').value = p.returnDate||''; document.getElementById('p-avail-f11').checked = p.availableF11; document.getElementById('p-avail-f7').checked = p.availableF7; document.getElementById('p-is-staff').checked = p.isStaff||false; document.getElementById('p-is-paid-up').checked = p.isPaidUp!==false;
     const sel = document.getElementById('p-position'); const pos = p.positions||(p.position?[p.position]:[]); for(let i=0;i<sel.options.length;i++) sel.options[i].selected = pos.includes(sel.options[i].value);
     if(p.image){ document.getElementById('p-image-preview').src=p.image; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.add('flex-show'); } else { document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); }
     window._pendingPhotoBlob = null; window._removePhotoFlag = false; window._setupPhotoDropzone();
-    document.getElementById('form-title').innerHTML = '<i class="fas fa-user-edit text-brand-500 mr-2"></i>Editar Ficha';
-    window.toggleReturnDateField(); window.updateAdminUI(); window.showSection('playerForm');
+    document.getElementById('form-title').innerHTML = '<i class="fas fa-user-edit text-brand-500 mr-2"></i>Editar Ficha'; window.toggleReturnDateField(); window.updateAdminUI(); window.showSection('playerForm');
 };
-
-window.deletePlayer = function(id) { 
-    window.showConfirm('¿Eliminar jugador permanentemente?', async () => { 
-        try { 
-            await db.collection(window.playersPath).doc(id).delete(); 
-            try { await firebase.storage().ref(`jugadores/${id}.jpg`).delete(); } catch(err) {}
-            window.showToast('Eliminado'); 
-        } catch(e) { window.showToast('Error', true); } 
-    }); 
-};
-
+window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador permanentemente?', async () => { try { await db.collection(window.playersPath).doc(id).delete(); try { await firebase.storage().ref(`jugadores/${id}.jpg`).delete(); } catch(err) {} window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
 window.migrarFotosAStorage = async function() {
     if (!window.isAdmin) return window.showToast('Debes ser administrador', true);
     const jugadoresConBase64 = window.players.filter(p => p.image && p.image.startsWith('data:image'));
     if (jugadoresConBase64.length === 0) return window.showToast('No hay fotos antiguas para migrar.');
-    window.showConfirm(`Se encontraron ${jugadoresConBase64.length} fotos antiguas. ¿Subirlas al servidor Storage?`, async () => {
-        const btn = document.getElementById('btn-migrar-fotos');
-        if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Migrando...'; }
-        let migradas = 0; let errores = 0;
+    window.showConfirm(`Se encontraron ${jugadoresConBase64.length} fotos antiguas. ¿Subirlas al Storage?`, async () => {
+        const btn = document.getElementById('btn-migrar-fotos'); if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Migrando...'; }
+        let migradas = 0;
         for (const p of jugadoresConBase64) {
-            try {
-                const res = await fetch(p.image); const blob = await res.blob();
-                const ref = firebase.storage().ref(`jugadores/${p.id}.jpg`);
-                await ref.put(blob);
-                const url = await ref.getDownloadURL();
-                await db.collection(window.playersPath).doc(p.id).update({ image: url });
-                migradas++;
-            } catch(e) { console.error(`Error foto ${p.name}:`, e); errores++; }
+            try { const res = await fetch(p.image); const blob = await res.blob(); const ref = firebase.storage().ref(`jugadores/${p.id}.jpg`); await ref.put(blob); const url = await ref.getDownloadURL(); await db.collection(window.playersPath).doc(p.id).update({ image: url }); migradas++; } catch(e) {}
         }
-        window.showToast(`Migración lista: ${migradas} fotos subidas.`);
-        if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Listo'; btn.classList.replace('bg-orange-500', 'bg-green-500'); }
+        window.showToast(`Migración lista: ${migradas} fotos subidas.`); if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Listo'; btn.classList.replace('bg-orange-500', 'bg-green-500'); }
     });
 };
 
@@ -508,24 +256,19 @@ window.renderPlayers = function() {
     if(q) list = list.filter(p => { const n=(p.name||'').toLowerCase(), al=(p.alias||'').toLowerCase(), num=String(p.number||''); return n.includes(q)||al.includes(q)||num===q; });
     if(posF) { if(posF==='Staff') list = list.filter(p=>p.isStaff); else list = list.filter(p => { const pos = Array.isArray(p.positions)?p.positions:(p.position?[p.position]:[]); return pos.includes(posF); }); }
     list.sort((a,b) => { if (a.isStaff && !b.isStaff) return 1; if (!a.isStaff && b.isStaff) return -1; const nA = parseInt(a.number) || 9999; const nB = parseInt(b.number) || 9999; if(nA !== nB) return nA - nB; return (a.name||'').localeCompare(b.name||''); });
-    if(list.length===0){ const q2=(document.getElementById('player-search')?.value||'').trim(), pF=document.getElementById('player-position-filter')?.value; const hasFilters=q2||pF; grid.innerHTML=`<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">${hasFilters?'<i class=\'fas fa-search-minus text-3xl mb-3 block text-slate-300\'></i>No se encontraron jugadores con esos criterios':'No hay registros'}</div>`; return; }
+    if(list.length===0){ grid.innerHTML=`<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay registros</div>`; return; }
 
     list.forEach(p => {
         const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), yellows = window.getPlayerStat(p, 'yellows'), reds = window.getPlayerStat(p, 'reds'), mvps = window.getPlayerStat(p, 'mvps'), cleanSheets = window.getPlayerStat(p, 'cleanSheets'), attendance = window.trainings?window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length:0;
-        let b='';
-        const badges = [];
+        let b=''; const badges = [];
         if(p.availableF11) badges.push('<span class="bg-brand-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F11</span>');
         if(p.availableF7) badges.push('<span class="bg-green-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F7</span>');
         if(mvps>0) badges.push(`<span class="bg-yellow-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase"><i class="fas fa-star"></i> ${mvps}</span>`);
-        const isGK = Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position==='Portero');
-        if(isGK && cleanSheets>0) badges.push(`<span class="bg-teal-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">🛡️ ${cleanSheets}</span>`);
-        b = badges.join('<span class="text-slate-300 dark:text-slate-600 text-[8px]">·</span> ');
-        if(b) b = `<div class="flex items-center gap-1 flex-wrap">${b}</div>`;
+        if(Array.isArray(p.positions) ? p.positions.includes('Portero') : (p.position==='Portero') && cleanSheets>0) badges.push(`<span class="bg-teal-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">🛡️ ${cleanSheets}</span>`);
+        b = badges.join('<span class="text-slate-300 dark:text-slate-600 text-[8px]">·</span> '); if(b) b = `<div class="flex items-center gap-1 flex-wrap">${b}</div>`;
         
         const dData = window.getPlayerDebts(p.id);
-        let debtBadge = '';
-        if(dData.total > 0.01) debtBadge=`<span class="text-red-500 dark:text-red-400 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> ${dData.total.toFixed(2)}</span>`;
-        else debtBadge='<span class="text-green-500 dark:text-green-400 font-black text-[10px] ml-1"><i class="fas fa-check-circle"></i> Al Día</span>';
+        const debtBadge = dData.total > 0.01 ? `<span class="text-red-500 dark:text-red-400 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> ${dData.total.toFixed(2)}</span>` : '<span class="text-green-500 dark:text-green-400 font-black text-[10px] ml-1"><i class="fas fa-check-circle"></i> Al Día</span>';
 
         let sb='', oc='';
         if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
@@ -563,15 +306,12 @@ window.openPlayerCard = function(id) {
     let discHtml = '';
     [...new Set(window.matches.filter(m => m.status === 'finished' || m.status === 'forfait').map(m => m.tournament))].filter(Boolean).forEach(t => {
         const d = window.getDiscipline(p.id, t);
-        if (d.yellows > 0 || d.suspended || window.matches.some(m => m.tournament === t && m.events && m.events.some(e => e.playerId === p.id && (e.type === 'reds' || e.type === 'double_yellow')))) {
-            discHtml += `<div class="flex justify-between items-center bg-slate-800 px-3 py-1.5 rounded-lg mb-1 border border-slate-700 shadow-inner"><span class="truncate w-1/2 text-left text-slate-300 font-bold text-[9px] uppercase tracking-widest">${t}</span><span class="text-yellow-400 font-black text-[10px]">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="text-red-400 font-black text-[10px] ml-2">SANCIONADO</span>' : '<span class="text-green-400 font-black text-[10px] ml-2">HABILITADO</span>'}</div>`;
-        }
+        if (d.yellows > 0 || d.suspended || window.matches.some(m => m.tournament === t && m.events && m.events.some(e => e.playerId === p.id && (e.type === 'reds' || e.type === 'double_yellow')))) { discHtml += `<div class="flex justify-between items-center bg-slate-800 px-3 py-1.5 rounded-lg mb-1 border border-slate-700 shadow-inner"><span class="truncate w-1/2 text-left text-slate-300 font-bold text-[9px] uppercase tracking-widest">${t}</span><span class="text-yellow-400 font-black text-[10px]">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="text-red-400 font-black text-[10px] ml-2">SANCIONADO</span>' : '<span class="text-green-400 font-black text-[10px] ml-2">HABILITADO</span>'}</div>`; }
     });
     if(discHtml) discHtml = `<div class="mt-4 w-full text-center px-6"><p class="text-[8px] text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-700 pb-1 font-bold">Control Disciplinario</p>${discHtml}</div>`;
 
     let sH = p.isStaff ? `<div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos CT</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div></div>` : `<div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Goles</p><p class="text-2xl font-black">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Asist.</p><p class="text-2xl font-black">${window.getPlayerStat(p,'assists')}</p></div></div>`;
     const mvps = window.getPlayerStat(p,'mvps');
-    
     let statusBanner = '';
     if (p.status !== 'active') {
         let sCol = p.status === 'injured' || p.status === 'suspended' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600';
@@ -579,7 +319,6 @@ window.openPlayerCard = function(id) {
         let sDate = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
         statusBanner = `<div class="mt-1 mb-2 px-4 py-1 rounded-full border ${sCol} text-[9px] font-black tracking-widest uppercase shadow-sm"><i class="fas fa-info-circle mr-1"></i> ${sTxt} | ${sDate}</div>`;
     }
-
     let fontSize = "1.75rem"; if(n.length > 18) fontSize = "1.25rem"; else if(n.length > 14) fontSize = "1.5rem";
 
     c.innerHTML = `
@@ -603,19 +342,32 @@ window.openPlayerCard = function(id) {
 };
 
 /* -----------------------------------------------------
-   GESTIÓN DE PARTIDOS Y PIZARRA
+   PARTIDOS, PIZARRA Y ALINEACIONES
 ------------------------------------------------------ */
+const posValid = { POR: ['Portero'], DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'], LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'], LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'], CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'], MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'], MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'], MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'], MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'], MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'], ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'], EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'], DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta'] };
+const formations = {
+    f11: { "4-4-2": [{x:50,y:90,valid:posValid.POR},{x:20,y:75,valid:posValid.LI},{x:40,y:75,valid:posValid.DFC},{x:60,y:75,valid:posValid.DFC},{x:80,y:75,valid:posValid.LD},{x:20,y:50,valid:posValid.MI},{x:40,y:50,valid:posValid.MC},{x:60,y:50,valid:posValid.MC},{x:80,y:50,valid:posValid.MD},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}], "4-3-3": [{x:50,y:90,valid:posValid.POR},{x:20,y:75,valid:posValid.LI},{x:40,y:75,valid:posValid.DFC},{x:60,y:75,valid:posValid.DFC},{x:80,y:75,valid:posValid.LD},{x:30,y:55,valid:posValid.MC},{x:50,y:55,valid:posValid.MCD},{x:70,y:55,valid:posValid.MC},{x:20,y:25,valid:posValid.EI},{x:50,y:25,valid:posValid.DC},{x:80,y:25,valid:posValid.ED}], "4-2-3-1": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.LI},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:85,y:75,valid:posValid.LD},{x:35,y:60,valid:posValid.MCD},{x:65,y:60,valid:posValid.MCD},{x:20,y:40,valid:posValid.MI},{x:50,y:40,valid:posValid.MCO},{x:80,y:40,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}], "4-1-4-1": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.LI},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:85,y:75,valid:posValid.LD},{x:50,y:60,valid:posValid.MCD},{x:15,y:45,valid:posValid.MI},{x:35,y:45,valid:posValid.MC},{x:65,y:45,valid:posValid.MC},{x:85,y:45,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}], "4-5-1": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.LI},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:85,y:75,valid:posValid.LD},{x:15,y:50,valid:posValid.MI},{x:35,y:50,valid:posValid.MC},{x:50,y:50,valid:posValid.MCD},{x:65,y:50,valid:posValid.MC},{x:85,y:50,valid:posValid.MD},{x:50,y:25,valid:posValid.DC}], "3-5-2": [{x:50,y:90,valid:posValid.POR},{x:30,y:75,valid:posValid.DFC},{x:50,y:75,valid:posValid.DFC},{x:70,y:75,valid:posValid.DFC},{x:15,y:50,valid:posValid.CAR},{x:35,y:50,valid:posValid.MC},{x:50,y:50,valid:posValid.MCD},{x:65,y:50,valid:posValid.MC},{x:85,y:50,valid:posValid.CAR},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}], "3-4-3": [{x:50,y:90,valid:posValid.POR},{x:30,y:75,valid:posValid.DFC},{x:50,y:75,valid:posValid.DFC},{x:70,y:75,valid:posValid.DFC},{x:15,y:50,valid:posValid.MI},{x:35,y:50,valid:posValid.MC},{x:65,y:50,valid:posValid.MC},{x:85,y:50,valid:posValid.MD},{x:25,y:25,valid:posValid.EI},{x:50,y:25,valid:posValid.DC},{x:75,y:25,valid:posValid.ED}], "5-3-2": [{x:50,y:90,valid:posValid.POR},{x:15,y:75,valid:posValid.CAR},{x:30,y:80,valid:posValid.DFC},{x:50,y:80,valid:posValid.DFC},{x:70,y:80,valid:posValid.DFC},{x:85,y:75,valid:posValid.CAR},{x:35,y:55,valid:posValid.MC},{x:50,y:55,valid:posValid.MCD},{x:65,y:55,valid:posValid.MC},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}] },
+    f7: { "3-2-1": [{x:50,y:90,valid:posValid.POR},{x:25,y:70,valid:posValid.LI},{x:50,y:70,valid:posValid.DFC},{x:75,y:70,valid:posValid.LD},{x:35,y:45,valid:posValid.MC},{x:65,y:45,valid:posValid.MC},{x:50,y:20,valid:posValid.DC}], "3-1-2": [{x:50,y:90,valid:posValid.POR},{x:25,y:70,valid:posValid.LI},{x:50,y:70,valid:posValid.DFC},{x:75,y:70,valid:posValid.LD},{x:50,y:45,valid:posValid.MCD},{x:35,y:20,valid:posValid.DC},{x:65,y:20,valid:posValid.DC}], "2-3-1": [{x:50,y:90,valid:posValid.POR},{x:35,y:70,valid:posValid.DFC},{x:65,y:70,valid:posValid.DFC},{x:20,y:45,valid:posValid.MI},{x:50,y:45,valid:posValid.MC},{x:80,y:45,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}], "2-2-2": [{x:50,y:90,valid:posValid.POR},{x:35,y:75,valid:posValid.DFC},{x:65,y:75,valid:posValid.DFC},{x:30,y:45,valid:posValid.MC},{x:70,y:45,valid:posValid.MC},{x:35,y:20,valid:posValid.DC},{x:65,y:20,valid:posValid.DC}], "1-3-2": [{x:50,y:90,valid:posValid.POR},{x:50,y:75,valid:posValid.DFC},{x:20,y:50,valid:posValid.MI},{x:50,y:50,valid:posValid.MC},{x:80,y:50,valid:posValid.MD},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}], "1-4-1": [{x:50,y:90,valid:posValid.POR},{x:50,y:75,valid:posValid.DFC},{x:15,y:45,valid:posValid.MI},{x:35,y:45,valid:posValid.MC},{x:65,y:45,valid:posValid.MC},{x:85,y:45,valid:posValid.MD},{x:50,y:20,valid:posValid.DC}] }
+};
+
+window.switchMatchTab = function(tabName) {
+    const btnPizarra = document.getElementById('tab-btn-pizarra'), btnEventos = document.getElementById('tab-btn-eventos'), contentPizarra = document.getElementById('tab-content-pizarra'), contentEventos = document.getElementById('tab-content-eventos');
+    if (tabName === 'pizarra') {
+        btnPizarra.classList.replace('text-slate-500', 'text-brand-600'); btnPizarra.classList.replace('dark:text-slate-400', 'dark:text-brand-400'); btnPizarra.classList.replace('bg-transparent', 'bg-white'); btnPizarra.classList.replace('dark:bg-transparent', 'dark:bg-slate-800'); btnPizarra.classList.replace('border-transparent', 'border-brand-500');
+        btnEventos.classList.replace('text-brand-600', 'text-slate-500'); btnEventos.classList.replace('dark:text-brand-400', 'dark:text-slate-400'); btnEventos.classList.replace('bg-white', 'bg-transparent'); btnEventos.classList.replace('dark:bg-slate-800', 'dark:bg-transparent'); btnEventos.classList.replace('border-brand-500', 'border-transparent');
+        contentPizarra.classList.remove('hidden'); contentPizarra.classList.add('flex'); contentEventos.classList.add('hidden'); window.drawTacticalBoard();
+    } else {
+        btnEventos.classList.replace('text-slate-500', 'text-brand-600'); btnEventos.classList.replace('dark:text-slate-400', 'dark:text-brand-400'); btnEventos.classList.replace('bg-transparent', 'bg-white'); btnEventos.classList.replace('dark:bg-transparent', 'dark:bg-slate-800'); btnEventos.classList.replace('border-transparent', 'border-brand-500');
+        btnPizarra.classList.replace('text-brand-600', 'text-slate-500'); btnPizarra.classList.replace('dark:text-brand-400', 'dark:text-slate-400'); btnPizarra.classList.replace('bg-white', 'bg-transparent'); btnPizarra.classList.replace('dark:bg-slate-800', 'dark:bg-transparent'); btnPizarra.classList.replace('border-brand-500', 'border-transparent');
+        contentPizarra.classList.add('hidden'); contentPizarra.classList.remove('flex'); contentEventos.classList.remove('hidden');
+    }
+}
+
 window.newMatch = function() {
-    document.getElementById('match-form').reset(); document.getElementById('m-id').value = '';
-    document.getElementById('match-form-title').innerHTML = '<i class="fas fa-plus text-brand-500 mr-2"></i>Agendar Partido';
-    document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = '';
-    document.getElementById('m-mvp').value = ''; document.getElementById('m-captain').value = '';
-    document.getElementById('m-opp-shirt').value = '#ff0000'; document.getElementById('m-opp-shorts').value = '#ff0000'; document.getElementById('m-opp-socks').value = '#ff0000'; document.getElementById('m-opp-gk').value = '#00ff00';
-    document.getElementById('m-kit').value = 'white_blue'; document.getElementById('m-modality').value = 'f11';
+    document.getElementById('match-form').reset(); document.getElementById('m-id').value = ''; document.getElementById('match-form-title').innerHTML = '<i class="fas fa-plus text-brand-500 mr-2"></i>Agendar Partido';
+    document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = ''; document.getElementById('m-mvp').value = ''; document.getElementById('m-captain').value = ''; document.getElementById('m-opp-shirt').value = '#ff0000'; document.getElementById('m-opp-shorts').value = '#ff0000'; document.getElementById('m-opp-socks').value = '#ff0000'; document.getElementById('m-opp-gk').value = '#00ff00'; document.getElementById('m-kit').value = 'white_blue'; document.getElementById('m-modality').value = 'f11';
     window.currentLineup = []; window.currentEvents = [];
-    window.toggleScoreFields(); window.renderCallupList(); window.updateFormationOptions(); window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview();
-    window.switchMatchTab('pizarra');
-    window.updateAdminUI(); window.showSection('matchForm');
+    window.toggleScoreFields(); window.renderCallupList(); window.updateFormationOptions(); window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview(); window.switchMatchTab('pizarra'); window.updateAdminUI(); window.showSection('matchForm');
 };
 
 window.editMatch = function(id) {
@@ -624,17 +376,11 @@ window.editMatch = function(id) {
     if(m.status === 'finished') { document.getElementById('m-goals-us').value = m.goalsUs; document.getElementById('m-goals-them').value = m.goalsThem; } else { document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = ''; }
     window.currentLineup = JSON.parse(JSON.stringify(m.lineup || [])); window.currentEvents = m.events ? JSON.parse(JSON.stringify(m.events)) : [];
     document.getElementById('match-form-title').innerHTML = '<i class="fas fa-edit text-brand-500 mr-2"></i>Editar Partido';
-    
     window.renderCallupList(); window.toggleScoreFields(); window.updateFormationOptions();
-    
     if(m.formation) { const f = document.getElementById('m-formation'); if(f) f.value = m.formation; }
-    
     if(m.status==='finished' && m.mvp) document.getElementById('m-mvp').value = m.mvp;
     if(m.captain) { const c = document.getElementById('m-captain'); if(c) c.value = m.captain; }
-    
-    window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview();
-    window.switchMatchTab('pizarra');
-    window.updateAdminUI(); window.showSection('matchForm');
+    window.drawTacticalBoard(); window.renderMatchEvents(); window.renderKitsPreview(); window.switchMatchTab('pizarra'); window.updateAdminUI(); window.showSection('matchForm');
 };
 
 window.saveMatch = async function(e) {
@@ -645,21 +391,13 @@ window.saveMatch = async function(e) {
     if (s === 'finished') { gU = document.getElementById('m-goals-us').value || 0; gT = document.getElementById('m-goals-them').value || 0; mvp = document.getElementById('m-mvp')?.value || null; } else if (s === 'forfait') { gU = 3; gT = 0; mvp = null; }
     
     const matchEvents = JSON.parse(JSON.stringify(window.currentEvents));
-    const batch = db.batch();
-    let multasAplicadas = 0;
+    const batch = db.batch(); let multasAplicadas = 0;
 
     matchEvents.forEach(ev => {
         if (['yellows', 'double_yellow', 'reds'].includes(ev.type) && !ev.fineApplied) {
-            const montoMulta = ev.type === 'yellows' ? 1.00 : 3.00; 
-            const finId = window.generateId();
-            const p = window.players.find(x => x.id === ev.playerId);
-            
+            const montoMulta = ev.type === 'yellows' ? 1.00 : 3.00; const finId = window.generateId(); const p = window.players.find(x => x.id === ev.playerId);
             if (p) {
-                batch.set(db.collection(window.financesPath).doc(finId), {
-                    id: finId, type: 'expense', amount: montoMulta, date: document.getElementById('m-date').value,
-                    category: 'Multa Tarjeta', description: `Multa Automática (${ev.type==='yellows'?'Amarilla':'Roja'})`,
-                    matchId: docId, playerId: ev.playerId, isPaid: false
-                });
+                batch.set(db.collection(window.financesPath).doc(finId), { id: finId, type: 'expense', amount: montoMulta, date: document.getElementById('m-date').value, category: 'Multa Tarjeta', description: `Multa Automática (${ev.type==='yellows'?'Amarilla':'Roja'})`, matchId: docId, playerId: ev.playerId, isPaid: false });
                 batch.set(db.collection(window.playersPath).doc(ev.playerId), { isPaidUp: false, debtAmount: (p.debtAmount || 0) + montoMulta }, { merge: true });
                 ev.fineApplied = true; multasAplicadas++;
             }
@@ -667,14 +405,11 @@ window.saveMatch = async function(e) {
     });
 
     const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
-    
     batch.set(db.collection(window.matchesPath).doc(docId), nm);
-
     try { await batch.commit(); window.showToast(multasAplicadas > 0 ? `Guardado (${multasAplicadas} multas aplicadas)` : 'Partido Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
 };
 
 window.deleteMatch = function(id) { window.showConfirm('¿Borrar partido permanentemente?', async () => { try { await db.collection(window.matchesPath).doc(id).delete(); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
-
 window.toggleScoreFields = () => { const s = document.getElementById('m-status').value, c = document.getElementById('m-score-container'), l = document.getElementById('label-opponent'); if(l) l.textContent = document.getElementById('m-opponent').value || 'Rival'; if(s==='finished') { c.classList.remove('hidden'); window.updateMvpSelect(); } else c.classList.add('hidden'); };
 window.handleModalityChange = () => { window.updateFormationOptions(); const m = document.getElementById('m-modality').value, mx = m==='f11'?11:7; window.currentLineup = window.currentLineup.filter(l => { const p = window.players.find(x=>x.id===l.playerId); return p && (m==='f11'?p.availableF11:p.availableF7); }); let c=0; window.currentLineup.forEach(p => { const s = window.players.find(x=>x.id===p.playerId)?.isStaff; if(!s && p.x!==null && p.y!==null) { c++; if(c>mx) {p.x=null;p.y=null;} } }); window.renderCallupList(); window.drawTacticalBoard(); };
 window.updateFormationOptions = () => { const m = document.getElementById('m-modality').value, s = document.getElementById('m-formation'); if(!s)return; let h='<option value="">Formación Libre</option>'; for(let k in formations[m]) h+=`<option value="${k}">${k}</option>`; s.innerHTML=h; };
@@ -689,8 +424,7 @@ window.renderCallupList = function() {
         const col = d.suspended ? 'text-red-500 line-through opacity-70' : 'text-slate-700 dark:text-slate-300';
         list.innerHTML += `<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 cursor-pointer"><label for="cb-${p.id}" class="truncate ${col} text-xs font-bold cursor-pointer flex-1">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.number?p.number+'-':''}${p.name} ${bg}</label></div>`;
     });
-    const c = document.getElementById('count-convocados'); if(c) c.textContent = window.currentLineup.length;
-    window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
+    const c = document.getElementById('count-convocados'); if(c) c.textContent = window.currentLineup.length; window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
 };
 
 window.handleCallupChange = (id, chk) => { if(!window.isAdmin) return window.showToast('Solo edición', true); if(chk) { if(!window.currentLineup.some(l=>l.playerId===id)) window.currentLineup.push({playerId:id,x:null,y:null}); } else { window.currentLineup = window.currentLineup.filter(l=>l.playerId!==id); const c = document.getElementById('m-captain'); if(c&&c.value===id) c.value=''; } window.drawTacticalBoard(); window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect(); const cn = document.getElementById('count-convocados'); if(cn) cn.textContent = window.currentLineup.length; };
@@ -707,7 +441,6 @@ window.addMatchEvent = function() {
     if(type==='sub' && (!pOut || pId===pOut)) return window.showToast('Cambio inválido', true);
     window.currentEvents.push({ minute:m, playerId:pId, type:type, playerOutId:pOut }); window.renderMatchEvents(); window.updateMvpSelect(); document.getElementById('m-event-minute').value = ''; window.drawTacticalBoard();
 };
-
 window.removeMatchEvent = (idx) => { if(!window.isAdmin) return window.showToast('Solo edición', true); window.currentEvents.splice(idx,1); window.renderMatchEvents(); window.updateMvpSelect(); window.drawTacticalBoard(); };
 
 window.renderMatchEvents = function() {
@@ -726,60 +459,23 @@ window.applyFormation = function() {
     if(!window.isAdmin) return window.showToast('Solo edición', true);
     const m = document.getElementById('m-modality').value, fk = document.getElementById('m-formation').value;
     if(!fk) { window.drawTacticalBoard(); return; }
-    
-    const coords = formations[m][fk];
-    if(!coords) return;
-
-    window.currentLineup.forEach(l => { 
-        const pO = window.players.find(x=>x.id===l.playerId); 
-        if(pO && !pO.isStaff) { l.x = null; l.y = null; } 
-    });
-
-    let availablePlayers = window.currentLineup.filter(l => { 
-        const pO = window.players.find(x=>x.id===l.playerId); 
-        return pO && !pO.isStaff; 
-    });
-
+    const coords = formations[m][fk]; if(!coords) return;
+    window.currentLineup.forEach(l => { const pO = window.players.find(x=>x.id===l.playerId); if(pO && !pO.isStaff) { l.x = null; l.y = null; } });
+    let availablePlayers = window.currentLineup.filter(l => { const pO = window.players.find(x=>x.id===l.playerId); return pO && !pO.isStaff; });
     let assignedSlots = [];
-
     coords.forEach((slot, index) => {
-        const matchIndex = availablePlayers.findIndex(l => {
-            const pO = window.players.find(x=>x.id===l.playerId);
-            const pos = Array.isArray(pO.positions) ? pO.positions : (pO.position ? [pO.position] : []);
-            return pos.some(x => slot.valid.includes(x));
-        });
-
-        if (matchIndex !== -1) {
-            const p = availablePlayers[matchIndex];
-            p.x = slot.x; p.y = slot.y;
-            availablePlayers.splice(matchIndex, 1);
-            assignedSlots.push(index);
-        }
+        const matchIndex = availablePlayers.findIndex(l => { const pO = window.players.find(x=>x.id===l.playerId); const pos = Array.isArray(pO.positions) ? pO.positions : (pO.position ? [pO.position] : []); return pos.some(x => slot.valid.includes(x)); });
+        if (matchIndex !== -1) { const p = availablePlayers[matchIndex]; p.x = slot.x; p.y = slot.y; availablePlayers.splice(matchIndex, 1); assignedSlots.push(index); }
     });
-
-    coords.forEach((slot, index) => {
-        if (!assignedSlots.includes(index) && availablePlayers.length > 0) {
-            const p = availablePlayers.shift(); 
-            p.x = slot.x; p.y = slot.y;
-        }
-    });
-
-    window.drawTacticalBoard(); 
-    window.showToast(`Formación ${fk} aplicada con éxito`);
+    coords.forEach((slot, index) => { if (!assignedSlots.includes(index) && availablePlayers.length > 0) { const p = availablePlayers.shift(); p.x = slot.x; p.y = slot.y; } });
+    window.drawTacticalBoard(); window.showToast(`Formación ${fk} aplicada con éxito`);
 };
 
 window.drawTacticalBoard = function() {
     const pt = document.getElementById('tactical-pitch'), bc = document.getElementById('tactical-bench'), st = document.getElementById('tactical-staff'); if(!pt||!bc||!st) return;
     document.querySelectorAll('.player-token, .formation-slot').forEach(t=>t.remove());
     const m = document.getElementById('m-modality').value, mx = m==='f11'?11:7, fk = document.getElementById('m-formation').value; let oP=0;
-    if(fk && formations[m] && formations[m][fk]) { 
-        formations[m][fk].forEach(c => { 
-            const s = document.createElement('div'); s.className="formation-slot"; s.style.left=c.x+'%'; s.style.top=c.y+'%'; 
-            let lbl='-'; 
-            for(let k in posValid){ if(posValid[k]===c.valid){lbl=k;break;} } 
-            s.innerHTML=lbl; pt.appendChild(s); 
-        }); 
-    }
+    if(fk && formations[m] && formations[m][fk]) { formations[m][fk].forEach(c => { const s = document.createElement('div'); s.className="formation-slot"; s.style.left=c.x+'%'; s.style.top=c.y+'%'; let lbl='-'; for(let k in posValid){ if(posValid[k]===c.valid){lbl=k;break;} } s.innerHTML=lbl; pt.appendChild(s); }); }
     
     window.currentLineup.forEach(l => {
         const p = window.players.find(x=>x.id===l.playerId); if(!p) return;
@@ -853,9 +549,7 @@ window.renderMatches = function() {
             if(g.length>0) evs += `<p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-3 text-center"><i class="fas fa-futbol text-green-500 mr-1"></i> ` + g.map(x=>{ const p = window.players.find(y=>y.id===x.playerId); return (p?(p.name||'').split(' ')[0]:'?') + (x.type==='penalty'?' 🎯':x.type==='freekick'?' 👟':''); }).join(', ') + `</p>`;
         }
         if(m.status==='finished'&&m.mvp) { const p=window.players.find(x=>x.id===m.mvp); if(p) evs+=`<p class="text-[10px] font-black tracking-widest uppercase text-yellow-600 dark:text-yellow-500 mt-2 text-center bg-yellow-50 dark:bg-yellow-900/10 inline-block px-3 py-1 rounded-full"><i class="fas fa-star mr-1"></i>MVP: ${(p.name||'').split(' ')[0]}</p>`; }
-        
         let loc=''; if(m.location) loc=m.location.startsWith('http')?`<a href="${m.location}" target="_blank" class="text-brand-500 hover:underline flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest mt-1"><i class="fas fa-map-marker-alt"></i> Ver Mapa</a>`:`<p class="text-slate-400 flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest mt-1"><i class="fas fa-map-marker-alt"></i> ${m.location.substring(0,25)}</p>`;
-        
         let nS='#ffffff', nA='#0284c7', nSh='#111827', nSo='#111827', nAc2='#111827'; if (m.kit === 'black') { nS='#050505'; nA='#050505'; nAc2=null; nSh='#050505'; nSo='#050505'; }
         
         grid.innerHTML += `
@@ -913,11 +607,10 @@ window.exportMatchResult = function(matchId) {
 };
 
 /* -----------------------------------------------------
-   DASHBOARD
+   DASHBOARD / ESTADÍSTICAS
 ------------------------------------------------------ */
 window.renderBirthdaysAvailability = function() {
-    const allPlayers = window.players.filter(p=>!p.isStaff);
-    const bEl = document.getElementById('birthdays-strip');
+    const allPlayers = window.players.filter(p=>!p.isStaff); const bEl = document.getElementById('birthdays-strip');
     if(bEl) {
         const today = new Date(); const ty = today.getFullYear();
         const upcoming = allPlayers.filter(p=>p.birthdate).map(p => {
@@ -931,10 +624,8 @@ window.renderBirthdaysAvailability = function() {
         bEl.innerHTML = '';
         if(upcoming.length===0) bEl.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium py-2 px-1">Sin fechas de nacimiento registradas</p>';
         else upcoming.forEach(item => {
-            const p = item.p;
-            const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`;
-            const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'});
-            const isToday = item.dCalc === 0;
+            const p = item.p; const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`;
+            const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'}); const isToday = item.dCalc === 0;
             const badge = isToday ? `<span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">¡Hoy!</span>` : `<span class="text-[10px] font-bold text-slate-400">${item.dCalc}d</span>`;
             bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
         });
@@ -942,25 +633,13 @@ window.renderBirthdaysAvailability = function() {
 
     const aEl = document.getElementById('availability-strip');
     if(aEl) {
-        const statusMap = { 
-            injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, 
-            suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, 
-            absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' },
-            inactive: { lbl:'Inactivo', icon:'fa-pause-circle', col:'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700' } 
-        };
+        const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' }, inactive: { lbl:'Inactivo', icon:'fa-pause-circle', col:'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700' } };
         const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
         const activeCount = allPlayers.length - unavailable.length;
         aEl.innerHTML = '';
         aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
-        if(unavailable.length === 0) {
-            aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`;
-        } else {
-            unavailable.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
-                const s = statusMap[p.status] || statusMap.absent;
-                const ret = p.returnDate ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : '';
-                aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${p.name} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`;
-            });
-        }
+        if(unavailable.length === 0) { aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`; } 
+        else { unavailable.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => { const s = statusMap[p.status] || statusMap.absent; const ret = p.returnDate ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : ''; aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${p.name} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`; }); }
     }
 };
 
@@ -1033,16 +712,17 @@ window.updateDashboard = function() {
     if(eW)eW.textContent=w; if(eD)eD.textContent=d; if(eL)eL.textContent=l;
     const eGF=document.getElementById('perf-gf'),eGA=document.getElementById('perf-ga'),ePP=document.getElementById('perf-played'),ePT=document.getElementById('perf-points');
     if(eGF)eGF.textContent=gf; if(eGA)eGA.textContent=ga; if(ePP)ePP.textContent=total; if(ePT)ePT.textContent=(w*3+d);
+    
     const donut=document.getElementById('perf-donut');
     if(donut){
         const wDeg=total>0?(w/total)*360:0, dDeg=total>0?(d/total)*360:0, lDeg=total>0?(l/total)*360:0;
         donut.style.background=`conic-gradient(#10b981 0deg ${wDeg}deg, #64748b ${wDeg}deg ${wDeg+dDeg}deg, #ef4444 ${wDeg+dDeg}deg ${wDeg+dDeg+lDeg}deg, #e2e8f0 ${wDeg+dDeg+lDeg}deg 360deg)`;
         const ePct=document.getElementById('perf-win-pct'); if(ePct)ePct.textContent=total>0?Math.round((w/total)*100)+'%':'0%';
     }
+    
     const formEl=document.getElementById('perf-form');
     if(formEl){
-        const recent=list.filter(m=>m.status==='finished'||m.status==='forfait').slice(0,5);
-        formEl.innerHTML='';
+        const recent=list.filter(m=>m.status==='finished'||m.status==='forfait').slice(0,5); formEl.innerHTML='';
         if(recent.length===0)formEl.innerHTML='<p class="text-xs text-slate-400 italic">Sin partidos jugados</p>';
         else recent.forEach(m=>{
             let r='E',col='bg-slate-400 text-white';
@@ -1054,17 +734,13 @@ window.updateDashboard = function() {
 
     const mvpEl=document.getElementById('mvp-card-content');
     if(mvpEl){
-        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{
-            const g=window.getPlayerStat(p,'goals'),a=window.getPlayerStat(p,'assists'),gp=window.getPlayerStat(p,'games'),m=window.getPlayerStat(p,'mvps');
-            return {p,score:g*2+a+gp+m*3,g,a,gp,m};
-        }).sort((x,y)=>y.score-x.score);
+        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ const g=window.getPlayerStat(p,'goals'),a=window.getPlayerStat(p,'assists'),gp=window.getPlayerStat(p,'games'),m=window.getPlayerStat(p,'mvps'); return {p,score:g*2+a+gp+m*3,g,a,gp,m}; }).sort((x,y)=>y.score-x.score);
         if(mvpList.length>0&&mvpList[0].score>0){
             const t=mvpList[0];
             const img=t.p.image?`<img src="${t.p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg">`:`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">${t.p.name.charAt(0)}</div>`;
             const name=t.p.alias&&t.p.showAlias?t.p.alias:t.p.name;
             mvpEl.innerHTML=`${img}<div><p class="text-white font-black text-xl leading-tight">${name}</p><p class="text-white/80 text-xs font-bold">${t.p.positions&&t.p.positions.length?t.p.positions[0]:'Jugador'}</p></div>`;
-            const sEl=document.getElementById('mvp-stats');
-            if(sEl)sEl.innerHTML=`<div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">PJ</p><p class="text-white font-black text-lg">${t.gp}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Goles</p><p class="text-white font-black text-lg">${t.g}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Asis.</p><p class="text-white font-black text-lg">${t.a}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">MVP</p><p class="text-white font-black text-lg">${t.m}</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML=`<div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">PJ</p><p class="text-white font-black text-lg">${t.gp}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Goles</p><p class="text-white font-black text-lg">${t.g}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Asis.</p><p class="text-white font-black text-lg">${t.a}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">MVP</p><p class="text-white font-black text-lg">${t.m}</p></div>`;
         } else {
             mvpEl.innerHTML=`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30"><i class="fas fa-trophy"></i></div><div><p class="text-white font-black text-xl leading-tight">Sin datos</p><p class="text-white/80 text-xs font-bold">Registra partidos</p></div>`;
             const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML='';
@@ -1076,10 +752,7 @@ window.updateDashboard = function() {
         const totalTrainings=window.trainings?window.trainings.length:0;
         if(totalTrainings===0){ rankEl.innerHTML='<p class="text-sm text-slate-500 italic text-center py-6">No hay sesiones registradas</p>'; }
         else {
-            const ranked=[...pL].filter(p=>!p.isStaff).map(p=>{
-                const attended=window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length;
-                return {p,attended,pct:Math.round((attended/totalTrainings)*100)};
-            }).sort((a,b)=>b.pct-a.pct||b.attended-a.attended).slice(0,5);
+            const ranked=[...pL].filter(p=>!p.isStaff).map(p=>{ const attended=window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length; return {p,attended,pct:Math.round((attended/totalTrainings)*100)}; }).sort((a,b)=>b.pct-a.pct||b.attended-a.attended).slice(0,5);
             rankEl.innerHTML=ranked.map((r,i)=>{
                 const img=r.p.image?`<img src="${r.p.image}" class="w-9 h-9 rounded-full object-cover">`:`<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${r.p.name.charAt(0)}</div>`;
                 const barColor=r.pct>=75?'bg-green-500':r.pct>=50?'bg-yellow-500':'bg-red-500';
@@ -1088,6 +761,9 @@ window.updateDashboard = function() {
             }).join('');
         }
     }
+    
+    // Llamar gráficos en el dashboard
+    setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
 };
 
 /* -----------------------------------------------------
@@ -1101,158 +777,76 @@ window.editAttendance = function(id) { const t = window.trainings.find(x=>x.id==
 window.deleteAttendance = function(id) { window.showConfirm('¿Borrar entreno permanentemente?', async()=>{ try{ await db.collection(window.trainingsPath).doc(id).delete(); window.showToast('Eliminado'); }catch(e){window.showToast('Error',true);} }); };
 
 window.renderTrainings = function() {
-    const u = document.getElementById('attendance-grid-upcoming');
-    const p = document.getElementById('attendance-grid-past');
-    if(!u || !p) return;
-    u.innerHTML = ''; p.innerHTML = '';
-    const td = new Date().toISOString().split('T')[0];
-    let upcoming = [], past = [];
-    
-    window.trainings.forEach(t => {
-        if(t.date >= td) upcoming.push(t);
-        else past.push(t);
-    });
-    
-    upcoming.sort((a,b) => new Date(a.date) - new Date(b.date));
-    past.sort((a,b) => new Date(b.date) - new Date(a.date));
+    const u = document.getElementById('attendance-grid-upcoming'), p = document.getElementById('attendance-grid-past'); if(!u || !p) return;
+    u.innerHTML = ''; p.innerHTML = ''; const td = new Date().toISOString().split('T')[0]; let upcoming = [], past = [];
+    window.trainings.forEach(t => { if(t.date >= td) upcoming.push(t); else past.push(t); });
+    upcoming.sort((a,b) => new Date(a.date) - new Date(b.date)); past.sort((a,b) => new Date(b.date) - new Date(a.date));
     
     if(upcoming.length === 0) u.innerHTML = '<div class="col-span-full text-slate-500 text-sm p-4 bg-white dark:bg-darkcard rounded-xl border border-slate-200 dark:border-slate-800">No hay sesiones programadas</div>';
-    
     upcoming.forEach(t => {
-        let loc = ''; 
-        if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir ubicación en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`;
-        else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
-
-        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length;
-        const attCount = t.attendees?t.attendees.length:0;
-        const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0;
-        const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
-
+        let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
         u.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800"><div class="flex justify-between items-center mb-3"><span class="font-black text-brand-600 dark:text-brand-400"><i class="far fa-calendar text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<div class="flex gap-2"><button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Editar</button><button onclick="window.deleteAttendance('${t.id}')" class="admin-only w-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition"><i class="fas fa-trash"></i></button></div></div>`;
     });
     
     if(past.length === 0) p.innerHTML = '<div class="col-span-full text-slate-500 text-sm p-4 bg-white dark:bg-darkcard rounded-xl border border-slate-200 dark:border-slate-800">No hay historial</div>';
-    
     past.forEach(t => {
-        let loc = ''; 
-        if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir ubicación en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`;
-        else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
-
-        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length;
-        const attCount = t.attendees?t.attendees.length:0;
-        const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0;
-        const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
-
+        let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
         p.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 opacity-80 hover:opacity-100 transition"><div class="flex justify-between items-center mb-3"><span class="font-black text-slate-600 dark:text-slate-400"><i class="far fa-check-circle text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<button onclick="window.editAttendance('${t.id}')" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Ver Lista</button></div>`;
     });
 };
 
 /* -----------------------------------------------------
-   GESTIÓN DE FINANZAS
+   FINANZAS
 ------------------------------------------------------ */
-const finCategories = {
-    income: ['Cuota Mensual', 'Inscripción', 'Cobro Manual', 'Abono a Deuda (Jugador)', 'Sponsor', 'Otro Ingreso'],
-    expense: ['Arbitraje', 'Cancha', 'Uniformes', 'Materiales', 'Multa Tarjeta', 'Otro Egreso']
-};
+const finCategories = { income: ['Cuota Mensual', 'Inscripción', 'Cobro Manual', 'Abono a Deuda (Jugador)', 'Sponsor', 'Otro Ingreso'], expense: ['Arbitraje', 'Cancha', 'Uniformes', 'Materiales', 'Multa Tarjeta', 'Otro Egreso'] };
 
 window.newTransaction = function(type) {
-    document.getElementById('finances-form').reset();
-    document.getElementById('f-id').value = '';
-    document.getElementById('f-type').value = type;
-    document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Nuevo Ingreso' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso';
-    const catSelect = document.getElementById('f-category');
-    catSelect.innerHTML = '';
-    finCategories[type].forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSelect.appendChild(o); });
-    document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('f-match-container').classList.add('hidden');
-    document.getElementById('f-player-container').classList.add('hidden');
-    document.getElementById('f-specific-debt-container').classList.add('hidden');
-    const matchSelect = document.getElementById('f-match');
-    matchSelect.innerHTML = '<option value="">Selecciona...</option>';
-    window.matches.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = `${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})} - vs ${m.opponent}`; matchSelect.appendChild(o); });
-    window.toggleMatchSelect();
-    window.updateAdminUI();
-    window.showSection('financesForm');
+    document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Nuevo Ingreso' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso';
+    const catSelect = document.getElementById('f-category'); catSelect.innerHTML = ''; finCategories[type].forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSelect.appendChild(o); });
+    document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; document.getElementById('f-match-container').classList.add('hidden'); document.getElementById('f-player-container').classList.add('hidden'); document.getElementById('f-specific-debt-container').classList.add('hidden');
+    const matchSelect = document.getElementById('f-match'); matchSelect.innerHTML = '<option value="">Selecciona...</option>'; window.matches.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = `${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})} - vs ${m.opponent}`; matchSelect.appendChild(o); });
+    window.toggleMatchSelect(); window.updateAdminUI(); window.showSection('financesForm');
 };
-
 window.toggleMatchSelect = function() {
-    const cat = document.getElementById('f-category').value;
-    const mc = document.getElementById('f-match-container'), pc = document.getElementById('f-player-container'), sdc = document.getElementById('f-specific-debt-container');
-    if (cat === 'Arbitraje' || cat === 'Multa Tarjeta') mc.classList.remove('hidden');
-    else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
-    if (cat === 'Cobro Manual' || cat === 'Multa Tarjeta' || cat === 'Abono a Deuda (Jugador)') { pc.classList.remove('hidden'); window.populateFinPlayerSelect(); }
-    else { pc.classList.add('hidden'); document.getElementById('f-player').value = ''; }
-    if (cat === 'Abono a Deuda (Jugador)') { sdc.classList.remove('hidden'); window.populateSpecificDebts(); }
-    else { sdc.classList.add('hidden'); document.getElementById('f-specific-debt').value = ''; }
+    const cat = document.getElementById('f-category').value, mc = document.getElementById('f-match-container'), pc = document.getElementById('f-player-container'), sdc = document.getElementById('f-specific-debt-container');
+    if (cat === 'Arbitraje' || cat === 'Multa Tarjeta') mc.classList.remove('hidden'); else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
+    if (cat === 'Cobro Manual' || cat === 'Multa Tarjeta' || cat === 'Abono a Deuda (Jugador)') { pc.classList.remove('hidden'); window.populateFinPlayerSelect(); } else { pc.classList.add('hidden'); document.getElementById('f-player').value = ''; }
+    if (cat === 'Abono a Deuda (Jugador)') { sdc.classList.remove('hidden'); window.populateSpecificDebts(); } else { sdc.classList.add('hidden'); document.getElementById('f-specific-debt').value = ''; }
     window.calcArbitraje();
 };
-
-window.populateFinPlayerSelect = function() {
-    const sel = document.getElementById('f-player');
-    sel.innerHTML = '<option value="">Selecciona...</option>';
-    window.players.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); });
-};
-
+window.populateFinPlayerSelect = function() { const sel = document.getElementById('f-player'); sel.innerHTML = '<option value="">Selecciona...</option>'; window.players.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); }); };
 window.calcArbitraje = function() {
     const cat = document.getElementById('f-category').value, calcDiv = document.getElementById('f-arbitraje-calc');
     if (cat !== 'Arbitraje') { calcDiv.classList.add('hidden'); return; }
     const matchId = document.getElementById('f-match').value, amount = parseFloat(document.getElementById('f-amount').value) || 0;
     if (!matchId || amount <= 0) { calcDiv.classList.add('hidden'); return; }
-    const match = window.matches.find(m => m.id === matchId);
-    if (!match || !match.lineup) { calcDiv.classList.add('hidden'); return; }
-    const valid = match.lineup.filter(l => { const p = window.players.find(x => x.id === l.playerId); return p && !p.isStaff; });
-    if (valid.length === 0) { calcDiv.classList.add('hidden'); return; }
-    const cuota = amount / valid.length;
-    calcDiv.classList.remove('hidden');
-    calcDiv.innerHTML = `<p class="text-xs font-bold"><i class="fas fa-users mr-1"></i> ${valid.length} jugadores convocados</p><p class="text-lg font-black text-brand-600 dark:text-brand-400 mt-1">Cuota por jugador: ${cuota.toFixed(2)}</p>`;
+    const match = window.matches.find(m => m.id === matchId); if (!match || !match.lineup) { calcDiv.classList.add('hidden'); return; }
+    const valid = match.lineup.filter(l => { const p = window.players.find(x => x.id === l.playerId); return p && !p.isStaff; }); if (valid.length === 0) { calcDiv.classList.add('hidden'); return; }
+    const cuota = amount / valid.length; calcDiv.classList.remove('hidden'); calcDiv.innerHTML = `<p class="text-xs font-bold"><i class="fas fa-users mr-1"></i> ${valid.length} jugadores convocados</p><p class="text-lg font-black text-brand-600 dark:text-brand-400 mt-1">Cuota por jugador: ${cuota.toFixed(2)}</p>`;
 };
-
 window.handleAmountInput = function() { window.calcArbitraje(); };
-
 window.populateSpecificDebts = function() {
-    const playerId = document.getElementById('f-player').value, sel = document.getElementById('f-specific-debt');
-    sel.innerHTML = '<option value="">Abono general a cuenta</option>';
-    if (!playerId) return;
+    const playerId = document.getElementById('f-player').value, sel = document.getElementById('f-specific-debt'); sel.innerHTML = '<option value="">Abono general a cuenta</option>'; if (!playerId) return;
     window.getPlayerDebts(playerId).debts.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = `${d.desc.substring(0,35)} - ${d.amount.toFixed(2)}`; sel.appendChild(o); });
 };
-
-window.handleSpecificDebtSelect = function() {
-    const debtId = document.getElementById('f-specific-debt').value;
-    if (!debtId) return;
-    const playerId = document.getElementById('f-player').value;
-    const debt = window.getPlayerDebts(playerId).debts.find(d => d.id === debtId);
-    if (debt) document.getElementById('f-amount').value = debt.amount.toFixed(2);
-};
+window.handleSpecificDebtSelect = function() { const debtId = document.getElementById('f-specific-debt').value; if (!debtId) return; const playerId = document.getElementById('f-player').value; const debt = window.getPlayerDebts(playerId).debts.find(d => d.id === debtId); if (debt) document.getElementById('f-amount').value = debt.amount.toFixed(2); };
 
 window.saveTransaction = async function(e) {
     e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
     const btn = document.getElementById('btn-save-fin'); btn.disabled = true; btn.textContent = "Guardando...";
-    const docId = document.getElementById('f-id').value || window.generateId();
-    const type = document.getElementById('f-type').value, category = document.getElementById('f-category').value;
-    const amount = parseFloat(document.getElementById('f-amount').value), date = document.getElementById('f-date').value;
-    const description = document.getElementById('f-desc').value;
-    const matchId = document.getElementById('f-match').value || null, playerId = document.getElementById('f-player').value || null;
-    const specificDebtId = document.getElementById('f-specific-debt').value || null;
+    const docId = document.getElementById('f-id').value || window.generateId(), type = document.getElementById('f-type').value, category = document.getElementById('f-category').value, amount = parseFloat(document.getElementById('f-amount').value), date = document.getElementById('f-date').value, description = document.getElementById('f-desc').value, matchId = document.getElementById('f-match').value || null, playerId = document.getElementById('f-player').value || null, specificDebtId = document.getElementById('f-specific-debt').value || null;
     const tData = { id: docId, type: type, amount: amount, date: date, category: category, description: description, matchId: matchId, playerId: playerId };
-    if (specificDebtId) tData.specificDebtId = specificDebtId;
-    if (category === 'Cobro Manual' || category === 'Multa Tarjeta') tData.isPaid = false;
-    if (category === 'Arbitraje') tData.paidBy = [];
-
-    const batch = db.batch();
-    batch.set(db.collection(window.financesPath).doc(docId), tData);
-
+    if (specificDebtId) tData.specificDebtId = specificDebtId; if (category === 'Cobro Manual' || category === 'Multa Tarjeta') tData.isPaid = false; if (category === 'Arbitraje') tData.paidBy = [];
+    const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(docId), tData);
     if (playerId) {
         const p = window.players.find(x => x.id === playerId);
         if (p) {
-            if (category === 'Cobro Manual' || category === 'Multa Tarjeta') {
-                batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
-            } else if (category === 'Abono a Deuda (Jugador)' && !specificDebtId) {
-                const newDebt = Math.max(0, (p.debtAmount || 0) - amount);
-                batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true });
-            }
+            if (category === 'Cobro Manual' || category === 'Multa Tarjeta') { batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true }); } 
+            else if (category === 'Abono a Deuda (Jugador)' && !specificDebtId) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
         }
     }
-
     try { await batch.commit(); window.showToast('Movimiento guardado'); window.showSection('finances'); } catch(err) { window.showToast('Error al guardar', true); } finally { btn.disabled = false; btn.textContent = "Guardar"; }
 };
 
@@ -1261,70 +855,27 @@ window.deleteTransaction = function(id) {
         try {
             const t = window.finances.find(x => x.id === id);
             if (t && t.playerId && (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && !t.isPaid) {
-                const p = window.players.find(x => x.id === t.playerId);
-                if (p) await db.collection(window.playersPath).doc(t.playerId).set({ debtAmount: Math.max(0, (p.debtAmount || 0) - t.amount) }, { merge: true });
+                const p = window.players.find(x => x.id === t.playerId); if (p) await db.collection(window.playersPath).doc(t.playerId).set({ debtAmount: Math.max(0, (p.debtAmount || 0) - t.amount) }, { merge: true });
             }
-            await db.collection(window.financesPath).doc(id).delete();
-            window.showToast('Movimiento eliminado');
+            await db.collection(window.financesPath).doc(id).delete(); window.showToast('Movimiento eliminado');
         } catch(e) { window.showToast('Error', true); }
     });
 };
 
 window.switchFinancesTab = function(tab) {
     window.currentFinTab = tab;
-    const btnRes = document.getElementById('fin-tab-btn-resumen');
-    const btnCob = document.getElementById('fin-tab-btn-cobros');
-    const contRes = document.getElementById('fin-tab-resumen');
-    const contCob = document.getElementById('fin-tab-cobros');
-    const activeClasses = ['bg-brand-600', 'text-white', 'shadow-sm'];
-    const inactiveClasses = ['text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-50', 'dark:hover:bg-slate-800'];
-    if (tab === 'resumen') {
-        btnRes.classList.add(...activeClasses); btnRes.classList.remove(...inactiveClasses);
-        btnCob.classList.add(...inactiveClasses); btnCob.classList.remove(...activeClasses);
-        contRes.classList.remove('hidden'); contCob.classList.add('hidden');
-    } else {
-        btnCob.classList.add(...activeClasses); btnCob.classList.remove(...inactiveClasses);
-        btnRes.classList.add(...inactiveClasses); btnRes.classList.remove(...activeClasses);
-        contCob.classList.remove('hidden'); contRes.classList.add('hidden');
-        window.renderMonthlyDues();
-    }
-};
-
-window.generatePaymentReceipt = function(playerId, debtId, amount, concept) {
-    const p = window.players.find(x => x.id === playerId); if (!p) return;
-    const dateStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
-    
-    document.getElementById('receipt-player').textContent = p.name;
-    document.getElementById('receipt-concept').textContent = concept || 'Abono a deuda';
-    document.getElementById('receipt-amount').textContent = `$${amount.toFixed(2)}`;
-    document.getElementById('receipt-date').textContent = `FECHA: ${dateStr}`;
-    document.getElementById('receipt-id').textContent = `REF: ${window.generateId().substring(0,8).toUpperCase()}`;
-
-    const node = document.getElementById('receipt-template');
-    node.style.display = 'block';
-
-    setTimeout(() => {
-        html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true }).then(cv => {
-            const a = document.createElement('a');
-            a.download = `Recibo_NISUS_${p.name.replace(/\s+/g, '_')}.png`;
-            a.href = cv.toDataURL('image/png');
-            a.click();
-            node.style.display = 'none';
-        }).catch(e => {
-            console.error('Error generando recibo', e);
-            node.style.display = 'none';
-        });
-    }, 300);
+    const btnRes = document.getElementById('fin-tab-btn-resumen'), btnCob = document.getElementById('fin-tab-btn-cobros'), contRes = document.getElementById('fin-tab-resumen'), contCob = document.getElementById('fin-tab-cobros');
+    const activeClasses = ['bg-brand-600', 'text-white', 'shadow-sm'], inactiveClasses = ['text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-50', 'dark:hover:bg-slate-800'];
+    if (tab === 'resumen') { btnRes.classList.add(...activeClasses); btnRes.classList.remove(...inactiveClasses); btnCob.classList.add(...inactiveClasses); btnCob.classList.remove(...activeClasses); contRes.classList.remove('hidden'); contCob.classList.add('hidden'); } 
+    else { btnCob.classList.add(...activeClasses); btnCob.classList.remove(...inactiveClasses); btnRes.classList.add(...inactiveClasses); btnRes.classList.remove(...activeClasses); contCob.classList.remove('hidden'); contRes.classList.add('hidden'); window.renderMonthlyDues(); }
 };
 
 window.getValidCashAmount = function(t) {
     if (t.type === 'expense') return t.amount || 0;
     if (t.type === 'income') {
-        if (t.isPaid === false) return 0; // Deudas pendientes no suman a caja
+        if (t.isPaid === false) return 0;
         if (t.isPaid === true && (t.category === 'Cuota Mensual' || t.category === 'Cobro Manual')) {
-            // Si la cuota ya se pagó con un "Abono a Deuda", no la sumamos para evitar duplicados
-            const hasAbono = window.finances.some(x => x.category === 'Abono a Deuda (Jugador)' && x.specificDebtId === t.id);
-            if (hasAbono) return 0;
+            const hasAbono = window.finances.some(x => x.category === 'Abono a Deuda (Jugador)' && x.specificDebtId === t.id); if (hasAbono) return 0;
         }
         return t.amount || 0;
     }
@@ -1332,34 +883,24 @@ window.getValidCashAmount = function(t) {
 };
 
 window.monthlyCloseReport = function() {
-    const now = new Date();
-    const currentMonth = now.toISOString().slice(0, 7);
-    const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
-    
+    const now = new Date(); const currentMonth = now.toISOString().slice(0, 7); const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
     let inc = 0, exp = 0;
-    window.finances.forEach(t => {
-        if ((t.date || '').startsWith(currentMonth)) {
-            if (t.type === 'income') inc += window.getValidCashAmount(t);
-            else if (t.type === 'expense') exp += window.getValidCashAmount(t);
-        }
-    });
-
-    let msg = `*📊 CIERRE DE MES NISUS FC - ${monthName}*\n\n`;
-    msg += `🟩 *Ingresos del mes:* $${inc.toFixed(2)}\n`;
-    msg += `🟥 *Egresos del mes:* $${exp.toFixed(2)}\n`;
-    msg += `💵 *Balance Mensual:* $${(inc - exp).toFixed(2)}\n\n`;
-    msg += `_Balance total histórico en caja:_ *$${document.getElementById('fin-balance').textContent}*\n\n`;
-    msg += `¡Gracias a todos por mantener al club funcionando! ⚽`;
-
+    window.finances.forEach(t => { if ((t.date || '').startsWith(currentMonth)) { if (t.type === 'income') inc += window.getValidCashAmount(t); else if (t.type === 'expense') exp += window.getValidCashAmount(t); } });
+    let msg = `*📊 CIERRE DE MES NISUS FC - ${monthName}*\n\n🟩 *Ingresos del mes:* $${inc.toFixed(2)}\n🟥 *Egresos del mes:* $${exp.toFixed(2)}\n💵 *Balance Mensual:* $${(inc - exp).toFixed(2)}\n\n_Balance total histórico en caja:_ *$${document.getElementById('fin-balance').textContent}*\n\n¡Gracias a todos por mantener al club funcionando! ⚽`;
     navigator.clipboard.writeText(msg).then(() => window.showToast('Reporte copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
 };
 
+window.sendDirectWhatsApp = function(playerName, debtAmount) {
+    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`; window.open(url, '_blank');
+};
+
+// ==========================================
+// RENDERIZADO DE FINANZAS
+// ==========================================
 window.renderFinances = function() {
     let income = 0, expense = 0;
-    window.finances.forEach(t => { 
-        if (t.type === 'income') income += window.getValidCashAmount(t); 
-        else if (t.type === 'expense') expense += window.getValidCashAmount(t); 
-    });
+    window.finances.forEach(t => { if (t.type === 'income') income += window.getValidCashAmount(t); else if (t.type === 'expense') expense += window.getValidCashAmount(t); });
     const balance = income - expense;
     const elB = document.getElementById('fin-balance'); if(elB) elB.textContent = `${balance.toFixed(2)}`;
     const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+${income.toFixed(2)}`;
@@ -1369,33 +910,19 @@ window.renderFinances = function() {
 
     const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
-        debtorsList.innerHTML = '';
-        let hasDebtors = false;
+        debtorsList.innerHTML = ''; let hasDebtors = false;
         window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
             const dData = window.getPlayerDebts(p.id);
             if (dData.total > 0.01) {
-                hasDebtors = true;
-                const mor = window.getMorosityStatus(p.id);
+                hasDebtors = true; const mor = window.getMorosityStatus(p.id);
                 const badgeColors = mor.color === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' : mor.color === 'yellow' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm';
                 const icon = mor.color === 'green' ? 'fa-check-circle' : mor.color === 'yellow' ? 'fa-clock' : 'fa-exclamation-triangle';
                 const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center shadow-sm">${p.name.charAt(0)}</div>`;
                 
                 debtorsList.innerHTML += `
                 <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0" onclick="window.openPaySpecific('${p.id}')">
-                    <div class="flex items-center gap-3 w-[60%]">
-                        ${img}
-                        <div class="min-w-0">
-                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${p.name}</p>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border ${badgeColors}"><i class="fas ${icon}"></i> ${mor.label}</span>
-                        </div>
-                    </div>
-                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5">
-                        <p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p>
-                        <div class="flex items-center gap-2">
-                            <button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.name}', ${dData.total})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button>
-                            <span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span>
-                        </div>
-                    </div>
+                    <div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${p.name}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border ${badgeColors}"><i class="fas ${icon}"></i> ${mor.label}</span></div></div>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5"><p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p><div class="flex items-center gap-2"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.name}', ${dData.total})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span></div></div>
                 </li>`;
             }
         });
@@ -1408,133 +935,84 @@ window.renderFinances = function() {
         const sorted = [...window.finances].sort((a,b) => new Date(b.date) - new Date(a.date));
         if (sorted.length === 0) { transList.innerHTML = '<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin movimientos registrados</td></tr>'; }
         else sorted.forEach(t => {
-            const dStr = new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
-            let extra = '';
+            const dStr = new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); let extra = '';
             if (t.matchId) { const m = window.matches.find(x => x.id === t.matchId); if (m) extra = ` vs ${m.opponent}`; }
             if (t.playerId) { const p = window.players.find(x => x.id === t.playerId); if (p) extra += ` · ${p.name}`; }
             
-            const validAmt = window.getValidCashAmount(t);
-            let displayAmt = ''; let iconBadge = '';
+            const validAmt = window.getValidCashAmount(t); let displayAmt = '', iconBadge = '';
             
-            if (t.type === 'expense') {
-                displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`;
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`;
-            } else if (t.isPaid === false) {
-                displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t.amount||0).toFixed(2)}</p>`;
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`;
-            } else if (validAmt === 0) {
-                displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t.amount||0).toFixed(2)}</p>`;
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`;
-            } else {
-                displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`;
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`;
-            }
+            if (t.type === 'expense') { displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`; } 
+            else if (t.isPaid === false) { displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; } 
+            else if (validAmt === 0) { displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; } 
+            else { displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`; }
 
-            // Botón de recibo manual
             let receiptBtn = '';
-            if (t.type === 'income' && t.playerId && validAmt > 0) {
-                receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`;
-            }
+            if (t.type === 'income' && t.playerId && validAmt > 0) { receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`; }
 
             transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${t.description}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right flex items-center justify-end">${receiptBtn}<button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Anular"><i class="fas fa-trash"></i></button></td></tr>`;
         });
     }
     
-    // Aquí está el final corregido: solo llama al gráfico de flujo de caja original
+    // Llamada a gráficos (usamos setTimeout para asegurar que el HTML está listo)
     if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
-        setTimeout(window.renderCashflowChart, 100);
+        setTimeout(() => {
+            if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
+            if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
+        }, 150);
     }
 };
 
 window.openPaySpecific = function(playerId) {
     const p = window.players.find(x => x.id === playerId); if (!p) return;
     document.getElementById('pay-spec-name').textContent = p.name;
-    const list = document.getElementById('pay-spec-list');
-    const debts = window.getPlayerDebts(playerId);
+    const list = document.getElementById('pay-spec-list'); const debts = window.getPlayerDebts(playerId);
     list.innerHTML = '';
     
-    if (debts.debts.length === 0) { 
-        list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; 
-    } else {
+    if (debts.debts.length === 0) { list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; } 
+    else {
         debts.debts.forEach(d => {
             const dStr = new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
-            list.innerHTML += `
-            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700">
-                <div class="flex-1 min-w-0 pr-2">
-                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${d.desc}">${d.desc}</p>
-                    <p class="text-[10px] text-slate-400">${dStr}</p>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-slate-400 font-bold text-xs">$</span>
-                    <input type="number" id="pay-amt-${d.id}" value="${d.amount.toFixed(2)}" max="${d.amount.toFixed(2)}" step="0.01" class="w-16 sm:w-20 py-1.5 px-2 text-right text-sm font-black text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 shadow-sm">
-                    <button onclick="window.processSpecificPayment('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Abonar</button>
-                </div>
-            </div>`;
+            list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700"><div class="flex-1 min-w-0 pr-2"><p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${d.desc}">${d.desc}</p><p class="text-[10px] text-slate-400">${dStr}</p></div><div class="flex items-center gap-2 shrink-0"><span class="text-slate-400 font-bold text-xs">$</span><input type="number" id="pay-amt-${d.id}" value="${d.amount.toFixed(2)}" max="${d.amount.toFixed(2)}" step="0.01" class="w-16 sm:w-20 py-1.5 px-2 text-right text-sm font-black text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 shadow-sm"><button onclick="window.processSpecificPayment('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Abonar</button></div></div>`;
         });
     }
-    
-    document.getElementById('pay-spec-total').textContent = `${debts.total.toFixed(2)}`;
-    document.getElementById('modalPaySpecific').classList.remove('hidden');
-    window.updateAdminUI();
+    document.getElementById('pay-spec-total').textContent = `${debts.total.toFixed(2)}`; document.getElementById('modalPaySpecific').classList.remove('hidden'); window.updateAdminUI();
 };
 
 window.processSpecificPayment = function(playerId, debtId, maxAmount) {
-    const inputEl = document.getElementById(`pay-amt-${debtId}`);
-    if (!inputEl) return;
+    const inputEl = document.getElementById(`pay-amt-${debtId}`); if (!inputEl) return;
     let payAmount = parseFloat(inputEl.value);
-    
     if (isNaN(payAmount) || payAmount <= 0) return window.showToast('Ingresa un monto válido', true);
-    if (payAmount > maxAmount) {
-        payAmount = maxAmount; 
-        inputEl.value = maxAmount.toFixed(2);
-    }
-    
+    if (payAmount > maxAmount) { payAmount = maxAmount; inputEl.value = maxAmount.toFixed(2); }
     window.paySpecificDebt(playerId, debtId, payAmount, maxAmount);
 };
 
 window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
     if (!window.isAdmin) return window.showToast('Solo Lectura', true);
     
-    const isFullPayment = Math.abs(maxAmount - amount) < 0.01;
-    const finId = window.generateId();
+    const isFullPayment = Math.abs(maxAmount - amount) < 0.01; const finId = window.generateId();
     const tData = { id: finId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: isFullPayment ? 'Pago total de deuda' : 'Abono parcial a deuda', playerId: playerId, specificDebtId: debtId };
-    
-    const batch = db.batch();
-    batch.set(db.collection(window.financesPath).doc(finId), tData);
+    const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(finId), tData);
 
     if (debtId.startsWith('arb_')) {
-        // En arbitrajes grupales, solo lo marcamos saldado para este jugador si pagó completo
-        if (isFullPayment) {
-            const parentId = debtId.split('_')[1];
-            const arbTx = window.finances.find(x => x.id === parentId);
-            if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true });
-        }
+        if (isFullPayment) { const parentId = debtId.split('_')[1]; const arbTx = window.finances.find(x => x.id === parentId); if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true }); }
     } else {
-        if (isFullPayment) {
-            batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
-        }
+        if (isFullPayment) batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
         const p = window.players.find(x => x.id === playerId);
-        if (p) { 
-            const newDebt = Math.max(0, (p.debtAmount || 0) - amount); 
-            batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); 
-        }
+        if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
     }
 
     try {
         await batch.commit();
-        const isFullPayment = Math.abs(maxAmount - amount) < 0.01;
         window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
         window.openPaySpecific(playerId); 
         window.renderFinances();
-    } catch(e) { 
-        window.showToast('Error al registrar abono', true); 
-    }
-   window.downloadReceiptFromTx = function(txId) {
+    } catch(e) { window.showToast('Error al registrar abono', true); }
+};
+
+window.downloadReceiptFromTx = function(txId) {
     const tx = window.finances.find(t => t.id === txId);
     if (!tx || !tx.playerId) return window.showToast('Solo aplica para cobros a jugadores', true);
-    const p = window.players.find(x => x.id === tx.playerId);
-    if (!p) return;
-    
+    const p = window.players.find(x => x.id === tx.playerId); if (!p) return;
     const dateStr = new Date(tx.date+'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
     
     document.getElementById('receipt-player').textContent = p.name;
@@ -1543,63 +1021,35 @@ window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
     document.getElementById('receipt-date').textContent = `FECHA: ${dateStr}`;
     document.getElementById('receipt-id').textContent = `REF: ${tx.id.substring(0,8).toUpperCase()}`;
 
-    const node = document.getElementById('receipt-template');
-    node.style.display = 'block';
-    window.showToast('Generando recibo...');
-
+    const node = document.getElementById('receipt-template'); node.style.display = 'block'; window.showToast('Generando recibo...');
     setTimeout(() => {
         html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true }).then(cv => {
-            const a = document.createElement('a');
-            a.download = `Recibo_NISUS_${p.name.replace(/\s+/g, '_')}_${dateStr.replace(/\s+/g, '')}.png`;
-            a.href = cv.toDataURL('image/png');
-            a.click();
-            node.style.display = 'none';
-        }).catch(e => {
-            console.error('Error', e);
-            node.style.display = 'none';
-            window.showToast('Error al generar', true);
-        });
+            const a = document.createElement('a'); a.download = `Recibo_NISUS_${p.name.replace(/\s+/g, '_')}_${dateStr.replace(/\s+/g, '')}.png`; a.href = cv.toDataURL('image/png'); a.click(); node.style.display = 'none';
+        }).catch(e => { node.style.display = 'none'; window.showToast('Error al generar', true); });
     }, 300);
-};
 };
 
 window.renderMonthlyDues = function() {
-    const grid = document.getElementById('monthly-dues-grid');
-    if (!grid) return;
-    const monthInput = document.getElementById('dues-month');
-    if (monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
+    const grid = document.getElementById('monthly-dues-grid'); if (!grid) return;
+    const monthInput = document.getElementById('dues-month'); if (monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
     const month = monthInput ? monthInput.value : new Date().toISOString().slice(0, 7);
-    const amountInput = document.getElementById('dues-amount');
-    const amount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
-
+    const amountInput = document.getElementById('dues-amount'), amount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
     const activePlayers = window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||''));
-    grid.innerHTML = '';
-    if (activePlayers.length === 0) { grid.innerHTML = '<p class="col-span-full text-center text-sm text-slate-500 py-6">No hay jugadores en el plantel</p>'; return; }
+    grid.innerHTML = ''; if (activePlayers.length === 0) { grid.innerHTML = '<p class="col-span-full text-center text-sm text-slate-500 py-6">No hay jugadores en el plantel</p>'; return; }
 
     activePlayers.forEach(p => {
-        const tx = window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id);
-        const paid = tx && tx.isPaid;
+        const tx = window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id), paid = tx && tx.isPaid;
         const img = p.image ? `<img src="${p.image}" class="w-9 h-9 rounded-full object-cover">` : `<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${p.name.charAt(0)}</div>`;
-        
         let statusBadge;
-        if (paid) { 
-            statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; 
-        } else if (tx) { 
-            statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; 
-        } else { 
-            statusBadge = `<label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded w-fit border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="dues-charge-cb rounded text-brand-600 w-3.5 h-3.5 cursor-pointer bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" value="${p.id}" checked><span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Cobrar</span></label>`; 
-        }
+        if (paid) { statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; } 
+        else if (tx) { statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; } 
+        else { statusBadge = `<label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded w-fit border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="dues-charge-cb rounded text-brand-600 w-3.5 h-3.5 cursor-pointer bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" value="${p.id}" checked><span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Cobrar</span></label>`; }
 
         let actionBtn = '';
         if (tx) { 
             let btnPagar = !paid ? `<button onclick="window.markDuesPaid('${tx.id}','${p.id}')" class="admin-only bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-check"></i> Pagada</button>` : '';
-            
-            actionBtn = `<div class="flex items-center justify-end gap-1.5">
-                ${btnPagar}
-                <button onclick="window.deleteTransaction('${tx.id}')" class="admin-only bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 w-8 h-8 rounded-lg text-sm font-bold transition flex items-center justify-center border border-red-100 dark:border-red-800/30 shadow-sm" title="Anular cobro"><i class="fas fa-trash-alt"></i></button>
-            </div>`; 
+            actionBtn = `<div class="flex items-center justify-end gap-1.5">${btnPagar}<button onclick="window.deleteTransaction('${tx.id}')" class="admin-only bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 w-8 h-8 rounded-lg text-sm font-bold transition flex items-center justify-center border border-red-100 dark:border-red-800/30 shadow-sm" title="Anular cobro"><i class="fas fa-trash-alt"></i></button></div>`; 
         }
-        
         grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
     });
 
@@ -1613,42 +1063,25 @@ window.renderMonthlyDues = function() {
 
 window.chargeMonthlyDues = async function() {
     if (!window.isAdmin) return window.showToast('Solo Lectura', true);
-    const month = document.getElementById('dues-month').value;
-    const amount = parseFloat(document.getElementById('dues-amount').value);
-    if (!month) return window.showToast('Selecciona un mes', true);
-    if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
-
-    const checkboxes = document.querySelectorAll('.dues-charge-cb:checked');
-    if (checkboxes.length === 0) return window.showToast('Selecciona al menos un jugador para cobrar', true);
-
-    const toChargeIds = Array.from(checkboxes).map(cb => cb.value);
-    const toCharge = window.players.filter(p => toChargeIds.includes(p.id));
-
-    const batch = db.batch();
-    const dateStr = month + '-01';
+    const month = document.getElementById('dues-month').value, amount = parseFloat(document.getElementById('dues-amount').value);
+    if (!month) return window.showToast('Selecciona un mes', true); if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
+    const checkboxes = document.querySelectorAll('.dues-charge-cb:checked'); if (checkboxes.length === 0) return window.showToast('Selecciona al menos un jugador para cobrar', true);
+    const toChargeIds = Array.from(checkboxes).map(cb => cb.value), toCharge = window.players.filter(p => toChargeIds.includes(p.id));
+    const batch = db.batch(), dateStr = month + '-01';
     
     toCharge.forEach(p => {
         const id = window.generateId();
         batch.set(db.collection(window.financesPath).doc(id), { id, type: 'income', amount, date: dateStr, category: 'Cuota Mensual', description: 'Cuota mensual ' + month, playerId: p.id, duesMonth: month, isPaid: false });
         batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
     });
-
-    try { 
-        await batch.commit(); 
-        window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); 
-    } catch(e) { 
-        window.showToast('Error al cobrar', true); 
-    }
+    try { await batch.commit(); window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); } catch(e) { window.showToast('Error al cobrar', true); }
 };
 
 window.markDuesPaid = async function(txId, playerId) {
     if (!window.isAdmin) return window.showToast('Solo Lectura', true);
-    const tx = window.finances.find(t => t.id === txId);
-    if (!tx) return;
-    const batch = db.batch();
-    batch.set(db.collection(window.financesPath).doc(txId), { isPaid: true }, { merge: true });
-    const p = window.players.find(x => x.id === playerId);
-    if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - tx.amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
+    const tx = window.finances.find(t => t.id === txId); if (!tx) return;
+    const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(txId), { isPaid: true }, { merge: true });
+    const p = window.players.find(x => x.id === playerId); if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - tx.amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
     try { await batch.commit(); window.showToast('Cuota marcada como pagada'); } catch(e) { window.showToast('Error', true); }
 };
 
@@ -1656,33 +1089,28 @@ window.copyGroupMessage = function() {
     const enMora = [], enPlazo = [];
     window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
         const d = window.getPlayerDebts(p.id);
-        if (d.total > 0.01) {
-            const mor = window.getMorosityStatus(p.id);
-            if (mor.status === 'mora') enMora.push(`🔴 ${p.name}: $${d.total.toFixed(2)}`);
-            else enPlazo.push(`🟡 ${p.name}: $${d.total.toFixed(2)}`);
-        }
+        if (d.total > 0.01) { const mor = window.getMorosityStatus(p.id); if (mor.status === 'mora') enMora.push(`🔴 ${p.name}: $${d.total.toFixed(2)}`); else enPlazo.push(`🟡 ${p.name}: $${d.total.toFixed(2)}`); }
     });
     let msg = '*NISUS FC - Estado de Pagos*\n\n⚠️ _Límite de pago para no entrar en mora: **Día 25** de cada mes._\n\n';
-    if (enMora.length === 0 && enPlazo.length === 0) {
-        msg += '✅ Todos los jugadores están al día. ¡Gracias!';
-    } else {
-        if (enMora.length > 0) {
-            msg += '🚨 *EN MORA (Vencido)*\n' + enMora.join('\n') + '\n\n';
-        }
-        if (enPlazo.length > 0) {
-            msg += '⏳ *EN PLAZO (Tienen hasta el 25)*\n' + enPlazo.join('\n') + '\n\n';
-        }
+    if (enMora.length === 0 && enPlazo.length === 0) { msg += '✅ Todos los jugadores están al día. ¡Gracias!'; } 
+    else {
+        if (enMora.length > 0) msg += '🚨 *EN MORA (Vencido)*\n' + enMora.join('\n') + '\n\n';
+        if (enPlazo.length > 0) msg += '⏳ *EN PLAZO (Tienen hasta el 25)*\n' + enPlazo.join('\n') + '\n\n';
         msg += '_Gracias por su compromiso._';
     }
     navigator.clipboard.writeText(msg).then(() => window.showToast('Mensaje copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
 };
 
-window.cashflowChart = null;
+// ==========================================
+// MOTOR DE GRÁFICOS (FLUJO Y DONA) - VERSIÓN LIMPIA
+// ==========================================
+window.cashflowCharts = [];
 window.renderCashflowChart = function() {
-    const canvas = document.getElementById('cashflow-chart');
-    if (!canvas || typeof Chart === 'undefined') return;
-    const now = new Date();
-    const labels = [], incomeData = [], expenseData = [];
+    if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
+    window.cashflowCharts = [];
+    if (typeof Chart === 'undefined') return;
+
+    const now = new Date(); const labels = [], incomeData = [], expenseData = [];
     for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const ym = d.toISOString().slice(0, 7);
@@ -1691,80 +1119,58 @@ window.renderCashflowChart = function() {
         let inc = 0, exp = 0;
         window.finances.forEach(t => {
             const tMonth = (t.date || '').slice(0, 7);
-            if (tMonth === ym) { 
-                if (t.type === 'income') inc += window.getValidCashAmount(t); 
-                else if (t.type === 'expense') exp += window.getValidCashAmount(t); 
-            }
+            if (tMonth === ym) { if (t.type === 'income') inc += window.getValidCashAmount(t); else if (t.type === 'expense') exp += window.getValidCashAmount(t); }
         });
-        incomeData.push(inc);
-        expenseData.push(exp);
+        incomeData.push(inc); expenseData.push(exp);
     }
     
     const isDark = document.documentElement.classList.contains('dark'); 
-    const textColor = isDark ? '#94a3b8' : '#64748b'; 
-    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+    const textColor = isDark ? '#94a3b8' : '#64748b', gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
-    if (window.cashflowChart) window.cashflowChart.destroy();
-    window.cashflowChart = new Chart(canvas, {
+    const chartConfig = {
         type: 'bar',
-        data: { labels, datasets: [
-            { label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 },
-            { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }
-        ]},
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} },
-                x: { grid: { display: false }, ticks: {color: textColor} }
-            }
-        }
+        data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } }
+    };
+
+    ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig));
     });
 };
-window.expensesDonutChart = null;
+
+window.donutCharts = [];
 window.renderExpensesDonutChart = function() {
-    const canvas = document.getElementById('expenses-donut-chart');
-    if (!canvas || typeof Chart === 'undefined') return;
+    if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
+    window.donutCharts = [];
+    if (typeof Chart === 'undefined') return;
     
-    // Sumar agrupadamente los egresos reales por categoría
     const expenseCategories = {};
     window.finances.forEach(t => {
         if (t.type === 'expense') {
             const amt = window.getValidCashAmount(t);
-            if (amt > 0) {
-                expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
-            }
+            if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
         }
     });
-    const labels = Object.keys(expenseCategories);
-    const data = Object.values(expenseCategories);
+
+    const labels = Object.keys(expenseCategories), data = Object.values(expenseCategories);
     const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+    const isDark = document.documentElement.classList.contains('dark'), textColor = isDark ? '#94a3b8' : '#64748b';
     
-    const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    
-    if (window.expensesDonutChart) window.expensesDonutChart.destroy();
-    
-    window.expensesDonutChart = new Chart(canvas, {
+    const chartConfig = {
         type: 'doughnut',
-        data: {
-            labels: labels.length ? labels : ['Sin egresos registrados'],
-            datasets: [{
-                data: data.length ? data : [1],
-                backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'],
-                borderWidth: 0,
-                hoverOffset: 6
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, cutout: '75%',
-            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } }
-        }
+        data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } }
+    };
+
+    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
     });
 };
 
 /* -----------------------------------------------------
-   INICIALIZACIÓN Y LISTENERS
+   INICIALIZACIÓN
 ------------------------------------------------------ */
 window.checkAutoActivations = async function() {
     if (!window.isAdmin) return; const t = new Date().toISOString().split('T')[0]; const u = [];
@@ -1807,138 +1213,10 @@ function setupRealtimeListeners() {
 }
 
 window.initApp = async function() { 
-    if(window.appInitialized) return;
-    window.appInitialized = true;
-    await loadInitialData(); 
-    setupRealtimeListeners(); 
-    window.setupPWA(); 
-    window.updateAdminUI(); 
-    document.addEventListener('mousemove', window.dragMove); 
-    document.addEventListener('mouseup', window.dragEnd); 
-    const p = document.getElementById('tactical-pitch'); 
-    if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
+    if(window.appInitialized) return; window.appInitialized = true;
+    await loadInitialData(); setupRealtimeListeners(); window.setupPWA(); window.updateAdminUI(); 
+    document.addEventListener('mousemove', window.dragMove); document.addEventListener('mouseup', window.dragEnd); 
+    const p = document.getElementById('tactical-pitch'); if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
 };
 
-// Función de WhatsApp (Debe ir FUERA del bloque de autoejecución)
-window.sendDirectWhatsApp = function(playerName, debtAmount) {
-    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
-    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
-};
-// ==========================================
-// MOTOR DE GRÁFICOS (FLUJO Y DONA)
-// ==========================================
-window.cashflowCharts = [];
-window.renderCashflowChart = function() {
-    // Limpiamos gráficos viejos para que no se superpongan
-    if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
-    window.cashflowCharts = [];
-
-    if (typeof Chart === 'undefined') return;
-
-    const now = new Date(); const labels = [], incomeData = [], expenseData = [];
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const ym = d.toISOString().slice(0, 7);
-        const monthLabel = d.toLocaleDateString('es-ES', { month: 'short' });
-        labels.push(monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1));
-        let inc = 0, exp = 0;
-        window.finances.forEach(t => {
-            const tMonth = (t.date || '').slice(0, 7);
-            if (tMonth === ym) { 
-                if (t.type === 'income') inc += window.getValidCashAmount(t); 
-                else if (t.type === 'expense') exp += window.getValidCashAmount(t); 
-            }
-        });
-        incomeData.push(inc); expenseData.push(exp);
-    }
-    
-    const isDark = document.documentElement.classList.contains('dark'); 
-    const textColor = isDark ? '#94a3b8' : '#64748b'; 
-    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-
-    const chartConfig = {
-        type: 'bar',
-        data: { labels, datasets: [
-            { label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 },
-            { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }
-        ]},
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } },
-            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } }
-        }
-    };
-
-    // Renderizamos en el Dashboard y en Finanzas simultáneamente
-    ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig));
-    });
-};
-
-window.donutCharts = [];
-window.renderExpensesDonutChart = function() {
-    if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
-    window.donutCharts = [];
-
-    if (typeof Chart === 'undefined') return;
-    
-    const expenseCategories = {};
-    window.finances.forEach(t => {
-        if (t.type === 'expense') {
-            const amt = window.getValidCashAmount(t);
-            if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
-        }
-    });
-
-    const labels = Object.keys(expenseCategories); const data = Object.values(expenseCategories);
-    const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
-    const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    
-    const chartConfig = {
-        type: 'doughnut',
-        data: {
-            labels: labels.length ? labels : ['Sin egresos registrados'],
-            datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, cutout: '75%',
-            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } }
-        }
-    };
-
-    // Renderizamos en el Dashboard y en Finanzas simultáneamente
-    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
-    });
-};
-
-// Nos aseguramos de que renderFinances llame a ambos gráficos
-const originalRenderFinances = window.renderFinances;
-window.renderFinances = function() {
-    if(originalRenderFinances) originalRenderFinances();
-    if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
-        setTimeout(() => {
-            window.renderCashflowChart();
-            window.renderExpensesDonutChart();
-        }, 150);
-    }
-};
-
-const originalUpdateDashboard = window.updateDashboard;
-window.updateDashboard = function() {
-    if(originalUpdateDashboard) originalUpdateDashboard();
-    setTimeout(() => {
-        window.renderCashflowChart();
-        window.renderExpensesDonutChart();
-    }, 150);
-};
-// Autoejecución a prueba de fallos
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', window.initApp);
-} else {
-    window.initApp();
-}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', window.initApp); } else { window.initApp(); }
