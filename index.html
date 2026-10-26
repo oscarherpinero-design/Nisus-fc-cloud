@@ -39,7 +39,6 @@
         }
     </script>
     
-    <!-- REGRESAMOS LOS ESTILOS AQUÍ PARA QUE TAILWIND LOS LEA CORRECTAMENTE -->
     <style type="text/tailwindcss">
         :root { color-scheme: light dark; }
         body { font-family: 'Inter', sans-serif; padding-bottom: 80px; overscroll-behavior-y: none; @apply bg-slate-100 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-300; }
@@ -68,7 +67,6 @@
         .match-result-loss { @apply bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50; }
         .match-result-draw { @apply bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/50; }
 
-        /* Estilos de la Pizarra Táctica */
         .pitch-container { width: 100%; max-width: 320px; height: 480px; margin: 0 auto; background-color: #22c55e; position: relative; border-radius: 12px; overflow: hidden; background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 48px, transparent 48px, transparent 96px); touch-action: none; border: 3px solid #16a34a; box-shadow: inset 0 0 20px rgba(0,0,0,0.1); }
         .pitch-outline { position: absolute; top: 12px; bottom: 12px; left: 12px; right: 12px; border: 2px solid rgba(255,255,255,0.8); pointer-events: none; }
         .pitch-line-center { position: absolute; top: 50%; left: 12px; right: 12px; height: 2px; background: rgba(255,255,255,0.8); transform: translateY(-50%); pointer-events: none; }
@@ -100,9 +98,6 @@
         .player-card-export { width: 360px; height: 520px; background: radial-gradient(circle at top right, #1e293b, #0f172a); border-radius: 16px; padding: 20px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 0 4px #fbbf24, inset 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         .match-result-export { width: 400px; height: 400px; background: radial-gradient(circle at top left, #0ea5e9, #082f49); border-radius: 20px; padding: 24px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.4); }
     </style>
-  <meta property="og:image" content="https://bolt.new/static/og_default.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
 </head>
 <body class="bg-slate-100 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-300">
 
@@ -201,16 +196,13 @@
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Gráfico de Flujo de Caja (Ocupa 2 columnas) -->
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-2">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja (6 meses)</h3>
-                            <button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button>
                         </div>
-                        <div class="relative w-full h-56"><canvas id="cashflow-chart"></canvas></div>
+                        <div class="relative w-full h-56"><canvas id="cashflow-chart-dash"></canvas></div>
                     </div>
                     
-                    <!-- NUEVO: Gráfico de Dona para Egresos (Ocupa 1 columna) -->
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
                         <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg mb-4"><i class="fas fa-chart-pie text-red-500 mr-3"></i>Distribución de Egresos</h3>
                         <div class="relative w-full h-56 flex justify-center"><canvas id="expenses-donut-chart-dash"></canvas></div>
@@ -334,18 +326,18 @@
                     </div>
                 </div>
 
-             <!-- Gráfico Original (Flujo de Caja) -->
-                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja (6 meses)</h3>
-                        <button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-chart-bar text-brand-500 mr-3"></i>Flujo de Caja (6 meses)</h3>
+                            <button onclick="window.monthlyCloseReport()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-sm"><i class="fas fa-file-export"></i> Cierre Mensual</button>
+                        </div>
+                        <div class="relative w-full h-56"><canvas id="cashflow-chart-fin"></canvas></div>
                     </div>
-                    <div class="relative w-full h-56">canvas id="cashflow-chart-dash"></canvas></div>
-                </div>
                     
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6">
                         <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg mb-4"><i class="fas fa-chart-pie text-red-500 mr-3"></i>Distribución de Egresos</h3>
-                        <div class="relative w-full h-56 flex justify-center"><canvas id="expenses-donut-chart"></canvas></div>
+                        <div class="relative w-full h-56 flex justify-center"><canvas id="expenses-donut-chart-fin"></canvas></div>
                     </div>
                 </div>
                 
