@@ -8,6 +8,17 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
+// Activar Persistencia Offline (Modo Cancha sin señal)
+db.enablePersistence({ synchronizeTabs: true })
+    .then(() => console.log("Modo Offline Activado: Listo para la cancha"))
+    .catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.warn("Persistencia falló: Múltiples pestañas abiertas");
+        } else if (err.code === 'unimplemented') {
+            console.warn("El navegador no soporta el modo offline");
+        }
+    });
+
 window.playersPath = `jugadores`; window.matchesPath = `partidos`; window.trainingsPath = `entrenamientos`; window.financesPath = `finanzas`;
 window.players = []; window.matches = []; window.trainings = []; window.finances = []; window.isReady = false;
 window.SECRET_PIN = "2024"; window.isAdmin = localStorage.getItem('nisus_admin') === 'true';
@@ -1731,3 +1742,4 @@ if (document.readyState === 'loading') {
     window.open(url, '_blank');
 };
 }
+f
