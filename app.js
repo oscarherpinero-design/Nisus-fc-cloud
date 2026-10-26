@@ -1435,7 +1435,10 @@ window.renderFinances = function() {
     }
     
     if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
-        setTimeout(window.renderCashflowChart, 100);
+        setTimeout(() => {
+            window.renderCashflowChart();
+            window.renderExpensesDonutChart();
+        }, 100);
     }
 };
 
@@ -1680,6 +1683,47 @@ window.renderCashflowChart = function() {
                 y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} },
                 x: { grid: { display: false }, ticks: {color: textColor} }
             }
+        }
+    });
+};
+window.expensesDonutChart = null;
+window.renderExpensesDonutChart = function() {
+    const canvas = document.getElementById('expenses-donut-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    
+    // Sumar agrupadamente los egresos reales por categoría
+    const expenseCategories = {};
+    window.finances.forEach(t => {
+        if (t.type === 'expense') {
+            const amt = window.getValidCashAmount(t);
+            if (amt > 0) {
+                expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
+            }
+        }
+    });
+    const labels = Object.keys(expenseCategories);
+    const data = Object.values(expenseCategories);
+    const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    
+    if (window.expensesDonutChart) window.expensesDonutChart.destroy();
+    
+    window.expensesDonutChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels.length ? labels : ['Sin egresos registrados'],
+            datasets: [{
+                data: data.length ? data : [1],
+                backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'],
+                borderWidth: 0,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '75%',
+            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } }
         }
     });
 };
