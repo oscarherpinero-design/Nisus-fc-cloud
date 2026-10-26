@@ -1430,14 +1430,20 @@ window.renderFinances = function() {
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`;
             }
 
-            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${t.description}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right admin-only"><button onclick="window.deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition"><i class="fas fa-trash"></i></button></td></tr>`;
+            // NUEVO: Botón de recibo para ingresos válidos
+            let receiptBtn = '';
+            if (t.type === 'income' && t.playerId && validAmt > 0) {
+                receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`;
+            }
+
+            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${t.description}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right flex items-center justify-end">${receiptBtn}<button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Anular"><i class="fas fa-trash"></i></button></td></tr>`;
         });
     }
     
     if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
         setTimeout(() => {
-            window.renderCashflowChart();
-            window.renderExpensesDonutChart();
+            if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
+            if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
         }, 100);
     }
 };
@@ -1518,14 +1524,45 @@ window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
 
     try {
         await batch.commit();
-        const concept = isFullPayment ? 'Pago de deuda' : 'Abono parcial a deuda';
-        window.generatePaymentReceipt(playerId, debtId, amount, concept);
+        const isFullPayment = Math.abs(maxAmount - amount) < 0.01;
         window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
         window.openPaySpecific(playerId); 
         window.renderFinances();
     } catch(e) { 
         window.showToast('Error al registrar abono', true); 
     }
+   window.downloadReceiptFromTx = function(txId) {
+    const tx = window.finances.find(t => t.id === txId);
+    if (!tx || !tx.playerId) return window.showToast('Solo aplica para cobros a jugadores', true);
+    const p = window.players.find(x => x.id === tx.playerId);
+    if (!p) return;
+    
+    const dateStr = new Date(tx.date+'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+    
+    document.getElementById('receipt-player').textContent = p.name;
+    document.getElementById('receipt-concept').textContent = tx.description || tx.category;
+    document.getElementById('receipt-amount').textContent = `$${tx.amount.toFixed(2)}`;
+    document.getElementById('receipt-date').textContent = `FECHA: ${dateStr}`;
+    document.getElementById('receipt-id').textContent = `REF: ${tx.id.substring(0,8).toUpperCase()}`;
+
+    const node = document.getElementById('receipt-template');
+    node.style.display = 'block';
+    window.showToast('Generando recibo...');
+
+    setTimeout(() => {
+        html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true }).then(cv => {
+            const a = document.createElement('a');
+            a.download = `Recibo_NISUS_${p.name.replace(/\s+/g, '_')}_${dateStr.replace(/\s+/g, '')}.png`;
+            a.href = cv.toDataURL('image/png');
+            a.click();
+            node.style.display = 'none';
+        }).catch(e => {
+            console.error('Error', e);
+            node.style.display = 'none';
+            window.showToast('Error al generar', true);
+        });
+    }, 300);
+};
 };
 
 window.renderMonthlyDues = function() {
