@@ -890,7 +890,8 @@ window.monthlyCloseReport = function() {
 };
 
 window.sendDirectWhatsApp = function(playerName, debtAmount) {
-    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
+    if (!window.isAdmin) return window.showToast('Solo el administrador puede usar esta función', true);
+    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por ${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`; window.open(url, '_blank');
 };
 
@@ -1002,14 +1003,16 @@ window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
 
     try {
         await batch.commit();
+        window._lastPaidTx = tData;
         window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
+        window.downloadReceiptFromTx(finId);
         window.openPaySpecific(playerId); 
         window.renderFinances();
     } catch(e) { window.showToast('Error al registrar abono', true); }
 };
 
 window.downloadReceiptFromTx = function(txId) {
-    const tx = window.finances.find(t => t.id === txId);
+    const tx = window.finances.find(t => t.id === txId) || window._lastPaidTx;
     if (!tx || !tx.playerId) return window.showToast('Solo aplica para cobros a jugadores', true);
     const p = window.players.find(x => x.id === tx.playerId); if (!p) return;
     const dateStr = new Date(tx.date+'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
@@ -1085,6 +1088,7 @@ window.markDuesPaid = async function(txId, playerId) {
 };
 
 window.copyGroupMessage = function() {
+    if (!window.isAdmin) return window.showToast('Solo el administrador puede usar esta función', true);
     const enMora = [], enPlazo = [];
     window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
         const d = window.getPlayerDebts(p.id);
