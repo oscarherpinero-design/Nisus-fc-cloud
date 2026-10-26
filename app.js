@@ -1369,9 +1369,12 @@ window.renderFinances = function() {
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border ${badgeColors}"><i class="fas ${icon}"></i> ${mor.label}</span>
                         </div>
                     </div>
-                    <div class="text-right shrink-0">
-                        <p class="font-black text-lg ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p>
-                        <p class="text-[10px] text-brand-600 dark:text-brand-400 font-bold uppercase mt-0.5">💰 Pagar</p>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5">
+                        <p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p>
+                        <div class="flex items-center gap-2">
+                            <button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.name}', ${dData.total})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button>
+                            <span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span>
+                        </div>
                     </div>
                 </li>`;
             }
@@ -1722,4 +1725,9 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', window.initApp);
 } else {
     window.initApp();
+   window.sendDirectWhatsApp = function(playerName, debtAmount) {
+    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+};
 }
