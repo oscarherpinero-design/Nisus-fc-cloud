@@ -1784,14 +1784,16 @@ window.initApp = async function() {
     if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
 };
 
+// Función de WhatsApp (Debe ir FUERA del bloque de autoejecución)
+window.sendDirectWhatsApp = function(playerName, debtAmount) {
+    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+};
+
 // Autoejecución a prueba de fallos
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', window.initApp);
 } else {
     window.initApp();
-   window.sendDirectWhatsApp = function(playerName, debtAmount) {
-    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
-    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
-};
 }
