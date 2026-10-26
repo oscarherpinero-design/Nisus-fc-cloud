@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nisus-fc-cache-v2';
+const CACHE_NAME = 'nisus-fc-cache-v3';
 
 // 1. Instalar y forzar activación inmediata
 self.addEventListener('install', event => {
@@ -17,7 +17,9 @@ self.addEventListener('install', event => {
 
 // 2. Tomar el control de la página al instante
 self.addEventListener('activate', event => {
-    event.waitUntil(self.clients.claim());
+    event.waitUntil(
+        caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))).then(() => self.clients.claim())
+    );
 });
 
 // 3. Estrategia "Cache First" con Caché Dinámico (Guarda Tailwind y Firebase)
