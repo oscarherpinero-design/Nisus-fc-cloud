@@ -1430,7 +1430,7 @@ window.renderFinances = function() {
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`;
             }
 
-            // NUEVO: Botón de recibo para ingresos válidos
+            // Botón de recibo manual
             let receiptBtn = '';
             if (t.type === 'income' && t.playerId && validAmt > 0) {
                 receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`;
@@ -1440,11 +1440,9 @@ window.renderFinances = function() {
         });
     }
     
+    // Aquí está el final corregido: solo llama al gráfico de flujo de caja original
     if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
-        setTimeout(() => {
-            if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
-            if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
-        }, 100);
+        setTimeout(window.renderCashflowChart, 100);
     }
 };
 
