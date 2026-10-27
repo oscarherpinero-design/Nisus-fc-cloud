@@ -45,8 +45,20 @@ window.showSection = function(sectionId) {
 };
 
 window.setupPWA = function() {
-    const manifestStr = JSON.stringify({ name: "NISUS FC Premium", short_name: "NISUS FC", start_url: ".", display: "standalone", background_color: "#0f172a", theme_color: "#082f49", icons: [{ src: "https://placehold.co/192x192/0ea5e9/ffffff?text=NFC", sizes: "192x192", type: "image/png" }, { src: "https://placehold.co/512x512/0ea5e9/ffffff?text=NFC", sizes: "512x512", type: "image/png" }] });
-    const manifestBlob = new Blob([manifestStr], {type: 'application/json'}); const manifestUrl = URL.createObjectURL(manifestBlob);
+    const manifestStr = JSON.stringify({ 
+        name: "NISUS FC", 
+        short_name: "NISUS FC", 
+        start_url: ".", 
+        display: "standalone", 
+        background_color: "#0f172a", 
+        theme_color: "#082f49", 
+        icons: [
+            { src: "./escudo.png", sizes: "192x192", type: "image/png" }, 
+            { src: "./escudo.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+        ] 
+    });
+    const manifestBlob = new Blob([manifestStr], {type: 'application/json'}); 
+    const manifestUrl = URL.createObjectURL(manifestBlob);
     const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl; document.head.appendChild(link);
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const btn = document.getElementById('btn-install-pwa'); if (btn) btn.classList.remove('hidden'); });
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
