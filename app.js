@@ -138,14 +138,14 @@ window.renderKitsPreview = function() {
    ESTADÍSTICAS Y CÁLCULOS
 ------------------------------------------------------ */
 window.getDiscipline = function(playerId, tournament) {
-    if (!tournament) return { suspended: false, yellows: 0, suspensionsLeft: 0 };
-    const tourneyMatches = window.matches.filter(m => (m.status === 'finished' || m.status === 'forfait') && (m.tournament || '').trim().toLowerCase() === tournament.trim().toLowerCase()).sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (!tournament || !playerId) return { suspended: false, yellows: 0, suspensionsLeft: 0 };
+    const tourneyMatches = (window.matches || []).filter(m => m && (m.status === 'finished' || m.status === 'forfait') && typeof m.tournament === 'string' && m.tournament.trim().toLowerCase() === tournament.trim().toLowerCase()).sort((a, b) => new Date(a.date||0) - new Date(b.date||0));
     let accYellows = 0; let suspensions = 0;
     tourneyMatches.forEach(m => {
         if (suspensions > 0) suspensions--;
-        if (m.events) {
+        if (m.events && Array.isArray(m.events)) {
             let y = 0, dy = 0, r = 0;
-            m.events.forEach(e => { if (e.playerId === playerId) { if (e.type === 'yellows') y++; if (e.type === 'double_yellow') dy++; if (e.type === 'reds') r++; } });
+            m.events.forEach(e => { if (e && e.playerId === playerId) { if (e.type === 'yellows') y++; if (e.type === 'double_yellow') dy++; if (e.type === 'reds') r++; } });
             if (dy > 0) suspensions += 1;
             else { accYellows += y; if (accYellows >= 3) { suspensions += Math.floor(accYellows / 3); accYellows = accYellows % 3; } if (r > 0) suspensions += 1; }
         }
@@ -156,13 +156,31 @@ window.getDiscipline = function(playerId, tournament) {
 window.getPlayerStat = function(player, statKey) {
     if(!player) return 0; if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
     let count = 0;
-    window.matches.forEach(m => {
-        if (m.status !== 'finished') return; if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return; if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
-        const played = (m.lineup && m.lineup.some(l => l.playerId === player.id && l.x !== null)) || (m.events && m.events.some(e => e.type === 'sub' && e.playerId === player.id));
+    (window.matches || []).forEach(m => {
+        if (!m || m.status !== 'finished') return; 
+        if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return; 
+        if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
+        
+        // PARACAÍDAS: Asegura que lineup y events sean arrays antes de iterarlos
+        const lArr = Array.isArray(m.lineup) ? m.lineup : [];
+        const eArr = Array.isArray(m.events) ? m.events : [];
+        
+        const played = lArr.some(l => l && l.playerId === player.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === player.id);
+        
         if (statKey === 'games' && played && !player.isStaff) count++;
-        if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) { const isGK = Array.isArray(player.positions) ? player.positions.includes('Portero') : (player.position === 'Portero'); if (isGK && !player.isStaff) count++; }
+        if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) { 
+            const posRaw = player.positions || player.position || [];
+            const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
+            if (pos.includes('Portero') && !player.isStaff) count++; 
+        }
         if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
-        if (m.events) m.events.forEach(ev => { if (ev.playerId === player.id) { if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++; else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++; else if (statKey === ev.type) count++; } });
+        eArr.forEach(ev => { 
+            if (ev && ev.playerId === player.id) { 
+                if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++; 
+                else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++; 
+                else if (statKey === ev.type) count++; 
+            } 
+        });
     }); return count;
 };
 
@@ -689,10 +707,12 @@ window.exportMatchResult = function(matchId) {
    DASHBOARD / ESTADÍSTICAS
 ------------------------------------------------------ */
 window.renderBirthdaysAvailability = function() {
-    const allPlayers = window.players.filter(p=>!p.isStaff); const bEl = document.getElementById('birthdays-strip');
+    const allPlayers = (window.players || []).filter(p => p && !p.isStaff); 
+    const bEl = document.getElementById('birthdays-strip');
     if(bEl) {
         const today = new Date(); const ty = today.getFullYear();
-        const upcoming = allPlayers.filter(p=>p.birthdate).map(p => {
+        // PARACAÍDAS: Solo procesa cumpleaños si el dato es estrictamente un string válido
+        const upcoming = allPlayers.filter(p => p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')).map(p => {
             const parts = p.birthdate.split('-'); const bm = parseInt(parts[1])-1, bd = parseInt(parts[2]);
             let next = new Date(ty, bm, bd);
             const days = Math.ceil((next - today) / (1000*60*60*24));
@@ -700,13 +720,17 @@ window.renderBirthdaysAvailability = function() {
             const dCalc = Math.ceil((next - today) / (1000*60*60*24));
             return { p, dCalc, next };
         }).sort((a,b)=>a.dCalc-b.dCalc).slice(0,6);
+        
         bEl.innerHTML = '';
         if(upcoming.length===0) bEl.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium py-2 px-1">Sin fechas de nacimiento registradas</p>';
         else upcoming.forEach(item => {
-            const p = item.p; const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${(p.name || '?').charAt(0).toUpperCase()}</div>`;
+            const p = item.p; 
+            const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+            const ini = validName.charAt(0).toUpperCase();
+            const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${ini}</div>`;
             const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'}); const isToday = item.dCalc === 0;
             const badge = isToday ? `<span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">¡Hoy!</span>` : `<span class="text-[10px] font-bold text-slate-400">${item.dCalc}d</span>`;
-            bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
+            bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
         });
     }
 
@@ -718,7 +742,14 @@ window.renderBirthdaysAvailability = function() {
         aEl.innerHTML = '';
         aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
         if(unavailable.length === 0) { aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`; } 
-        else { unavailable.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => { const s = statusMap[p.status] || statusMap.absent; const ret = p.returnDate ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : ''; aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${p.name} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`; }); }
+        else { 
+            unavailable.sort((a,b)=>((a.name||'').localeCompare(b.name||''))).forEach(p => { 
+                const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+                const s = statusMap[p.status] || statusMap.absent; 
+                const ret = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : ''; 
+                aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${validName} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`; 
+            }); 
+        }
     }
 };
 
