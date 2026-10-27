@@ -250,36 +250,63 @@ window.migrarFotosAStorage = async function() {
 
 window.renderPlayers = function() {
     const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
-    let list = window.players; if(window.currentFilter==='f11') list = list.filter(p=>p.availableF11); else if(window.currentFilter==='f7') list = list.filter(p=>p.availableF7);
+    let list = window.players || []; 
+    if(window.currentFilter==='f11') list = list.filter(p => p?.availableF11); 
+    else if(window.currentFilter==='f7') list = list.filter(p => p?.availableF7);
+    
     const q = (document.getElementById('player-search')?.value || '').trim().toLowerCase();
     const posF = document.getElementById('player-position-filter')?.value || '';
     
-    if(q) list = list.filter(p => { const n=(p.name||'').toLowerCase(), al=(p.alias||'').toLowerCase(), num=String(p.number||''); return n.includes(q)||al.includes(q)||num===q; });
-    if(posF) { if(posF==='Staff') list = list.filter(p=>p.isStaff); else list = list.filter(p => { const posRaw = p.positions || p.position || []; const pos = Array.isArray(posRaw) ? posRaw : [posRaw]; return pos.includes(posF); }); }
+    if(q) list = list.filter(p => { 
+        const n = (p?.name || '').toLowerCase(); 
+        const al = (p?.alias || '').toLowerCase(); 
+        const num = String(p?.number || ''); 
+        return n.includes(q) || al.includes(q) || num === q; 
+    });
     
-    list.sort((a,b) => { if (a.isStaff && !b.isStaff) return 1; if (!a.isStaff && b.isStaff) return -1; const nA = parseInt(a.number) || 9999; const nB = parseInt(b.number) || 9999; if(nA !== nB) return nA - nB; return (a.name||'').localeCompare(b.name||''); });
-    if(list.length===0){ grid.innerHTML=`<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay registros</div>`; return; }
+    if(posF) { 
+        if(posF === 'Staff') list = list.filter(p => p?.isStaff); 
+        else list = list.filter(p => { 
+            const posRaw = p?.positions || p?.position || []; 
+            const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); 
+            return pos.includes(posF); 
+        }); 
+    }
+    
+    list.sort((a,b) => { 
+        if (a?.isStaff && !b?.isStaff) return 1; 
+        if (!a?.isStaff && b?.isStaff) return -1; 
+        const nA = parseInt(a?.number) || 9999; 
+        const nB = parseInt(b?.number) || 9999; 
+        if(nA !== nB) return nA - nB; 
+        return (a?.name || '').localeCompare(b?.name || ''); 
+    });
+    
+    if(list.length === 0){ grid.innerHTML = `<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay registros</div>`; return; }
 
     list.forEach(p => {
-        const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), yellows = window.getPlayerStat(p, 'yellows'), reds = window.getPlayerStat(p, 'reds'), mvps = window.getPlayerStat(p, 'mvps'), cleanSheets = window.getPlayerStat(p, 'cleanSheets'), attendance = window.trainings?window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length:0;
+        if(!p) return; // Paracaídas extra
+        const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), yellows = window.getPlayerStat(p, 'yellows'), reds = window.getPlayerStat(p, 'reds'), mvps = window.getPlayerStat(p, 'mvps'), cleanSheets = window.getPlayerStat(p, 'cleanSheets');
+        const attendance = (window.trainings || []).filter(t => t?.attendees && Array.isArray(t.attendees) && t.attendees.includes(p.id)).length;
         let b=''; const badges = [];
         
         const posRaw = p.positions || p.position || [];
-        const pos = Array.isArray(posRaw) ? posRaw : [posRaw];
+        const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
         
         if(p.availableF11) badges.push('<span class="bg-brand-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F11</span>');
         if(p.availableF7) badges.push('<span class="bg-green-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F7</span>');
-        if(mvps>0) badges.push(`<span class="bg-yellow-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase"><i class="fas fa-star"></i> ${mvps}</span>`);
-        if(pos.includes('Portero') && cleanSheets>0) badges.push(`<span class="bg-teal-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">🛡️ ${cleanSheets}</span>`);
+        if(mvps > 0) badges.push(`<span class="bg-yellow-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase"><i class="fas fa-star"></i> ${mvps}</span>`);
+        if(pos.includes('Portero') && cleanSheets > 0) badges.push(`<span class="bg-teal-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">🛡️ ${cleanSheets}</span>`);
         b = badges.join('<span class="text-slate-300 dark:text-slate-600 text-[8px]">·</span> '); if(b) b = `<div class="flex items-center gap-1 flex-wrap">${b}</div>`;
         
-        const dData = window.getPlayerDebts(p.id);
-        const debtBadge = dData.total > 0.01 ? `<span class="text-red-500 dark:text-red-400 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> ${dData.total.toFixed(2)}</span>` : '<span class="text-green-500 dark:text-green-400 font-black text-[10px] ml-1"><i class="fas fa-check-circle"></i> Al Día</span>';
+        const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0 };
+        const debtBadge = (dData?.total || 0) > 0.01 ? `<span class="text-red-500 dark:text-red-400 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> ${(dData.total).toFixed(2)}</span>` : '<span class="text-green-500 dark:text-green-400 font-black text-[10px] ml-1"><i class="fas fa-check-circle"></i> Al Día</span>';
 
         let sb='', oc='';
-        if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
+        const returnDateStr = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? p.returnDate.split('-').reverse().join('/') : 'Indefinido';
+        if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate?` (Hasta ${returnDateStr})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
         else if(p.status==='suspended'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-ban mr-1"></i> Sanción</span>`; oc='opacity-75 hover:opacity-100'; }
-        else if(p.status==='absent'){ sb=`<span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-600 block mt-2 text-center w-full"><i class="fas fa-plane mr-1"></i> Ausente${p.returnDate?` (Hasta ${p.returnDate.split('-').reverse().join('/')})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
+        else if(p.status==='absent'){ sb=`<span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-600 block mt-2 text-center w-full"><i class="fas fa-plane mr-1"></i> Ausente${p.returnDate?` (Hasta ${returnDateStr})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
         else if(p.status==='inactive'){ sb=`<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-700 block mt-2 text-center w-full"><i class="fas fa-pause-circle mr-1"></i> Inactivo / En duda</span>`; oc='opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all'; }
 
         let pb='', sh='';
@@ -291,48 +318,89 @@ window.renderPlayers = function() {
             sh = `<div class="grid grid-cols-6 gap-1 text-center bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl mb-4 border border-slate-200 dark:border-slate-800"><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-slate-400 font-bold uppercase">PJ</p><p class="font-black text-slate-800 dark:text-slate-200">${games}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-brand-500 font-bold uppercase">ENT</p><p class="font-black text-brand-600 dark:text-brand-400">${attendance}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-slate-400 font-bold uppercase">G</p><p class="font-black text-green-500">${goals}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-slate-400 font-bold uppercase">A</p><p class="font-black text-blue-500">${assists}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px]">🟨</p><p class="font-black text-yellow-500">${yellows}</p></div><div><p class="text-[9px]">🟥</p><p class="font-black text-red-500">${reds}</p></div></div>`;
         }
 
-        // PARACAÍDAS: Extrae la inicial asegurando que exista un nombre
-        const ini = (p.name || '?').charAt(0).toUpperCase();
+        // PARACAÍDAS: Extrae la inicial asegurando que exista un nombre válido
+        const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+        const ini = validName.charAt(0).toUpperCase();
+        
         const img = p.image?`<img src="${p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md">`:`<div class="w-16 h-16 rounded-full ${p.isStaff?'bg-purple-100 text-purple-600 dark:bg-purple-900/50':'bg-brand-100 text-brand-600 dark:bg-brand-900/50'} font-black flex items-center justify-center text-2xl border-2 border-slate-200 dark:border-slate-700 shadow-md">${ini}</div>`;
         
-        grid.innerHTML += `<div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-5 flex flex-col ${oc} relative transition-all hover:-translate-y-1 hover:shadow-lg"><div class="admin-only absolute top-4 right-4 flex gap-2 z-20"><button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div><div class="flex items-center gap-4 mb-3 mt-2 cursor-pointer" onclick="window.openPlayerCard('${p.id}')">${img}<div class="overflow-hidden"><h3 class="font-black text-slate-900 dark:text-white text-lg truncate">${p.name||'Sin Nombre'}</h3>${p.alias?`<p class="font-medium italic text-slate-400 text-xs">"${p.alias}"</p>`:''}${b}</div></div><div class="flex items-center justify-between mb-3"><div class="flex flex-wrap gap-1">${pb}</div>${debtBadge}</div>${sb}<div class="mt-auto pt-4">${sh}<button onclick="window.openPlayerCard('${p.id}')" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 text-brand-700 dark:text-brand-300 rounded-xl text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2"><i class="fas fa-id-card"></i> Ver Perfil</button></div></div>`;
+        grid.innerHTML += `<div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-5 flex flex-col ${oc} relative transition-all hover:-translate-y-1 hover:shadow-lg"><div class="admin-only absolute top-4 right-4 flex gap-2 z-20"><button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div><div class="flex items-center gap-4 mb-3 mt-2 cursor-pointer" onclick="window.openPlayerCard('${p.id}')">${img}<div class="overflow-hidden"><h3 class="font-black text-slate-900 dark:text-white text-lg truncate">${validName === '?' ? 'Sin Nombre' : validName}</h3>${p.alias?`<p class="font-medium italic text-slate-400 text-xs">"${p.alias}"</p>`:''}${b}</div></div><div class="flex items-center justify-between mb-3"><div class="flex flex-wrap gap-1">${pb}</div>${debtBadge}</div>${sb}<div class="mt-auto pt-4">${sh}<button onclick="window.openPlayerCard('${p.id}')" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 text-brand-700 dark:text-brand-300 rounded-xl text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2"><i class="fas fa-id-card"></i> Ver Perfil</button></div></div>`;
     });
 };
 
 window.openPlayerCard = function(id) {
-    const p = window.players.find(x => x.id === id); if (!p) return;
-    const c = document.getElementById('card-render-container');
-    const n = p.name||'N/A', a = p.alias?`<p class="text-sm font-medium italic text-slate-400 mt-1 mb-2">"${p.alias}"</p>`:`<div class="mb-2"></div>`;
-    const pos = p.isStaff?'CT':String((p.positions&&p.positions.length>0)?p.positions[0]:(p.position||'N/A')).substring(0,3).toUpperCase();
-    let fL = window.currentFilter==='all'?'GLOBAL':window.currentFilter.toUpperCase(), sL = window.currentSeason==='all'?'HISTÓRICO':`T. ${window.currentSeason}`;
-    let age='--', ft=p.foot?p.foot.toUpperCase():'N/E'; 
-    if(p.birthdate) { const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1]-1, p.birthdate.split('-')[2]), td = new Date(); let ca = td.getFullYear()-bd.getFullYear(); const m = td.getMonth()-bd.getMonth(); if(m<0||(m===0&&td.getDate()<bd.getDate())) ca--; age = ca+' AÑOS'; }
-    let mp=0, mw=0; window.matches.forEach(m => { if(m.status!=='finished'||(window.currentSeason!=='all'&&m.season!==window.currentSeason)||(window.currentFilter!=='all'&&m.modality!==window.currentFilter))return; if((m.lineup&&m.lineup.some(l=>l.playerId===p.id)) || (m.events&&m.events.some(e=>e.type==='sub'&&e.playerId===p.id))) { mp++; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)) mw++; } });
-    const wr = mp>0?Math.round((mw/mp)*100)+'%':'0%';
+    const p = (window.players || []).find(x => x?.id === id); if (!p) return;
+    const c = document.getElementById('card-render-container'); if (!c) return;
+    
+    const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'N/A';
+    const n = validName;
+    const a = p.alias ? `<p class="text-sm font-medium italic text-slate-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
+    
+    const posRaw = Array.isArray(p.positions) && p.positions.length > 0 ? p.positions[0] : (typeof p.positions === 'string' ? p.positions.split(',')[0] : (p.position || 'N/A'));
+    const pos = p.isStaff ? 'CT' : String(posRaw).substring(0,3).toUpperCase();
+    
+    let fL = window.currentFilter==='all' ? 'GLOBAL' : window.currentFilter.toUpperCase();
+    let sL = window.currentSeason==='all' ? 'HISTÓRICO' : `T. ${window.currentSeason}`;
+    
+    let age='--', ft=p.foot ? String(p.foot).toUpperCase() : 'N/E'; 
+    if(p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')) { 
+        const parts = p.birthdate.split('-');
+        if (parts.length === 3) {
+            const bd = new Date(parts[0], parts[1]-1, parts[2]), td = new Date(); 
+            let ca = td.getFullYear()-bd.getFullYear(); 
+            const m = td.getMonth()-bd.getMonth(); 
+            if(m<0 || (m===0 && td.getDate()<bd.getDate())) ca--; 
+            age = ca+' AÑOS'; 
+        }
+    }
+    
+    let mp=0, mw=0; 
+    (window.matches || []).forEach(m => { 
+        if(!m || m.status!=='finished' || (window.currentSeason!=='all' && m.season!==window.currentSeason) || (window.currentFilter!=='all' && m.modality!==window.currentFilter)) return; 
+        
+        const playedInLineup = Array.isArray(m.lineup) && m.lineup.some(l => l?.playerId === p.id);
+        const playedInEvents = Array.isArray(m.events) && m.events.some(e => e?.type === 'sub' && e?.playerId === p.id);
+        
+        if(playedInLineup || playedInEvents) { 
+            mp++; 
+            if(parseInt(m.goalsUs || 0) > parseInt(m.goalsThem || 0)) mw++; 
+        } 
+    });
+    
+    const wr = mp > 0 ? Math.round((mw/mp)*100)+'%' : '0%';
     
     let discHtml = '';
-    [...new Set(window.matches.filter(m => m.status === 'finished' || m.status === 'forfait').map(m => m.tournament))].filter(Boolean).forEach(t => {
+    const tournaments = [...new Set((window.matches || []).filter(m => m && (m.status === 'finished' || m.status === 'forfait')).map(m => m.tournament))].filter(Boolean);
+    
+    tournaments.forEach(t => {
         const d = window.getDiscipline(p.id, t);
-        if (d.yellows > 0 || d.suspended || window.matches.some(m => m.tournament === t && m.events && m.events.some(e => e.playerId === p.id && (e.type === 'reds' || e.type === 'double_yellow')))) { discHtml += `<div class="flex justify-between items-center bg-slate-800 px-3 py-1.5 rounded-lg mb-1 border border-slate-700 shadow-inner"><span class="truncate w-1/2 text-left text-slate-300 font-bold text-[9px] uppercase tracking-widest">${t}</span><span class="text-yellow-400 font-black text-[10px]">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="text-red-400 font-black text-[10px] ml-2">SANCIONADO</span>' : '<span class="text-green-400 font-black text-[10px] ml-2">HABILITADO</span>'}</div>`; }
+        const hasReds = (window.matches || []).some(m => m && m.tournament === t && Array.isArray(m.events) && m.events.some(e => e?.playerId === p.id && (e?.type === 'reds' || e?.type === 'double_yellow')));
+        
+        if (d.yellows > 0 || d.suspended || hasReds) { 
+            discHtml += `<div class="flex justify-between items-center bg-slate-800 px-3 py-1.5 rounded-lg mb-1 border border-slate-700 shadow-inner"><span class="truncate w-1/2 text-left text-slate-300 font-bold text-[9px] uppercase tracking-widest">${t}</span><span class="text-yellow-400 font-black text-[10px]">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="text-red-400 font-black text-[10px] ml-2">SANCIONADO</span>' : '<span class="text-green-400 font-black text-[10px] ml-2">HABILITADO</span>'}</div>`; 
+        }
     });
+    
     if(discHtml) discHtml = `<div class="mt-4 w-full text-center px-6"><p class="text-[8px] text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-700 pb-1 font-bold">Control Disciplinario</p>${discHtml}</div>`;
 
     let sH = p.isStaff ? `<div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos CT</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div></div>` : `<div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Goles</p><p class="text-2xl font-black">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Asist.</p><p class="text-2xl font-black">${window.getPlayerStat(p,'assists')}</p></div></div>`;
     const mvps = window.getPlayerStat(p,'mvps');
     let statusBanner = '';
-    if (p.status !== 'active') {
+    
+    if (p.status && p.status !== 'active') {
         let sCol = p.status === 'injured' || p.status === 'suspended' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600';
         let sTxt = p.status === 'injured' ? 'LESIÓN' : p.status === 'suspended' ? 'SANCIÓN' : p.status === 'inactive' ? 'INACTIVO' : 'AUSENTE';
-        let sDate = p.returnDate ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
+        let sDate = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
         statusBanner = `<div class="mt-1 mb-2 px-4 py-1 rounded-full border ${sCol} text-[9px] font-black tracking-widest uppercase shadow-sm"><i class="fas fa-info-circle mr-1"></i> ${sTxt} | ${sDate}</div>`;
     }
+    
     let fontSize = "1.75rem"; if(n.length > 18) fontSize = "1.25rem"; else if(n.length > 14) fontSize = "1.5rem";
 
     c.innerHTML = `
         <div id="player-card-node" class="player-card-export">
             <div class="absolute top-5 left-5 text-center"><p class="text-3xl font-black text-yellow-400 leading-none drop-shadow-md">${p.number||'--'}</p><p class="text-[10px] font-black uppercase tracking-widest mt-1 text-slate-300">${pos}</p></div>
             <div class="absolute top-5 right-5 opacity-40"><img src="escudo.png" class="w-10 h-10 object-contain drop-shadow" onerror="this.style.display='none'"></div>
-            <div class="w-28 h-28 rounded-[2rem] border-4 border-slate-600 bg-slate-800 flex items-center justify-center mt-6 mb-4 overflow-hidden shadow-2xl">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-black">${n.charAt(0)}</span>`}</div>
+            <div class="w-28 h-28 rounded-[2rem] border-4 border-slate-600 bg-slate-800 flex items-center justify-center mt-6 mb-4 overflow-hidden shadow-2xl">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-black">${validName.charAt(0).toUpperCase()}</span>`}</div>
             <h2 class="font-black uppercase tracking-wide text-center w-full px-4 leading-tight drop-shadow-md" style="font-size:${fontSize}">${n}</h2>
             ${a} ${statusBanner}
             <div class="flex justify-center gap-3 mt-2 text-[8px] font-black tracking-widest text-slate-400 uppercase"><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">EDAD: ${age}</span><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">PIE: ${ft}</span><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">VIC: ${wr}</span></div>
@@ -341,10 +409,14 @@ window.openPlayerCard = function(id) {
             ${discHtml}
             <div class="absolute bottom-3 text-[7px] text-slate-600 font-black tracking-widest uppercase">NISUS FC PREMIUM</div>
         </div>`;
+        
     document.getElementById('modalPlayerCard').classList.remove('hidden');
     document.getElementById('btn-download-card').onclick = function() {
         const node = document.getElementById('player-card-node'); const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-        html2canvas(node, { backgroundColor:null, scale:3, useCORS:true, allowTaint:true }).then(cv => { const a = document.createElement('a'); a.download=`Ficha_${n.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click(); btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download mr-2"></i>Guardar Imagen',2000); }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download mr-2"></i>Guardar Imagen'; });
+        html2canvas(node, { backgroundColor:null, scale:3, useCORS:true, allowTaint:true }).then(cv => { 
+            const a = document.createElement('a'); a.download=`Ficha_${n.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click(); 
+            btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download mr-2"></i>Guardar Imagen',2000); 
+        }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download mr-2"></i>Guardar Imagen'; });
     };
 };
 
@@ -806,8 +878,62 @@ window.renderTrainings = function() {
 /* -----------------------------------------------------
    FINANZAS
 ------------------------------------------------------ */
+/* -----------------------------------------------------
+   FINANZAS
+------------------------------------------------------ */
 const finCategories = { income: ['Cuota Mensual', 'Inscripción', 'Cobro Manual', 'Abono a Deuda (Jugador)', 'Sponsor', 'Otro Ingreso'], expense: ['Arbitraje', 'Cancha', 'Uniformes', 'Materiales', 'Multa Tarjeta', 'Otro Egreso'] };
 
+window.getPlayerDebts = function(playerId) {
+    let total = 0;
+    let debts = [];
+    if (!playerId) return { total, debts };
+    
+    const p = (window.players || []).find(x => x?.id === playerId);
+    if (p && parseFloat(p.debtAmount) > 0) {
+        total = parseFloat(p.debtAmount);
+    }
+    
+    (window.finances || []).forEach(t => {
+        if (t?.playerId === playerId && t?.type === 'income' && t?.isPaid === false) {
+            const abonos = (window.finances || []).filter(x => x?.category === 'Abono a Deuda (Jugador)' && x?.specificDebtId === t.id);
+            const totalAbonado = abonos.reduce((sum, x) => sum + (parseFloat(x?.amount) || 0), 0);
+            const amt = (parseFloat(t?.amount) || 0) - totalAbonado;
+            if (amt > 0.01) {
+                debts.push({ id: t.id, desc: t.description || t.category || 'Deuda', amount: amt, date: t.date || '' });
+            }
+        }
+    });
+    
+    const calcTotal = debts.reduce((sum, d) => sum + d.amount, 0);
+    if (total > calcTotal + 0.01) {
+        debts.push({ id: 'generic_' + playerId, desc: 'Saldo pendiente anterior', amount: total - calcTotal, date: '' });
+    } else if (calcTotal > total) {
+        total = calcTotal;
+    }
+
+    return { total, debts };
+};
+
+window.getMorosityStatus = function(playerId) {
+    const dData = window.getPlayerDebts(playerId);
+    if (dData.total <= 0.01) return { status: 'aldia', label: 'Al Día', color: 'green' };
+    
+    let hasVencida = false;
+    const today = new Date();
+    
+    dData.debts.forEach(d => {
+        if (d.date && typeof d.date === 'string') {
+            const parts = d.date.split('-');
+            if (parts.length === 3) {
+                const dDate = new Date(parts[0], parts[1] - 1, 25);
+                if (today > dDate) hasVencida = true;
+            }
+        }
+    });
+    
+    if (hasVencida || today.getDate() > 25) return { status: 'mora', label: 'En Mora', color: 'red' };
+    return { status: 'plazo', label: 'En Plazo', color: 'yellow' };
+};
 window.newTransaction = function(type) {
     document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Nuevo Ingreso' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso';
     const catSelect = document.getElementById('f-category'); catSelect.innerHTML = ''; finCategories[type].forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSelect.appendChild(o); });
@@ -926,32 +1052,44 @@ window.copyGroupMessage = function() {
 // ==========================================
 window.renderFinances = function() {
     let income = 0, expense = 0;
-    window.finances.forEach(t => { if (t.type === 'income') income += window.getValidCashAmount(t); else if (t.type === 'expense') expense += window.getValidCashAmount(t); });
+    (window.finances || []).forEach(t => { 
+        if(!t) return;
+        if (t.type === 'income') income += window.getValidCashAmount(t); 
+        else if (t.type === 'expense') expense += window.getValidCashAmount(t); 
+    });
+    
     const balance = income - expense;
     const elB = document.getElementById('fin-balance'); if(elB) elB.textContent = `${balance.toFixed(2)}`;
     const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+${income.toFixed(2)}`;
     const elE = document.getElementById('fin-expense'); if(elE) elE.textContent = `-${expense.toFixed(2)}`;
 
-    if (window.currentFinTab === 'cobros') window.renderMonthlyDues();
+    if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') {
+        window.renderMonthlyDues();
+    }
 
     const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
         debtorsList.innerHTML = ''; let hasDebtors = false;
-        window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
-            const dData = window.getPlayerDebts(p.id);
-            if (dData.total > 0.01) {
-                hasDebtors = true; const mor = window.getMorosityStatus(p.id);
+        
+        (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
+            const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0 };
+            
+            if ((dData?.total || 0) > 0.01) {
+                hasDebtors = true; 
+                const mor = typeof window.getMorosityStatus === 'function' ? window.getMorosityStatus(p.id) : { label: 'Deuda', color: 'yellow' };
+                
                 const badgeColors = mor.color === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' : mor.color === 'yellow' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm';
                 const icon = mor.color === 'green' ? 'fa-check-circle' : mor.color === 'yellow' ? 'fa-clock' : 'fa-exclamation-triangle';
                 
-                // PARACAÍDAS: Extrae la inicial asegurando que exista un nombre
-                const ini = (p.name || '?').charAt(0).toUpperCase();
+                const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+                const ini = validName.charAt(0).toUpperCase();
+                
                 const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center shadow-sm">${ini}</div>`;
                 
                 debtorsList.innerHTML += `
                 <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0" onclick="window.openPaySpecific('${p.id}')">
-                    <div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${p.name||'Sin Nombre'}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border ${badgeColors}"><i class="fas ${icon}"></i> ${mor.label}</span></div></div>
-                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5"><p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p><div class="flex items-center gap-2"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.name}', ${dData.total})" class="admin-only w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span></div></div>
+                    <div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${validName === '?' ? 'Sin Nombre' : validName}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border ${badgeColors}"><i class="fas ${icon}"></i> ${mor.label}</span></div></div>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5"><p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p><div class="flex items-center gap-2"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${dData.total})" class="admin-only w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span></div></div>
                 </li>`;
             }
         });
@@ -961,24 +1099,29 @@ window.renderFinances = function() {
     const transList = document.getElementById('transactions-list');
     if (transList) {
         transList.innerHTML = '';
-        const sorted = [...window.finances].sort((a,b) => new Date(b.date) - new Date(a.date));
+        const sorted = [...(window.finances || [])].filter(Boolean).sort((a,b) => new Date(b?.date || 0) - new Date(a?.date || 0));
+        
         if (sorted.length === 0) { transList.innerHTML = '<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin movimientos registrados</td></tr>'; }
         else sorted.forEach(t => {
-            const dStr = new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); let extra = '';
-            if (t.matchId) { const m = window.matches.find(x => x.id === t.matchId); if (m) extra = ` vs ${m.opponent}`; }
-            if (t.playerId) { const p = window.players.find(x => x.id === t.playerId); if (p) extra += ` · ${p.name}`; }
+            const dateVal = t?.date && typeof t.date === 'string' && t.date.includes('-') ? t.date + 'T12:00:00' : new Date().toISOString();
+            const dStr = new Date(dateVal).toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); 
+            let extra = '';
             
-            const validAmt = window.getValidCashAmount(t); let displayAmt = '', iconBadge = '';
+            if (t?.matchId) { const m = (window.matches || []).find(x => x?.id === t.matchId); if (m) extra = ` vs ${m?.opponent || 'Rival desconocido'}`; }
+            if (t?.playerId) { const p = (window.players || []).find(x => x?.id === t.playerId); if (p) extra += ` · ${p?.name || 'Jugador desconocido'}`; }
             
-            if (t.type === 'expense') { displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`; } 
-            else if (t.isPaid === false) { displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; } 
-            else if (validAmt === 0) { displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; } 
-            else { displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`; }
+            const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0; 
+            let displayAmt = '', iconBadge = '';
+            
+            if (t?.type === 'expense') { displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`; } 
+            else if (t?.isPaid === false) { displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; } 
+            else if (validAmt === 0) { displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; } 
+            else { displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`; }
 
             let receiptBtn = '';
-            if (t.type === 'income' && t.playerId && validAmt > 0) { receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`; }
+            if (t?.type === 'income' && t?.playerId && validAmt > 0) { receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`; }
 
-            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${t.description}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right flex items-center justify-end">${receiptBtn}<button onclick="window.deleteTransaction('${t.id}')" class="admin-only text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Anular"><i class="fas fa-trash"></i></button></td></tr>`;
+            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t?.category || 'Sin categoría'}</p><p class="text-[10px] text-slate-400">${t?.description || ''}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right flex items-center justify-end">${receiptBtn}<button onclick="window.deleteTransaction('${t?.id}')" class="admin-only text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Anular"><i class="fas fa-trash"></i></button></td></tr>`;
         });
     }
     
