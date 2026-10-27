@@ -1,18 +1,17 @@
-// Este código obliga al Service Worker a desinstalarse y borrar toda la caché
 self.addEventListener('install', function(e) {
-  self.skipWaiting();
+  self.skipWaiting(); // Se instala inmediatamente
 });
 
 self.addEventListener('activate', function(e) {
+  // Limpia cualquier caché vieja que haya quedado
   e.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          return caches.delete(cacheName);
-        })
-      );
-    }).then(function() {
-      self.registration.unregister();
-    })
+    caches.keys().then(keys => Promise.all(keys.map(key => caches.delete(key))))
   );
+  self.clients.claim();
+});
+
+// Este bloque es OBLIGATORIO para que el móvil permita instalar la app
+self.addEventListener('fetch', function(e) {
+  // Estrategia "Network Only": Siempre busca la versión más reciente en internet
+  e.respondWith(fetch(e.request));
 });
