@@ -383,12 +383,12 @@
 </section>
 <!-- NUEVO: PERFIL 360 DEL JUGADOR -->
         <section id="playerProfile" class="hidden space-y-6">
-          <!-- Cabecera del Perfil -->
-            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft border border-slate-200 dark:border-slate-800 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative overflow-hidden">
+         <!-- Cabecera del Perfil -->
+            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft border border-slate-200 dark:border-slate-800 p-6 pt-16 sm:pt-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-bl-full pointer-events-none"></div>
                 <button type="button" onclick="window.closePlayerProfile()" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-brand-500 hover:bg-brand-50 rounded-full flex items-center justify-center transition z-50 shadow-sm"><i class="fas fa-arrow-left"></i></button>
                 
-                <div id="pp-image-container" class="shrink-0 relative z-10 mt-6 sm:mt-0"></div>
+                <div id="pp-image-container" class="shrink-0 relative z-10 mt-2 sm:mt-0"></div>
                 <div class="text-center sm:text-left flex-1 relative z-10 w-full mt-2 sm:mt-0">
                     <div class="flex flex-col sm:flex-row sm:justify-between items-center sm:items-start gap-4">
                         <div>
@@ -397,7 +397,7 @@
                             <p class="text-xs text-slate-500 font-medium mb-4" id="pp-age-foot"></p>
                             <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2" id="pp-badges"></div>
                         </div>
-                        <button id="pp-btn-edit" class="admin-only shrink-0 bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-900/30 hover:text-brand-600 dark:hover:text-brand-400 text-slate-500 dark:text-slate-400 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm"><i class="fas fa-edit"></i> Editar Ficha</button>
+                        <button id="pp-btn-edit" class="admin-only shrink-0 w-full sm:w-auto bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-900/30 hover:text-brand-600 dark:hover:text-brand-400 text-slate-500 dark:text-slate-400 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm"><i class="fas fa-edit"></i> Editar Ficha</button>
                     </div>
                 </div>
             </div>
@@ -535,7 +535,13 @@
                     <div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Dorsal</label><input type="number" id="p-number" class="input-premium"></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Posición</label><select id="p-position" multiple class="input-premium custom-scroll" style="height: 120px;"><option value="Portero">Portero</option><option value="Defensa Central">Defensa Central</option><option value="Lateral Derecho">Lateral Derecho</option><option value="Lateral Izquierdo">Lateral Izquierdo</option><option value="Carrilero">Carrilero</option><option value="Mediocentro Defensivo">Pivote / MCD</option><option value="Mediocentro">Mediocentro / MC</option><option value="Interior">Interior</option><option value="Mediapunta">Mediapunta / MCO</option><option value="Extremo Derecho">Extremo Derecho</option><option value="Extremo Izquierdo">Extremo Izquierdo</option><option value="Segundo Delantero">Segundo Delantero</option><option value="Delantero Centro">Delantero Centro / 9</option></select></div></div>
                     <div class="grid grid-cols-3 gap-4"><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nacimiento</label><input type="date" id="p-birthdate" class="input-premium px-2"></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Pie Dom.</label><select id="p-foot" class="input-premium px-2"><option value="">N/E</option><option value="Diestro">Diestro</option><option value="Zurdo">Zurdo</option><option value="Ambidiestro">Ambi.</option></select></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Estado</label><select id="p-status" class="input-premium px-2" onchange="window.toggleReturnDateField()"><option value="active">Activo ✅</option><option value="injured">Lesión 🚑</option><option value="suspended">Sanción 🟥</option><option value="absent">Ausente ✈️</option><option value="inactive">Inactivo ⏸️</option></select></div></div>
                     
-                    <div id="p-return-date-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 mt-4">Fecha de Alta / Retorno</label><input type="date" id="p-return-date" class="input-premium"><p class="text-[10px] text-slate-400 mt-1 italic">El estado cambiará automáticamente a "Activo" cuando se cumpla la fecha.</p></div>
+                   <div id="p-return-date-container" class="hidden">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Fecha de Alta / Retorno</label><input type="date" id="p-return-date" class="input-premium"></div>
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Detalles / Motivo</label><input type="text" id="p-status-notes" placeholder="Ej. Esguince, Viaje laboral..." class="input-premium"></div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-2 italic">El estado cambiará automáticamente a "Activo" cuando se cumpla la fecha.</p>
+                    </div>
                     
                     <div class="pt-4 pb-2 border-t border-slate-100 dark:border-slate-800 border-b flex flex-col gap-3 mt-4"><label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="p-is-paid-up" class="rounded text-green-500 w-5 h-5" checked><span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Al día con los pagos</span></label><label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="p-is-staff" class="rounded text-purple-500 w-5 h-5"><span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Es parte del Cuerpo Técnico (DT)</span></label></div>
                     <div class="pt-4"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Torneos Disponibles</label><div class="flex gap-6 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="p-avail-f11" class="rounded text-brand-600 w-4 h-4" checked><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Fútbol 11</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="p-avail-f7" class="rounded text-brand-600 w-4 h-4" checked><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Fútbol 7</span></label></div></div>
