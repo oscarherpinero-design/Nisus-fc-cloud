@@ -383,10 +383,12 @@
 </section>
 <!-- NUEVO: PERFIL 360 DEL JUGADOR -->
         <section id="playerProfile" class="hidden space-y-6">
-            <!-- Cabecera del Perfil -->
+           <!-- Cabecera del Perfil -->
             <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft border border-slate-200 dark:border-slate-800 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-bl-full pointer-events-none"></div>
-                <button onclick="window.showSection('players')" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-brand-500 rounded-full flex items-center justify-center transition z-10"><i class="fas fa-arrow-left"></i></button>
+                
+                <!-- BOTÓN CORREGIDO AQUÍ -->
+                <button type="button" onclick="window.closePlayerProfile()" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-brand-500 hover:bg-brand-50 rounded-full flex items-center justify-center transition z-50 shadow-sm"><i class="fas fa-arrow-left"></i></button>
                 
                 <div id="pp-image-container" class="shrink-0 relative z-10"></div>
                 <div class="text-center sm:text-left flex-1 relative z-10">
