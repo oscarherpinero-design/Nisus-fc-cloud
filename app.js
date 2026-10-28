@@ -1760,11 +1760,6 @@ function setupRealtimeListeners() {
 window.initApp = async function() { 
     if(window.appInitialized) return; window.appInitialized = true;
     
-    // Disparamos la búsqueda de la tasa BCV (si la función existe)
-    if (typeof window.fetchVenezuelaRates === 'function') {
-        window.fetchVenezuelaRates();
-    }
-    
     await loadInitialData(); 
     setupRealtimeListeners(); 
     window.setupPWA(); 
