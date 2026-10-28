@@ -1093,6 +1093,46 @@ window.copyGroupMessage = function() {
 // ==========================================
 // RENDERIZADO DE FINANZAS
 // ==========================================
+window.exportFinancesCSV = function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores pueden exportar', true);
+    if (!window.finances || window.finances.length === 0) return window.showToast('No hay datos para exportar', true);
+
+    let csvContent = "\uFEFF"; // BOM para que Excel reconozca tildes y eñes
+    csvContent += "ID Movimiento,Fecha,Tipo,Categoría,Descripción,Jugador / Rival,Monto ($),Estado\n";
+
+    const sorted = [...window.finances].sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+    
+    sorted.forEach(t => {
+        const id = t.id || '';
+        const fecha = t.date ? new Date(t.date+'T12:00:00').toLocaleDateString('es-ES') : '';
+        const tipo = t.type === 'income' ? 'Ingreso' : 'Egreso';
+        const categoria = `"${t.category || ''}"`;
+        const desc = `"${(t.description || '').replace(/"/g, '""')}"`;
+        
+        let extra = '""';
+        if (t.matchId) { const m = (window.matches || []).find(x => x.id === t.matchId); if (m) extra = `"vs ${m.opponent || ''}"`; }
+        if (t.playerId) { const p = (window.players || []).find(x => x.id === t.playerId); if (p) extra = `"${p.name || ''}"`; }
+
+        const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
+        const monto = (t.amount || 0).toFixed(2);
+        
+        let estado = 'Pagado / Saldado';
+        if (t.type === 'income' && t.isPaid === false) estado = 'Pendiente de Cobro';
+        if (t.type === 'income' && validAmt === 0 && t.isPaid !== false) estado = 'Pagado (Saldado con Abonos)';
+
+        csvContent += `${id},${fecha},${tipo},${categoria},${desc},${extra},${monto},${estado}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Tesoreria_NISUS_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.showToast("Excel descargado correctamente");
+};
 window.renderFinances = function() {
     let income = 0, expense = 0;
     (window.finances || []).forEach(t => { 
@@ -1382,7 +1422,7 @@ window.renderExpensesDonutChart = function() {
 };
 
 /* -----------------------------------------------------
-   INICIALIZACIÓN
+   INICIALIZACIÓN Y OPTIMIZACIÓN DE RENDIMIENTO
 ------------------------------------------------------ */
 window.checkAutoActivations = async function() {
     if (!window.isAdmin) return; const t = new Date().toISOString().split('T')[0]; const u = [];
@@ -1404,6 +1444,21 @@ async function loadInitialData() {
     } catch(e) { if(el) el.innerHTML = '<i class="fas fa-exclamation-triangle mr-2 text-red-400"></i> Error de conexión'; console.error(e); }
 }
 
+// OPTIMIZACIÓN: Función Debounce para evitar congelamiento de UI en descargas masivas
+function debounceRender(func, wait = 150) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+const safeUpdateDashboard = debounceRender(() => { if(!document.getElementById('dashboard').classList.contains('hidden') || !document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); });
+const safeRenderPlayers = debounceRender(() => { if(!document.getElementById('players').classList.contains('hidden')) { window.renderPlayers(); window.renderBirthdaysAvailability(); } });
+const safeRenderMatches = debounceRender(() => { if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); });
+const safeRenderTrainings = debounceRender(() => { if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings(); });
+const safeRenderFinances = debounceRender(() => { if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+
 function setupRealtimeListeners() {
     const sId = window.generateId(); const pRef = db.collection('sistema').doc('presencia_' + sId);
     setInterval(() => { if(document.visibilityState === 'visible') pRef.set({ lastSeen: Date.now() }).catch(()=>{}); }, 30000);
@@ -1418,10 +1473,33 @@ function setupRealtimeListeners() {
         const c = document.getElementById('online-count'); if(c) c.textContent = o;
     });
 
-    db.collection(window.playersPath).onSnapshot((s) => { if(!window.isReady) return; window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id })); window.checkAutoActivations(); if(!document.getElementById('players').classList.contains('hidden')) { window.renderPlayers(); window.renderBirthdaysAvailability(); } if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList(); if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
-    db.collection(window.matchesPath).onSnapshot((s) => { if(!window.isReady) return; window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); window.updateSeasonDropdown(); if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); if(!document.getElementById('dashboard').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
-    db.collection(window.trainingsPath).onSnapshot((s) => { if(!window.isReady) return; window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id })); if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings(); if(!document.getElementById('players').classList.contains('hidden')) window.renderPlayers(); if(!document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); });
-    db.collection(window.financesPath).onSnapshot((s) => { if(!window.isReady) return; window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+    db.collection(window.playersPath).onSnapshot((s) => { 
+        if(!window.isReady) return; 
+        window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id })); 
+        window.checkAutoActivations(); 
+        safeRenderPlayers(); safeUpdateDashboard(); safeRenderFinances();
+        if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList(); 
+        if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist(); 
+    });
+    
+    db.collection(window.matchesPath).onSnapshot((s) => { 
+        if(!window.isReady) return; 
+        window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); 
+        window.updateSeasonDropdown(); 
+        safeRenderMatches(); safeUpdateDashboard(); safeRenderPlayers(); safeRenderFinances(); 
+    });
+    
+    db.collection(window.trainingsPath).onSnapshot((s) => { 
+        if(!window.isReady) return; 
+        window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id })); 
+        safeRenderTrainings(); safeRenderPlayers(); safeUpdateDashboard(); 
+    });
+    
+    db.collection(window.financesPath).onSnapshot((s) => { 
+        if(!window.isReady) return; 
+        window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id })); 
+        safeRenderFinances(); 
+    });
 }
 
 window.initApp = async function() { 
