@@ -1379,9 +1379,12 @@ window.fetchVenezuelaRates = async function() {
     }
 };
 window.applyCustomRate = function() {
-    const rawVal = document.getElementById('custom-rate-input').value;
-    // Forzamos a que reemplace las comas por puntos antes de calcular
-    const val = parseFloat(rawVal.replace(',', '.'));
+    const inputEl = document.getElementById('custom-rate-input');
+    if (!inputEl) return; // Si no encuentra el cajón, se detiene para no dar error
+    
+    const rawVal = inputEl.value;
+    // Forzamos la limpieza del texto y cambiamos comas por puntos
+    const val = parseFloat(rawVal.replace(/[^0-9,.]/g, '').replace(',', '.'));
     
     if (!isNaN(val) && val > 0) { 
         window.currentExchangeRate = val; 
@@ -1389,7 +1392,6 @@ window.applyCustomRate = function() {
         window.currentExchangeRate = null; 
     }
     
-    // Volvemos a dibujar las finanzas para que el cambio se vea al instante
     window.renderFinances();
 };
 
