@@ -274,10 +274,12 @@
                         <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><ul id="debtors-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></ul></div>
                     </div>
                     
-                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-2 flex flex-col">
-                        <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
+                    <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
                             <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-history text-brand-500 mr-2"></i>Historial</h3>
-                            <button onclick="window.clearFinancialHistory()" class="admin-only text-[10px] text-red-500 hover:text-red-700 font-bold bg-red-50 px-2 py-1 rounded flex items-center gap-1"><i class="fas fa-trash-alt"></i> Vaciar</button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.exportFinancesCSV()" class="admin-only text-[10px] text-green-600 hover:text-green-800 font-bold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"><i class="fas fa-file-csv text-sm"></i> Exportar CSV</button>
+                                <button onclick="window.clearFinancialHistory()" class="admin-only text-[10px] text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded flex items-center gap-1 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                            </div>
                         </div>
                         <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><table class="w-full text-left border-collapse"><tbody id="transactions-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></tbody></table></div>
                     </div>
