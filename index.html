@@ -250,14 +250,15 @@
             </div>
             
             <div id="fin-tab-resumen" class="space-y-8">
-                <!-- NUEVO: Panel de Conversor Manual / BCV -->
-                <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+               <!-- NUEVO: Panel de Conversor Manual / BCV -->
+                <div class="admin-only bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center"><i class="fas fa-exchange-alt"></i></div>
                         <span class="font-bold text-sm text-slate-700 dark:text-slate-300">Convertir a Bolívares</span>
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="number" id="custom-rate-input" step="0.01" placeholder="Tasa manual..." class="input-premium py-2 px-3 text-sm w-32" oninput="window.applyCustomRate()">
+                        <!-- Cambiamos a type="text" con inputmode para evitar el bug de las comas en celulares -->
+                        <input type="text" inputmode="decimal" id="custom-rate-input" placeholder="Tasa manual..." class="input-premium py-2 px-3 text-sm w-32" onkeyup="window.applyCustomRate()">
                         <button onclick="window.fetchVenezuelaRates()" class="bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 hover:bg-brand-100 px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1"><i class="fas fa-sync" id="bcv-spinner"></i> Auto BCV</button>
                         <button onclick="window.clearRate()" class="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm" title="Limpiar"><i class="fas fa-times"></i></button>
                     </div>
