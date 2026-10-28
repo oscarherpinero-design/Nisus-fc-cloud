@@ -1378,7 +1378,27 @@ window.fetchVenezuelaRates = async function() {
         if (rateSpinner) rateSpinner.classList.remove('fa-spin');
     }
 };
+window.applyCustomRate = function() {
+    const rawVal = document.getElementById('custom-rate-input').value;
+    // Forzamos a que reemplace las comas por puntos antes de calcular
+    const val = parseFloat(rawVal.replace(',', '.'));
+    
+    if (!isNaN(val) && val > 0) { 
+        window.currentExchangeRate = val; 
+    } else { 
+        window.currentExchangeRate = null; 
+    }
+    
+    // Volvemos a dibujar las finanzas para que el cambio se vea al instante
+    window.renderFinances();
+};
 
+window.clearRate = function() {
+    window.currentExchangeRate = null;
+    const input = document.getElementById('custom-rate-input');
+    if(input) input.value = '';
+    window.renderFinances();
+};
 window.renderFinances = function() {
     let income = 0, expense = 0;
     (window.finances || []).forEach(t => { 
