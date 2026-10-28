@@ -200,8 +200,7 @@ window.getPlayerStat = function(player, statKey) {
    GESTIÓN DE JUGADORES
 ------------------------------------------------------ */
 window.toggleReturnDateField = function() { const s = document.getElementById('p-status').value; const c = document.getElementById('p-return-date-container'); if(s==='injured'||s==='absent'||s==='inactive') c.classList.remove('hidden'); else c.classList.add('hidden'); };
-window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').innerHTML = '<i class="fas fa-user-plus text-brand-500 mr-2"></i>Inscribir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; window._pendingPhotoBlob = null; window._removePhotoFlag = false; const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.toggleReturnDateField(); window._setupPhotoDropzone(); window.showSection('playerForm'); };
-window.handleImageUpload = function(e) { const f = e.target.files[0]; if(!f) return; if(!f.type.startsWith('image/')) return window.showToast('Solo imágenes', true); window._compressPlayerImage(f); };
+window.newPlayer = function() { document.getElementById('player-form').reset(); document.getElementById('p-id').value = ''; document.getElementById('form-title').innerHTML = '<i class="fas fa-user-plus text-brand-500 mr-2"></i>Inscribir Miembro'; document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); document.getElementById('p-image-base64').value = ''; window._pendingPhotoBlob = null; window._removePhotoFlag = false; const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); const sel = document.getElementById('p-position'); for(let i=0;i<sel.options.length;i++) sel.options[i].selected=false; window.toggleReturnDateField(); const notesInput = document.getElementById('p-status-notes'); if(notesInput) notesInput.value = ''; window._setupPhotoDropzone(); window.showSection('playerForm'); };window.handleImageUpload = function(e) { const f = e.target.files[0]; if(!f) return; if(!f.type.startsWith('image/')) return window.showToast('Solo imágenes', true); window._compressPlayerImage(f); };
 window._compressPlayerImage = function(file) {
     const spinner = document.getElementById('p-image-spinner'), preview = document.getElementById('p-image-preview'), placeholder = document.getElementById('p-image-placeholder'), overlay = document.getElementById('p-image-overlay');
     if(spinner) spinner.classList.add('flex-show');
@@ -242,22 +241,27 @@ window.savePlayer = async function(e) {
     const btn = document.getElementById('btn-save-player'); btn.disabled=true; btn.textContent="Guardando...";
     const id = document.getElementById('p-id').value; const docId = id || window.generateId();
     const positions = Array.from(document.getElementById('p-position').selectedOptions).map(o=>o.value);
-    const pStatus = document.getElementById('p-status').value || 'active'; let returnD = null;
-    if(pStatus === 'injured' || pStatus === 'absent' || pStatus === 'inactive') { returnD = document.getElementById('p-return-date').value || null; }
+    const pStatus = document.getElementById('p-status').value || 'active'; 
+    let returnD = null, statusNotes = '';
+    if(pStatus === 'injured' || pStatus === 'absent' || pStatus === 'inactive') { 
+        returnD = document.getElementById('p-return-date').value || null; 
+        statusNotes = document.getElementById('p-status-notes')?.value || '';
+    }
     const oldP = window.players.find(x => x.id === id);
     let imageUrl = document.getElementById('p-image-base64').value;
     if (window._removePhotoFlag) { imageUrl = ''; try { await firebase.storage().ref(`jugadores/${docId}.jpg`).delete(); } catch(err) {} } 
-    else if (window._pendingPhotoBlob) {
-        try { const ref = firebase.storage().ref(`jugadores/${docId}.jpg`); await ref.put(window._pendingPhotoBlob); imageUrl = await ref.getDownloadURL(); } catch (error) { window.showToast('Error subiendo imagen', true); imageUrl = oldP ? (oldP.image || '') : ''; }
+    else if (window._pendingPhotoBlob) { try { const ref = firebase.storage().ref(`jugadores/${docId}.jpg`); await ref.put(window._pendingPhotoBlob); imageUrl = await ref.getDownloadURL(); } catch (error) { window.showToast('Error subiendo imagen', true); imageUrl = oldP ? (oldP.image || '') : ''; }
     } else if (!imageUrl && oldP && oldP.image && !oldP.image.startsWith('data:image')) { imageUrl = oldP.image; }
     
-    const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: imageUrl, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
+    const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: imageUrl, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, statusNotes: statusNotes, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
     if(oldP && oldP.debtAmount !== undefined) pData.debtAmount = oldP.debtAmount;
     try { await db.collection(window.playersPath).doc(docId).set(pData); window._pendingPhotoBlob = null; window._removePhotoFlag = false; window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Ficha"; }
 };
 window.editPlayer = function(id) {
     const p = window.players.find(x => x.id === id); if(!p) return;
-    document.getElementById('p-id').value = p.id; document.getElementById('p-name').value = p.name; document.getElementById('p-alias').value = p.alias||''; document.getElementById('p-show-alias').checked = p.showAlias||false; document.getElementById('p-number').value = p.number||''; document.getElementById('p-image-base64').value = p.image||''; document.getElementById('p-birthdate').value = p.birthdate||''; document.getElementById('p-foot').value = p.foot||''; document.getElementById('p-status').value = p.status||'active'; document.getElementById('p-return-date').value = p.returnDate||''; document.getElementById('p-avail-f11').checked = p.availableF11; document.getElementById('p-avail-f7').checked = p.availableF7; document.getElementById('p-is-staff').checked = p.isStaff||false; document.getElementById('p-is-paid-up').checked = p.isPaidUp!==false;
+    document.getElementById('p-id').value = p.id; document.getElementById('p-name').value = p.name; document.getElementById('p-alias').value = p.alias||''; document.getElementById('p-show-alias').checked = p.showAlias||false; document.getElementById('p-number').value = p.number||''; document.getElementById('p-image-base64').value = p.image||''; document.getElementById('p-birthdate').value = p.birthdate||''; document.getElementById('p-foot').value = p.foot||''; document.getElementById('p-status').value = p.status||'active'; document.getElementById('p-return-date').value = p.returnDate||''; 
+    const notesInput = document.getElementById('p-status-notes'); if(notesInput) notesInput.value = p.statusNotes||'';
+    document.getElementById('p-avail-f11').checked = p.availableF11; document.getElementById('p-avail-f7').checked = p.availableF7; document.getElementById('p-is-staff').checked = p.isStaff||false; document.getElementById('p-is-paid-up').checked = p.isPaidUp!==false;
     const sel = document.getElementById('p-position'); const pos = p.positions||(p.position?[p.position]:[]); for(let i=0;i<sel.options.length;i++) sel.options[i].selected = pos.includes(sel.options[i].value);
     if(p.image){ document.getElementById('p-image-preview').src=p.image; document.getElementById('p-image-preview').classList.remove('hidden'); document.getElementById('p-image-placeholder').classList.add('hidden'); const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.add('flex-show'); } else { document.getElementById('p-image-preview').classList.add('hidden'); document.getElementById('p-image-placeholder').classList.remove('hidden'); const overlay = document.getElementById('p-image-overlay'); if(overlay) overlay.classList.remove('flex-show'); }
     window._pendingPhotoBlob = null; window._removePhotoFlag = false; window._setupPhotoDropzone();
@@ -508,11 +512,16 @@ window.renderProfileRendimiento = function(p) {
 window.renderProfileClinica = function(p) {
     const medEl = document.getElementById('pp-medical-status');
     const returnDateStr = p.returnDate && p.returnDate.includes('-') ? p.returnDate.split('-').reverse().join('/') : 'Indefinido';
+    const notesHtml = p.statusNotes ? `<p class="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-black/20 p-2.5 rounded-lg italic">"${p.statusNotes}"</p>` : '';
     
     if(p.status === 'injured') {
-        medEl.innerHTML = `<div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800 text-center"><i class="fas fa-briefcase-medical text-3xl text-red-500 mb-2"></i><p class="font-black text-red-700 dark:text-red-400">Lesionado</p><p class="text-xs text-red-600 dark:text-red-300 mt-1">Regreso estimado: ${returnDateStr}</p></div>`;
+        medEl.innerHTML = `<div class="bg-red-50 dark:bg-red-900/20 p-5 rounded-xl border border-red-200 dark:border-red-800/50 text-center"><i class="fas fa-briefcase-medical text-3xl text-red-500 mb-2"></i><p class="font-black text-red-700 dark:text-red-400">Lesionado</p><p class="text-xs text-red-600 dark:text-red-300 mt-1">Regreso estimado: ${returnDateStr}</p>${notesHtml}</div>`;
+    } else if(p.status === 'suspended') {
+        medEl.innerHTML = `<div class="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-xl border border-orange-200 dark:border-orange-800/50 text-center"><i class="fas fa-ban text-3xl text-orange-500 mb-2"></i><p class="font-black text-orange-700 dark:text-orange-400">Suspendido</p><p class="text-xs text-orange-600 dark:text-orange-300 mt-1">Sanción disciplinaria</p>${notesHtml}</div>`;
+    } else if(p.status === 'absent') {
+        medEl.innerHTML = `<div class="bg-slate-100 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-300 dark:border-slate-700 text-center"><i class="fas fa-plane text-3xl text-slate-500 mb-2"></i><p class="font-black text-slate-700 dark:text-slate-300">Ausente</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Regreso estimado: ${returnDateStr}</p>${notesHtml}</div>`;
     } else {
-        medEl.innerHTML = `<div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-200 dark:border-green-800 text-center"><i class="fas fa-heartbeat text-3xl text-green-500 mb-2"></i><p class="font-black text-green-700 dark:text-green-400">En Forma Óptima</p><p class="text-xs text-green-600 dark:text-green-300 mt-1">Apto para jugar</p></div>`;
+        medEl.innerHTML = `<div class="bg-green-50 dark:bg-green-900/20 p-5 rounded-xl border border-green-200 dark:border-green-800/50 text-center"><i class="fas fa-heartbeat text-3xl text-green-500 mb-2"></i><p class="font-black text-green-700 dark:text-green-400">En Forma Óptima</p><p class="text-xs text-green-600 dark:text-green-300 mt-1">Apto para jugar</p></div>`;
     }
 
     const discEl = document.getElementById('pp-discipline-list'); discEl.innerHTML = '';
@@ -521,7 +530,7 @@ window.renderProfileClinica = function(p) {
     tournaments.forEach(t => {
         const d = window.getDiscipline(p.id, t);
         if(d.yellows > 0 || d.suspended) {
-            discEl.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl mb-2 border border-slate-100 dark:border-slate-800"><span class="font-bold text-xs text-slate-700 dark:text-slate-300">${t}</span><div><span class="text-yellow-500 font-black text-xs mr-3">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="bg-red-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase">Sancionado</span>' : '<span class="bg-green-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase">Ok</span>'}</div></div>`;
+            discEl.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl mb-2 border border-slate-100 dark:border-slate-800"><span class="font-bold text-xs text-slate-700 dark:text-slate-300">${t}</span><div><span class="text-yellow-500 font-black text-xs mr-3">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="bg-red-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-sm">Sancionado</span>' : '<span class="bg-green-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-sm">Ok</span>'}</div></div>`;
         }
     });
     if(discEl.innerHTML === '') discEl.innerHTML = '<p class="text-sm text-slate-500 italic text-center py-4">Historial limpio. ¡Buen comportamiento!</p>';
