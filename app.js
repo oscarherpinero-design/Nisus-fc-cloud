@@ -389,6 +389,22 @@ window.openPlayerProfile = function(id) {
     document.getElementById('pp-name').textContent = validName;
     document.getElementById('pp-alias-pos').textContent = p.alias ? `"${p.alias}" · ${pos}` : pos;
     
+    // Cálculo de Edad y Pie
+    let age='--', ft=p.foot ? p.foot.toUpperCase() : 'N/E'; 
+    if(p.birthdate && p.birthdate.includes('-')) { 
+        const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1]-1, p.birthdate.split('-')[2]), td = new Date(); 
+        let ca = td.getFullYear()-bd.getFullYear(); 
+        const m = td.getMonth()-bd.getMonth(); 
+        if(m<0||(m===0&&td.getDate()<bd.getDate())) ca--; 
+        age = ca+' AÑOS'; 
+    }
+    const ageFootEl = document.getElementById('pp-age-foot');
+    if (ageFootEl) ageFootEl.innerHTML = `<i class="fas fa-birthday-cake mr-1"></i> ${age} <span class="mx-2 text-slate-300 dark:text-slate-700">|</span> <i class="fas fa-shoe-prints mr-1"></i> Pie: ${ft}`;
+    
+    // Acción del botón Editar
+    const editBtn = document.getElementById('pp-btn-edit');
+    if (editBtn) editBtn.onclick = () => window.editPlayer(p.id);
+    
     const imgCont = document.getElementById('pp-image-container');
     const ini = validName.charAt(0).toUpperCase();
     imgCont.innerHTML = p.image 
@@ -396,14 +412,14 @@ window.openPlayerProfile = function(id) {
         : `<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl ${p.isStaff?'bg-purple-100 text-purple-600':'bg-brand-100 text-brand-600'} font-black flex items-center justify-center text-4xl border-4 border-white dark:border-slate-800 shadow-lg">${ini}</div>`;
     
     const badgesEl = document.getElementById('pp-badges'); badgesEl.innerHTML = '';
-    if(p.number) badgesEl.innerHTML += `<span class="bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-black">#${p.number}</span>`;
-    if(p.availableF11) badgesEl.innerHTML += `<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F11</span>`;
-    if(p.availableF7) badgesEl.innerHTML += `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F7</span>`;
+    if(p.number) badgesEl.innerHTML += `<span class="bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-black shadow-sm">#${p.number}</span>`;
+    if(p.availableF11) badgesEl.innerHTML += `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F11</span>`;
+    if(p.availableF7) badgesEl.innerHTML += `<span class="bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F7</span>`;
     
     window.renderProfileRendimiento(p);
     window.renderProfileClinica(p);
     window.renderProfileFinanzas(p);
-    window.renderProfileFicha(p); // Llama a la lógica de tu tarjeta anterior
+    window.renderProfileFicha(p);
     
     window.switchProfileTab('rendimiento');
     window.showSection('playerProfile');
