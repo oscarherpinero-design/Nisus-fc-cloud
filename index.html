@@ -198,9 +198,10 @@
             </div>
         </section>
 
-        <section id="stats" class="hidden space-y-8">
+       <section id="stats" class="hidden space-y-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Estadísticas</h2><p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Rankings, MVP y compromiso del equipo <span id="stats-season-label" class="font-bold text-brand-600 dark:text-brand-400 hidden"></span></p></div>
+                <button onclick="window.openSeasonCloseModal()" class="admin-only bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-sm"><i class="fas fa-trophy"></i> Cerrar Temporada</button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -546,7 +547,29 @@
                 </form>
             </div>
         </section>
-
+<!-- Modal de Cierre de Temporada -->
+        <div id="modalSeasonClose" class="hidden fixed inset-0 bg-slate-900/90 z-[70] flex items-center justify-center p-4 backdrop-blur-sm modal-animate">
+            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark w-full max-w-lg overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
+                    <h3 class="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-award text-purple-500"></i> Cierre de Temporada</h3>
+                    <button onclick="document.getElementById('modalSeasonClose').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-6 space-y-5">
+                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Se archivarán todos los partidos actuales que no pertenezcan a una temporada pasada. Esto generará el registro histórico y dejará la pantalla principal lista para un nuevo torneo.</p>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nombre Oficial de la Temporada *</label>
+                        <input type="text" id="season-close-name" placeholder="Ej. Torneo Apertura 2026" class="input-premium">
+                    </div>
+                    <div id="season-close-summary" class="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-xl border border-purple-100 dark:border-purple-800/30 text-sm">
+                        <!-- El resumen se inyecta por JS -->
+                    </div>
+                </div>
+                <div class="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
+                    <button onclick="document.getElementById('modalSeasonClose').classList.add('hidden')" class="px-5 py-2.5 text-slate-500 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+                    <button onclick="window.executeSeasonClose()" id="btn-confirm-season" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition flex items-center gap-2"><i class="fas fa-archive"></i> Archivar Temporada</button>
+                </div>
+            </div>
+        </div>
         <!-- Elementos Comunes (Toast, Modales Confirm, etc) -->
         <div id="modalPlayerCard" class="hidden fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
             <div class="relative max-w-sm w-full flex flex-col items-center"><button onclick="document.getElementById('modalPlayerCard').classList.add('hidden')" class="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition backdrop-blur"><i class="fas fa-times text-xl"></i></button><div id="card-render-container" class="mb-6 scale-95 md:scale-100 transition-transform"></div><button id="btn-download-card" class="w-full max-w-[360px] bg-brand-500 hover:bg-brand-600 text-white py-4 rounded-2xl font-black tracking-widest uppercase transition-colors shadow-lg flex justify-center items-center gap-2"><i class="fas fa-download"></i> Guardar Imagen</button></div>
