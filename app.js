@@ -1249,10 +1249,10 @@ window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
     const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(finId), tData);
 
     if (debtId.startsWith('arb_')) {
-        if (isFullPayment) { const parentId = debtId.split('_')[1]; const arbTx = window.finances.find(x => x.id === parentId); if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true }); }
+        if (isFullPayment) { const parentId = debtId.split('_')[1]; const arbTx = (window.finances||[]).find(x => x.id === parentId); if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true }); }
     } else {
         if (isFullPayment) batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
-        const p = window.players.find(x => x.id === playerId);
+        const p = (window.players||[]).find(x => x.id === playerId);
         if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
     }
 
@@ -1260,7 +1260,7 @@ window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
         await batch.commit();
         window._lastPaidTx = tData;
         window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
-        window.downloadReceiptFromTx(finId);
+        // Se ha eliminado la descarga automática del recibo aquí
         window.openPaySpecific(playerId); 
         window.renderFinances();
     } catch(e) { window.showToast('Error al registrar abono', true); }
