@@ -1753,7 +1753,12 @@ function setupRealtimeListeners() {
 
 window.initApp = async function() { 
     if(window.appInitialized) return; window.appInitialized = true;
-    window.fetchVenezuelaRates(); // <--- Llama a la API del dólar
+    
+    // Disparamos la búsqueda de la tasa BCV (si la función existe)
+    if (typeof window.fetchVenezuelaRates === 'function') {
+        window.fetchVenezuelaRates();
+    }
+    
     await loadInitialData(); 
     setupRealtimeListeners(); 
     window.setupPWA(); 
@@ -1763,3 +1768,10 @@ window.initApp = async function() {
     const p = document.getElementById('tactical-pitch'); 
     if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
 };
+
+// ¡ESTA ES LA LÍNEA VITAL QUE FALTABA! Enciende la aplicación.
+if (document.readyState === 'loading') { 
+    document.addEventListener('DOMContentLoaded', window.initApp); 
+} else { 
+    window.initApp(); 
+}
