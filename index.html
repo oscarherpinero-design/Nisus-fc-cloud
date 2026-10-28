@@ -81,13 +81,7 @@
                     <button onclick="window.setFilter('f11')" id="btn-filter-f11" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-300 hover:text-white transition font-medium">F11</button>
                     <button onclick="window.setFilter('f7')" id="btn-filter-f7" class="text-xs px-3 sm:text-sm sm:px-4 py-1.5 rounded-lg text-brand-100 dark:text-slate-300 hover:text-white transition font-medium">F7</button>
                 </div>
-               <div class="w-px h-5 bg-brand-700 dark:bg-slate-600 mx-2 sm:mx-3"></div>
-                
-                <!-- Widget de Tasa BCV -->
-                <div class="hidden sm:flex items-center gap-1.5 mr-2 bg-slate-900/50 px-2 py-1 rounded-lg border border-slate-700/50" title="Tasa BCV Actualizada">
-                    <i class="fas fa-sync fa-spin text-[10px] text-green-400" id="rate-spinner"></i>
-                    <span id="rate-text" class="text-[10px] font-bold text-green-400">Tasa...</span>
-                </div>
+                <div class="w-px h-5 bg-brand-700 dark:bg-slate-600 mx-2 sm:mx-3"></div>
                 
                 <div class="hidden sm:flex items-center gap-2 mr-3 px-2"><span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span><span id="online-count" class="text-sm font-bold text-green-400">1</span></div>
                 <button onclick="window.toggleAdmin()" id="btn-admin" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-brand-800 dark:hover:bg-slate-700 transition"><i class="fas fa-lock"></i></button>
@@ -256,6 +250,18 @@
             </div>
             
             <div id="fin-tab-resumen" class="space-y-8">
+                <!-- NUEVO: Panel de Conversor Manual / BCV -->
+                <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center"><i class="fas fa-exchange-alt"></i></div>
+                        <span class="font-bold text-sm text-slate-700 dark:text-slate-300">Convertir a Bolívares</span>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <input type="number" id="custom-rate-input" step="0.01" placeholder="Tasa manual..." class="input-premium py-2 px-3 text-sm w-32" oninput="window.applyCustomRate()">
+                        <button onclick="window.fetchVenezuelaRates()" class="bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 hover:bg-brand-100 px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1"><i class="fas fa-sync" id="bcv-spinner"></i> Auto BCV</button>
+                        <button onclick="window.clearRate()" class="bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm" title="Limpiar"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 transition-colors">
                         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2" id="lbl-balance">Saldo Total en Caja</p>
