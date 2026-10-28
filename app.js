@@ -1344,6 +1344,35 @@ window.exportFinancesCSV = function() {
     document.body.removeChild(link);
     window.showToast("Excel descargado correctamente");
 };
+window.exchangeRateBCV = null;
+
+window.fetchVenezuelaRates = async function() {
+    try {
+        const response = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv');
+        const data = await response.json();
+        
+        if (data && data.monitors && data.monitors.bcv) {
+            window.exchangeRateBCV = data.monitors.bcv.price;
+            const rateText = document.getElementById('rate-text');
+            const rateSpinner = document.getElementById('rate-spinner');
+            
+            if (rateText) rateText.innerHTML = `BCV: ${window.exchangeRateBCV.toFixed(2)} Bs`;
+            if (rateSpinner) {
+                rateSpinner.classList.remove('fa-spin', 'fa-sync');
+                rateSpinner.classList.add('fa-money-bill-wave');
+            }
+            
+            if (!document.getElementById('finances').classList.contains('hidden')) {
+                window.renderFinances();
+            }
+        }
+    } catch (error) {
+        console.error("Error obteniendo tasa:", error);
+        const rateText = document.getElementById('rate-text');
+        if (rateText) rateText.textContent = "Error BCV";
+    }
+};
+
 window.renderFinances = function() {
     let income = 0, expense = 0;
     (window.finances || []).forEach(t => { 
@@ -1353,9 +1382,18 @@ window.renderFinances = function() {
     });
     
     const balance = income - expense;
-    const elB = document.getElementById('fin-balance'); if(elB) elB.textContent = `${balance.toFixed(2)}`;
-    const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+${income.toFixed(2)}`;
-    const elE = document.getElementById('fin-expense'); if(elE) elE.textContent = `-${expense.toFixed(2)}`;
+    
+    // Asignación de Dólares
+    const elB = document.getElementById('fin-balance'); if(elB) elB.textContent = `$${balance.toFixed(2)}`;
+    const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+$${income.toFixed(2)}`;
+    const elE = document.getElementById('fin-expense'); if(elE) elE.textContent = `-$${expense.toFixed(2)}`;
+
+    // Asignación de Bolívares (Si la API ya cargó)
+    if (window.exchangeRateBCV) {
+        const elB_bs = document.getElementById('fin-balance-bs'); if(elB_bs) elB_bs.textContent = `≈ ${(balance * window.exchangeRateBCV).toFixed(2)} Bs`;
+        const elI_bs = document.getElementById('fin-income-bs'); if(elI_bs) elI_bs.textContent = `≈ ${(income * window.exchangeRateBCV).toFixed(2)} Bs`;
+        const elE_bs = document.getElementById('fin-expense-bs'); if(elE_bs) elE_bs.textContent = `≈ ${(expense * window.exchangeRateBCV).toFixed(2)} Bs`;
+    }
 
     if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') {
         window.renderMonthlyDues();
@@ -1371,19 +1409,19 @@ window.renderFinances = function() {
             if ((dData?.total || 0) > 0.01) {
                 hasDebtors = true; 
                 const mor = typeof window.getMorosityStatus === 'function' ? window.getMorosityStatus(p.id) : { label: 'Deuda', color: 'yellow' };
-                
                 const badgeColors = mor.color === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' : mor.color === 'yellow' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm';
                 const icon = mor.color === 'green' ? 'fa-check-circle' : mor.color === 'yellow' ? 'fa-clock' : 'fa-exclamation-triangle';
-                
                 const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
                 const ini = validName.charAt(0).toUpperCase();
-                
                 const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center shadow-sm">${ini}</div>`;
                 
+                // Agregamos el equivalente en Bs en la lista de deudores también
+                let bsEquivalent = window.exchangeRateBCV ? `<span class="text-[9px] text-slate-400 block mt-0.5">≈ ${(dData.total * window.exchangeRateBCV).toFixed(2)} Bs</span>` : '';
+
                 debtorsList.innerHTML += `
                 <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0" onclick="window.openPaySpecific('${p.id}')">
                     <div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${validName === '?' ? 'Sin Nombre' : validName}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border ${badgeColors}"><i class="fas ${icon}"></i> ${mor.label}</span></div></div>
-                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5"><p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p><div class="flex items-center gap-2"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${dData.total})" class="admin-only w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span></div></div>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1"><p class="font-black text-lg leading-none ${mor.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}">$${dData.total.toFixed(2)}</p>${bsEquivalent}<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${dData.total})" class="admin-only w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span></div></div>
                 </li>`;
             }
         });
@@ -1715,9 +1753,13 @@ function setupRealtimeListeners() {
 
 window.initApp = async function() { 
     if(window.appInitialized) return; window.appInitialized = true;
-    await loadInitialData(); setupRealtimeListeners(); window.setupPWA(); window.updateAdminUI(); 
-    document.addEventListener('mousemove', window.dragMove); document.addEventListener('mouseup', window.dragEnd); 
-    const p = document.getElementById('tactical-pitch'); if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
+    window.fetchVenezuelaRates(); // <--- Llama a la API del dólar
+    await loadInitialData(); 
+    setupRealtimeListeners(); 
+    window.setupPWA(); 
+    window.updateAdminUI(); 
+    document.addEventListener('mousemove', window.dragMove); 
+    document.addEventListener('mouseup', window.dragEnd); 
+    const p = document.getElementById('tactical-pitch'); 
+    if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
 };
-
-if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', window.initApp); } else { window.initApp(); }
