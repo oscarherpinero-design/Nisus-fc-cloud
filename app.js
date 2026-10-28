@@ -409,45 +409,67 @@ window.openPlayerProfile = function(id) {
     window.showSection('playerProfile');
 };
 
+window.closePlayerProfile = function() {
+    document.getElementById('playerProfile').classList.add('hidden');
+    window.showSection('players');
+};
+
 window.renderProfileRendimiento = function(p) {
-    const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), mvps = window.getPlayerStat(p, 'mvps');
+    const games = window.getPlayerStat(p, 'games');
+    const goals = window.getPlayerStat(p, 'goals');
+    const assists = window.getPlayerStat(p, 'assists');
+    const mvps = window.getPlayerStat(p, 'mvps');
+    const yellows = window.getPlayerStat(p, 'yellows');
+    const reds = window.getPlayerStat(p, 'reds');
+    
     const totalTrainings = window.trainings ? window.trainings.length : 0;
     const attendance = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
     const attPct = totalTrainings > 0 ? Math.round((attendance/totalTrainings)*100) : 0;
+
+    // Calcular Defensa Real (Arcos en cero del equipo cuando este jugador estaba en la cancha)
+    let defCleanSheets = 0;
+    (window.matches || []).forEach(m => {
+        if (m.status === 'finished') {
+            const played = (Array.isArray(m.lineup) && m.lineup.some(l => l.playerId === p.id)) || (Array.isArray(m.events) && m.events.some(e => e.type === 'sub' && e.playerId === p.id));
+            if (played && parseInt(m.goalsThem || 0) === 0) defCleanSheets++;
+        }
+    });
 
     document.getElementById('pp-stats-grid').innerHTML = `
         <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partidos</p><p class="text-2xl font-black text-slate-800 dark:text-white">${games}</p></div>
         <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Goles</p><p class="text-2xl font-black text-green-500">${goals}</p></div>
         <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencias</p><p class="text-2xl font-black text-blue-500">${assists}</p></div>
-        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencia</p><p class="text-2xl font-black ${attPct>70?'text-green-500':attPct>40?'text-yellow-500':'text-red-500'}">${attPct}%</p></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencia</p><p class="text-2xl font-black ${attPct>=75?'text-green-500':attPct>=50?'text-yellow-500':'text-red-500'}">${attPct}%</p></div>
     `;
 
     if (window.radarChart360) { window.radarChart360.destroy(); window.radarChart360 = null; }
     if (typeof Chart !== 'undefined' && document.getElementById('pp-radar-chart')) {
         const isDark = document.documentElement.classList.contains('dark');
         const textColor = isDark ? '#cbd5e1' : '#64748b';
-        const radarData = p.isStaff ? [10, 10, 10, 10, 10] : [
-            Math.min(100, (goals / (games || 1)) * 100), // Ataque
-            Math.min(100, (assists / (games || 1)) * 100), // Creación
-            Math.min(100, attPct), // Compromiso
-            Math.min(100, (mvps / (games || 1)) * 300), // Relevancia
-            100 - Math.min(100, window.getPlayerStat(p, 'yellows') * 10) // Disciplina (empieza en 100 y baja con tarjetas)
-        ];
+        
+        // Puntuaciones Balanceadas
+        const scoreAtaque = Math.min(100, (goals / (games || 1)) * 120); 
+        const scoreCreacion = Math.min(100, (assists / (games || 1)) * 150); 
+        const scoreDefensa = Math.min(100, (defCleanSheets / (games || 1)) * 200); 
+        const scoreMVP = Math.min(100, (mvps / (games || 1)) * 400); 
+        const scoreDisciplina = Math.max(0, 100 - (yellows * 15) - (reds * 30));
+
+        const radarData = p.isStaff ? [10, 10, 10, 10, 10] : [scoreAtaque, scoreCreacion, scoreDefensa, scoreMVP, scoreDisciplina];
 
         window.radarChart360 = new Chart(document.getElementById('pp-radar-chart'), {
             type: 'radar',
             data: {
-                labels: ['Ataque', 'Creación', 'Compromiso', 'Impacto MVP', 'Disciplina'],
-                datasets: [{ label: 'Stats', data: radarData, backgroundColor: 'rgba(14, 165, 233, 0.2)', borderColor: '#0ea5e9', pointBackgroundColor: '#0ea5e9', borderWidth: 2 }]
+                labels: ['Ataque', 'Creación', 'Defensa', 'Relevancia (MVP)', 'Disciplina'],
+                datasets: [{ label: 'Nivel', data: radarData, backgroundColor: 'rgba(14, 165, 233, 0.2)', borderColor: '#0ea5e9', pointBackgroundColor: '#0ea5e9', borderWidth: 2 }]
             },
-            options: { scales: { r: { angleLines: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, pointLabels: { color: textColor, font: {size: 10, weight: 'bold'} }, ticks: { display: false, max: 100, min: 0 } } }, plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+            options: { scales: { r: { angleLines: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, pointLabels: { color: textColor, font: {size: 10, weight: 'bold'} }, ticks: { display: false, max: 100, min: 0, stepSize: 20 } } }, plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
         });
     }
 
     const fgEl = document.getElementById('pp-form-guide'); fgEl.innerHTML = '';
     const recentMatches = (window.matches || []).filter(m => m.status === 'finished' && Array.isArray(m.lineup) && m.lineup.some(l => l.playerId === p.id)).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
     
-    if(recentMatches.length === 0) fgEl.innerHTML = '<p class="text-sm text-slate-500 italic">No ha jugado partidos recientes</p>';
+    if(recentMatches.length === 0) fgEl.innerHTML = '<p class="text-sm text-slate-500 italic py-4 text-center">No ha jugado partidos recientes</p>';
     recentMatches.forEach(m => {
         let us = parseInt(m.goalsUs)||0, them = parseInt(m.goalsThem)||0;
         let res = us > them ? 'V' : (us < them ? 'D' : 'E');
@@ -463,7 +485,7 @@ window.renderProfileRendimiento = function(p) {
             }
         });
 
-        fgEl.innerHTML += `<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800"><div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-xs ${col}">${res}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">vs ${m.opponent}</p><p class="text-[10px] text-slate-400">${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES')}</p></div><div class="text-right text-xs">${evs}</div></div>`;
+        fgEl.innerHTML += `<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800"><div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-sm ${col}">${res}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">vs ${m.opponent}</p><p class="text-[10px] text-slate-400">${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES')}</p></div><div class="text-right text-xs shrink-0">${evs}</div></div>`;
     });
 };
 
