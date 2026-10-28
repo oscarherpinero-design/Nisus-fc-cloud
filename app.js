@@ -30,7 +30,7 @@ window.showToast = function(msg, isError = false) {
 window.toggleMenu = function() { const m = document.getElementById('side-menu'); const o = document.getElementById('side-menu-overlay'); if(m.classList.contains('-translate-x-full')) { m.classList.remove('-translate-x-full'); o.classList.remove('force-hidden'); } else { m.classList.add('-translate-x-full'); o.classList.add('force-hidden'); } };
 
 window.showSection = function(sectionId) {
-    ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances', 'playerForm', 'matchForm', 'attendanceForm', 'financesForm'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); });
+    ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances', 'playerForm', 'matchForm', 'attendanceForm', 'financesForm', 'playerProfile'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); });
     const sec = document.getElementById(sectionId); if(sec) { sec.classList.remove('hidden'); sec.classList.remove('section-fade-in'); void sec.offsetWidth; sec.classList.add('section-fade-in'); }
     ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances'].forEach(id => { const s = document.getElementById('nav-side-' + id); if(s) { s.classList.remove('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); s.classList.add('text-slate-600', 'dark:text-slate-300'); } });
     const aS = document.getElementById('nav-side-' + sectionId); if(aS) { aS.classList.add('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); aS.classList.remove('text-slate-600', 'dark:text-slate-300'); }
@@ -354,99 +354,197 @@ window.renderPlayers = function() {
         
         const img = p.image?`<img src="${p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md">`:`<div class="w-16 h-16 rounded-full ${p.isStaff?'bg-purple-100 text-purple-600 dark:bg-purple-900/50':'bg-brand-100 text-brand-600 dark:bg-brand-900/50'} font-black flex items-center justify-center text-2xl border-2 border-slate-200 dark:border-slate-700 shadow-md">${ini}</div>`;
         
-        grid.innerHTML += `<div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-5 flex flex-col ${oc} relative transition-all hover:-translate-y-1 hover:shadow-lg"><div class="admin-only absolute top-4 right-4 flex gap-2 z-20"><button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div><div class="flex items-center gap-4 mb-3 mt-2 cursor-pointer" onclick="window.openPlayerCard('${p.id}')">${img}<div class="overflow-hidden"><h3 class="font-black text-slate-900 dark:text-white text-lg truncate">${validName === '?' ? 'Sin Nombre' : validName}</h3>${p.alias?`<p class="font-medium italic text-slate-400 text-xs">"${p.alias}"</p>`:''}${b}</div></div><div class="flex items-center justify-between mb-3"><div class="flex flex-wrap gap-1">${pb}</div>${debtBadge}</div>${sb}<div class="mt-auto pt-4">${sh}<button onclick="window.openPlayerCard('${p.id}')" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 text-brand-700 dark:text-brand-300 rounded-xl text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2"><i class="fas fa-id-card"></i> Ver Perfil</button></div></div>`;
+        grid.innerHTML += `<div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-5 flex flex-col ${oc} relative transition-all hover:-translate-y-1 hover:shadow-lg"><div class="admin-only absolute top-4 right-4 flex gap-2 z-20"><button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div><div class="flex items-center gap-4 mb-3 mt-2 cursor-pointer" onclick="window.openPlayerProfile('${p.id}')">${img}<div class="overflow-hidden"><h3 class="font-black text-slate-900 dark:text-white text-lg truncate">${validName === '?' ? 'Sin Nombre' : validName}</h3>${p.alias?`<p class="font-medium italic text-slate-400 text-xs">"${p.alias}"</p>`:''}${b}</div></div><div class="flex items-center justify-between mb-3"><div class="flex flex-wrap gap-1">${pb}</div>${debtBadge}</div>${sb}<div class="mt-auto pt-4">${sh}<button onclick="window.openPlayerProfile('${p.id}')" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 text-brand-700 dark:text-brand-300 rounded-xl text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2"><i class="fas fa-id-card"></i> Ver Perfil</button></div></div>`;
     });
 };
 
-window.openPlayerCard = function(id) {
-    const p = (window.players || []).find(x => x?.id === id); if (!p) return;
-    const c = document.getElementById('card-render-container'); if (!c) return;
-    
-    const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'N/A';
-    const n = validName;
-    const a = p.alias ? `<p class="text-sm font-medium italic text-slate-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
-    
-    const posRaw = Array.isArray(p.positions) && p.positions.length > 0 ? p.positions[0] : (typeof p.positions === 'string' ? p.positions.split(',')[0] : (p.position || 'N/A'));
-    const pos = p.isStaff ? 'CT' : String(posRaw).substring(0,3).toUpperCase();
-    
-    let fL = window.currentFilter==='all' ? 'GLOBAL' : window.currentFilter.toUpperCase();
-    let sL = window.currentSeason==='all' ? 'HISTÓRICO' : `T. ${window.currentSeason}`;
-    
-    let age='--', ft=p.foot ? String(p.foot).toUpperCase() : 'N/E'; 
-    if(p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')) { 
-        const parts = p.birthdate.split('-');
-        if (parts.length === 3) {
-            const bd = new Date(parts[0], parts[1]-1, parts[2]), td = new Date(); 
-            let ca = td.getFullYear()-bd.getFullYear(); 
-            const m = td.getMonth()-bd.getMonth(); 
-            if(m<0 || (m===0 && td.getDate()<bd.getDate())) ca--; 
-            age = ca+' AÑOS'; 
+window.currentPlayer360 = null;
+window.radarChart360 = null;
+
+window.switchProfileTab = function(tab) {
+    ['rendimiento', 'clinica', 'finanzas', 'ficha'].forEach(t => {
+        document.getElementById('ptab-' + t).classList.add('hidden');
+        const btn = document.getElementById('ptab-btn-' + t);
+        if (btn) {
+            btn.classList.remove('bg-brand-600', 'text-white', 'shadow-sm');
+            btn.classList.add('text-slate-500');
         }
-    }
-    
-    let mp=0, mw=0; 
-    (window.matches || []).forEach(m => { 
-        if(!m || m.status!=='finished' || (window.currentSeason!=='all' && m.season!==window.currentSeason) || (window.currentFilter!=='all' && m.modality!==window.currentFilter)) return; 
-        
-        const playedInLineup = Array.isArray(m.lineup) && m.lineup.some(l => l?.playerId === p.id);
-        const playedInEvents = Array.isArray(m.events) && m.events.some(e => e?.type === 'sub' && e?.playerId === p.id);
-        
-        if(playedInLineup || playedInEvents) { 
-            mp++; 
-            if(parseInt(m.goalsUs || 0) > parseInt(m.goalsThem || 0)) mw++; 
-        } 
     });
+    document.getElementById('ptab-' + tab).classList.remove('hidden');
+    const activeBtn = document.getElementById('ptab-btn-' + tab);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-slate-500');
+        activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow-sm');
+    }
+};
+
+window.openPlayerProfile = function(id) {
+    const p = (window.players || []).find(x => x?.id === id); if (!p) return;
+    window.currentPlayer360 = p;
     
-    const wr = mp > 0 ? Math.round((mw/mp)*100)+'%' : '0%';
+    const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'Sin Nombre';
+    const posRaw = Array.isArray(p.positions) && p.positions.length > 0 ? p.positions[0] : (typeof p.positions === 'string' ? p.positions.split(',')[0] : (p.position || 'Jugador'));
+    const pos = p.isStaff ? 'Cuerpo Técnico' : posRaw;
     
-    let discHtml = '';
+    document.getElementById('pp-name').textContent = validName;
+    document.getElementById('pp-alias-pos').textContent = p.alias ? `"${p.alias}" · ${pos}` : pos;
+    
+    const imgCont = document.getElementById('pp-image-container');
+    const ini = validName.charAt(0).toUpperCase();
+    imgCont.innerHTML = p.image 
+        ? `<img src="${p.image}" class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white dark:border-slate-800 shadow-lg">`
+        : `<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl ${p.isStaff?'bg-purple-100 text-purple-600':'bg-brand-100 text-brand-600'} font-black flex items-center justify-center text-4xl border-4 border-white dark:border-slate-800 shadow-lg">${ini}</div>`;
+    
+    const badgesEl = document.getElementById('pp-badges'); badgesEl.innerHTML = '';
+    if(p.number) badgesEl.innerHTML += `<span class="bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-black">#${p.number}</span>`;
+    if(p.availableF11) badgesEl.innerHTML += `<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F11</span>`;
+    if(p.availableF7) badgesEl.innerHTML += `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F7</span>`;
+    
+    window.renderProfileRendimiento(p);
+    window.renderProfileClinica(p);
+    window.renderProfileFinanzas(p);
+    window.renderProfileFicha(p); // Llama a la lógica de tu tarjeta anterior
+    
+    window.switchProfileTab('rendimiento');
+    window.showSection('playerProfile');
+};
+
+window.renderProfileRendimiento = function(p) {
+    const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), mvps = window.getPlayerStat(p, 'mvps');
+    const totalTrainings = window.trainings ? window.trainings.length : 0;
+    const attendance = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
+    const attPct = totalTrainings > 0 ? Math.round((attendance/totalTrainings)*100) : 0;
+
+    document.getElementById('pp-stats-grid').innerHTML = `
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partidos</p><p class="text-2xl font-black text-slate-800 dark:text-white">${games}</p></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Goles</p><p class="text-2xl font-black text-green-500">${goals}</p></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencias</p><p class="text-2xl font-black text-blue-500">${assists}</p></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencia</p><p class="text-2xl font-black ${attPct>70?'text-green-500':attPct>40?'text-yellow-500':'text-red-500'}">${attPct}%</p></div>
+    `;
+
+    if (window.radarChart360) { window.radarChart360.destroy(); window.radarChart360 = null; }
+    if (typeof Chart !== 'undefined' && document.getElementById('pp-radar-chart')) {
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#cbd5e1' : '#64748b';
+        const radarData = p.isStaff ? [10, 10, 10, 10, 10] : [
+            Math.min(100, (goals / (games || 1)) * 100), // Ataque
+            Math.min(100, (assists / (games || 1)) * 100), // Creación
+            Math.min(100, attPct), // Compromiso
+            Math.min(100, (mvps / (games || 1)) * 300), // Relevancia
+            100 - Math.min(100, window.getPlayerStat(p, 'yellows') * 10) // Disciplina (empieza en 100 y baja con tarjetas)
+        ];
+
+        window.radarChart360 = new Chart(document.getElementById('pp-radar-chart'), {
+            type: 'radar',
+            data: {
+                labels: ['Ataque', 'Creación', 'Compromiso', 'Impacto MVP', 'Disciplina'],
+                datasets: [{ label: 'Stats', data: radarData, backgroundColor: 'rgba(14, 165, 233, 0.2)', borderColor: '#0ea5e9', pointBackgroundColor: '#0ea5e9', borderWidth: 2 }]
+            },
+            options: { scales: { r: { angleLines: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, pointLabels: { color: textColor, font: {size: 10, weight: 'bold'} }, ticks: { display: false, max: 100, min: 0 } } }, plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    const fgEl = document.getElementById('pp-form-guide'); fgEl.innerHTML = '';
+    const recentMatches = (window.matches || []).filter(m => m.status === 'finished' && Array.isArray(m.lineup) && m.lineup.some(l => l.playerId === p.id)).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    
+    if(recentMatches.length === 0) fgEl.innerHTML = '<p class="text-sm text-slate-500 italic">No ha jugado partidos recientes</p>';
+    recentMatches.forEach(m => {
+        let us = parseInt(m.goalsUs)||0, them = parseInt(m.goalsThem)||0;
+        let res = us > them ? 'V' : (us < them ? 'D' : 'E');
+        let col = res === 'V' ? 'bg-green-500' : (res === 'D' ? 'bg-red-500' : 'bg-slate-400');
+        
+        let evs = '';
+        (m.events || []).forEach(e => {
+            if(e.playerId === p.id) {
+                if(['goals', 'penalty', 'freekick'].includes(e.type)) evs += '⚽ ';
+                if(e.type === 'assists') evs += '👟 ';
+                if(e.type === 'yellows') evs += '🟨 ';
+                if(e.type === 'reds' || e.type === 'double_yellow') evs += '🟥 ';
+            }
+        });
+
+        fgEl.innerHTML += `<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800"><div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-xs ${col}">${res}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">vs ${m.opponent}</p><p class="text-[10px] text-slate-400">${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES')}</p></div><div class="text-right text-xs">${evs}</div></div>`;
+    });
+};
+
+window.renderProfileClinica = function(p) {
+    const medEl = document.getElementById('pp-medical-status');
+    const returnDateStr = p.returnDate && p.returnDate.includes('-') ? p.returnDate.split('-').reverse().join('/') : 'Indefinido';
+    
+    if(p.status === 'injured') {
+        medEl.innerHTML = `<div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800 text-center"><i class="fas fa-briefcase-medical text-3xl text-red-500 mb-2"></i><p class="font-black text-red-700 dark:text-red-400">Lesionado</p><p class="text-xs text-red-600 dark:text-red-300 mt-1">Regreso estimado: ${returnDateStr}</p></div>`;
+    } else {
+        medEl.innerHTML = `<div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-200 dark:border-green-800 text-center"><i class="fas fa-heartbeat text-3xl text-green-500 mb-2"></i><p class="font-black text-green-700 dark:text-green-400">En Forma Óptima</p><p class="text-xs text-green-600 dark:text-green-300 mt-1">Apto para jugar</p></div>`;
+    }
+
+    const discEl = document.getElementById('pp-discipline-list'); discEl.innerHTML = '';
     const tournaments = [...new Set((window.matches || []).filter(m => m && (m.status === 'finished' || m.status === 'forfait')).map(m => m.tournament))].filter(Boolean);
     
     tournaments.forEach(t => {
         const d = window.getDiscipline(p.id, t);
-        const hasReds = (window.matches || []).some(m => m && m.tournament === t && Array.isArray(m.events) && m.events.some(e => e?.playerId === p.id && (e?.type === 'reds' || e?.type === 'double_yellow')));
-        
-        if (d.yellows > 0 || d.suspended || hasReds) { 
-            discHtml += `<div class="flex justify-between items-center bg-slate-800 px-3 py-1.5 rounded-lg mb-1 border border-slate-700 shadow-inner"><span class="truncate w-1/2 text-left text-slate-300 font-bold text-[9px] uppercase tracking-widest">${t}</span><span class="text-yellow-400 font-black text-[10px]">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="text-red-400 font-black text-[10px] ml-2">SANCIONADO</span>' : '<span class="text-green-400 font-black text-[10px] ml-2">HABILITADO</span>'}</div>`; 
+        if(d.yellows > 0 || d.suspended) {
+            discEl.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl mb-2 border border-slate-100 dark:border-slate-800"><span class="font-bold text-xs text-slate-700 dark:text-slate-300">${t}</span><div><span class="text-yellow-500 font-black text-xs mr-3">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="bg-red-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase">Sancionado</span>' : '<span class="bg-green-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase">Ok</span>'}</div></div>`;
         }
     });
-    
-    if(discHtml) discHtml = `<div class="mt-4 w-full text-center px-6"><p class="text-[8px] text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-700 pb-1 font-bold">Control Disciplinario</p>${discHtml}</div>`;
+    if(discEl.innerHTML === '') discEl.innerHTML = '<p class="text-sm text-slate-500 italic text-center py-4">Historial limpio. ¡Buen comportamiento!</p>';
+};
 
-    let sH = p.isStaff ? `<div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos CT</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div></div>` : `<div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Goles</p><p class="text-2xl font-black">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Asist.</p><p class="text-2xl font-black">${window.getPlayerStat(p,'assists')}</p></div></div>`;
-    const mvps = window.getPlayerStat(p,'mvps');
-    let statusBanner = '';
+window.renderProfileFinanzas = function(p) {
+    const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0, debts: [] };
+    const mor = typeof window.getMorosityStatus === 'function' ? window.getMorosityStatus(p.id) : { label: 'Deuda', color: 'yellow' };
     
-    if (p.status && p.status !== 'active') {
-        let sCol = p.status === 'injured' || p.status === 'suspended' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600';
-        let sTxt = p.status === 'injured' ? 'LESIÓN' : p.status === 'suspended' ? 'SANCIÓN' : p.status === 'inactive' ? 'INACTIVO' : 'AUSENTE';
-        let sDate = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? `HASTA ${p.returnDate.split('-').reverse().join('/')}` : 'INDEFINIDO';
-        statusBanner = `<div class="mt-1 mb-2 px-4 py-1 rounded-full border ${sCol} text-[9px] font-black tracking-widest uppercase shadow-sm"><i class="fas fa-info-circle mr-1"></i> ${sTxt} | ${sDate}</div>`;
-    }
+    const badgeColors = mor.color === 'green' ? 'bg-green-100 text-green-700' : mor.color === 'yellow' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+    document.getElementById('pp-debt-badge').className = `px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${badgeColors}`;
+    document.getElementById('pp-debt-badge').innerHTML = `${mor.label}: $${dData.total.toFixed(2)}`;
+
+    const listEl = document.getElementById('pp-finances-list'); listEl.innerHTML = '';
+    const myTxs = (window.finances || []).filter(t => t.playerId === p.id).sort((a,b) => new Date(b.date||0) - new Date(a.date||0)).slice(0,10);
+    
+    if(myTxs.length === 0) listEl.innerHTML = '<tr><td class="py-4 text-sm text-slate-500 italic text-center">Sin movimientos financieros</td></tr>';
+    myTxs.forEach(t => {
+        const dStr = new Date((t.date||'')+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
+        const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
+        let estado = '', color = '';
+        if (t.isPaid === false) { estado = 'Pendiente'; color = 'text-amber-500'; }
+        else if (t.category === 'Abono a Deuda (Jugador)') { estado = 'Abono'; color = 'text-green-500'; }
+        else { estado = 'Pagado'; color = 'text-slate-400'; }
+        
+        listEl.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0"><td class="py-3"><p class="text-xs font-bold text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${dStr}</p></td><td class="py-3 text-right"><p class="text-sm font-black ${color}">$${(t.amount||0).toFixed(2)}</p><p class="text-[9px] font-bold uppercase ${color}">${estado}</p></td></tr>`;
+    });
+};
+
+window.renderProfileFicha = function(p) {
+    // Aquí reutilizamos tu generador de tarjeta original
+    const c = document.getElementById('pp-card-container');
+    const n = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'N/A';
+    const a = p.alias ? `<p class="text-sm font-medium italic text-slate-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
+    const pos = p.isStaff ? 'CT' : String(Array.isArray(p.positions) && p.positions.length > 0 ? p.positions[0] : (p.position || 'N/A')).substring(0,3).toUpperCase();
+    
+    let fL = window.currentFilter==='all'?'GLOBAL':window.currentFilter.toUpperCase(), sL = window.currentSeason==='all'?'HISTÓRICO':`T. ${window.currentSeason}`;
+    let age='--', ft=p.foot?p.foot.toUpperCase():'N/E'; 
+    if(p.birthdate && p.birthdate.includes('-')) { const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1]-1, p.birthdate.split('-')[2]), td = new Date(); let ca = td.getFullYear()-bd.getFullYear(); const m = td.getMonth()-bd.getMonth(); if(m<0||(m===0&&td.getDate()<bd.getDate())) ca--; age = ca+' AÑOS'; }
     
     let fontSize = "1.75rem"; if(n.length > 18) fontSize = "1.25rem"; else if(n.length > 14) fontSize = "1.5rem";
 
     c.innerHTML = `
-        <div id="player-card-node" class="player-card-export">
+        <div id="pp-card-export-node" class="player-card-export">
             <div class="absolute top-5 left-5 text-center"><p class="text-3xl font-black text-yellow-400 leading-none drop-shadow-md">${p.number||'--'}</p><p class="text-[10px] font-black uppercase tracking-widest mt-1 text-slate-300">${pos}</p></div>
             <div class="absolute top-5 right-5 opacity-40"><img src="escudo.png" class="w-10 h-10 object-contain drop-shadow" onerror="this.style.display='none'"></div>
-            <div class="w-28 h-28 rounded-[2rem] border-4 border-slate-600 bg-slate-800 flex items-center justify-center mt-6 mb-4 overflow-hidden shadow-2xl">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-black">${validName.charAt(0).toUpperCase()}</span>`}</div>
+            <div class="w-28 h-28 rounded-[2rem] border-4 border-slate-600 bg-slate-800 flex items-center justify-center mt-6 mb-4 overflow-hidden shadow-2xl">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-black">${n.charAt(0)}</span>`}</div>
             <h2 class="font-black uppercase tracking-wide text-center w-full px-4 leading-tight drop-shadow-md" style="font-size:${fontSize}">${n}</h2>
-            ${a} ${statusBanner}
-            <div class="flex justify-center gap-3 mt-2 text-[8px] font-black tracking-widest text-slate-400 uppercase"><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">EDAD: ${age}</span><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">PIE: ${ft}</span><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">VIC: ${wr}</span></div>
-            <div class="w-full border-t border-slate-700 mt-5 pt-3"><p class="text-[8px] text-brand-400 uppercase tracking-widest font-black text-center text-center w-full">ESTADÍSTICAS ${fL} - ${sL}</p></div>
-            ${sH} ${mvps>0?`<div class="mt-3 bg-yellow-500/20 text-yellow-400 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest border border-yellow-500/50 shadow-sm"><i class="fas fa-star mr-1"></i> ${mvps} MVP</div>`:''}
-            ${discHtml}
+            ${a}
+            <div class="flex justify-center gap-3 mt-2 text-[8px] font-black tracking-widest text-slate-400 uppercase"><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">EDAD: ${age}</span><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">PIE: ${ft}</span></div>
+            <div class="w-full border-t border-slate-700 mt-5 pt-3"><p class="text-[8px] text-brand-400 uppercase tracking-widest font-black text-center w-full">ESTADÍSTICAS ${fL} - ${sL}</p></div>
+            <div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Goles</p><p class="text-2xl font-black">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Asist.</p><p class="text-2xl font-black">${window.getPlayerStat(p,'assists')}</p></div></div>
             <div class="absolute bottom-3 text-[7px] text-slate-600 font-black tracking-widest uppercase">NISUS FC PREMIUM</div>
         </div>`;
-        
-    document.getElementById('modalPlayerCard').classList.remove('hidden');
-    document.getElementById('btn-download-card').onclick = function() {
-        const node = document.getElementById('player-card-node'); const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+
+    document.getElementById('btn-pp-download-card').onclick = function() {
+        const node = document.getElementById('pp-card-export-node'); const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
         html2canvas(node, { backgroundColor:null, scale:3, useCORS:true, allowTaint:true }).then(cv => { 
             const a = document.createElement('a'); a.download=`Ficha_${n.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click(); 
-            btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download mr-2"></i>Guardar Imagen',2000); 
-        }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download mr-2"></i>Guardar Imagen'; });
+            btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download"></i> Descargar Ficha',2000); 
+        }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download"></i> Descargar Ficha'; });
     };
 };
 
