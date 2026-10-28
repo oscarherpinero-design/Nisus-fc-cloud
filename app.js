@@ -1348,11 +1348,12 @@ window.exchangeRateBCV = null;
 
 window.fetchVenezuelaRates = async function() {
     try {
-        const response = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv');
+        // Cambiamos a DolarAPI que es súper estable y amigable con los navegadores (sin error CORS)
+        const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         const data = await response.json();
         
-        if (data && data.monitors && data.monitors.bcv) {
-            window.exchangeRateBCV = data.monitors.bcv.price;
+        if (data && data.promedio) {
+            window.exchangeRateBCV = data.promedio;
             const rateText = document.getElementById('rate-text');
             const rateSpinner = document.getElementById('rate-spinner');
             
@@ -1362,14 +1363,19 @@ window.fetchVenezuelaRates = async function() {
                 rateSpinner.classList.add('fa-money-bill-wave');
             }
             
-            if (!document.getElementById('finances').classList.contains('hidden')) {
+            // Si estamos en la pestaña de finanzas, actualizamos los cálculos inmediatamente
+            if (document.getElementById('finances') && !document.getElementById('finances').classList.contains('hidden')) {
                 window.renderFinances();
             }
+        } else {
+            throw new Error("No se encontró el promedio en la respuesta");
         }
     } catch (error) {
         console.error("Error obteniendo tasa:", error);
         const rateText = document.getElementById('rate-text');
-        if (rateText) rateText.textContent = "Error BCV";
+        const rateSpinner = document.getElementById('rate-spinner');
+        if (rateText) rateText.textContent = "Sin conexión BCV";
+        if (rateSpinner) rateSpinner.classList.remove('fa-spin');
     }
 };
 
