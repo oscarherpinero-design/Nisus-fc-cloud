@@ -714,7 +714,73 @@ window.exportMatchResult = function(matchId) {
         html2canvas(node, { backgroundColor:'#082f49', scale:3, useCORS:true, allowTaint:true }).then(cv => { const a = document.createElement('a'); a.download=`Resultado_NISUS_vs_${m.opponent.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click(); btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-share-alt mr-2"></i>Compartir Resultado',2000); }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-share-alt mr-2"></i>Compartir Resultado'; });
     };
 };
+window.openSeasonCloseModal = function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    
+    const unassignedMatches = (window.matches || []).filter(m => !m.season || m.season.trim() === '' || m.season === 'all');
+    if (unassignedMatches.length === 0) {
+        return window.showToast('No hay partidos sin temporada para archivar', true);
+    }
 
+    const finishedMatches = unassignedMatches.filter(m => m.status === 'finished' || m.status === 'forfait');
+    
+    let w = 0, d = 0, l = 0, gf = 0, gc = 0;
+    finishedMatches.forEach(m => {
+        if (m.status === 'forfait') { w++; gf+=3; }
+        else {
+            const us = parseInt(m.goalsUs)||0, them = parseInt(m.goalsThem)||0;
+            gf += us; gc += them;
+            if (us > them) w++; else if (us < them) l++; else d++;
+        }
+    });
+
+    const summaryEl = document.getElementById('season-close-summary');
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <p class="font-black text-purple-700 dark:text-purple-400 mb-3 uppercase tracking-widest text-[10px]">Resumen a archivar:</p>
+            <ul class="space-y-2 text-slate-700 dark:text-slate-300 font-bold text-xs">
+                <li><i class="fas fa-futbol text-slate-400 mr-2 w-4"></i> ${unassignedMatches.length} partidos totales (${w}V - ${d}E - ${l}D)</li>
+                <li><i class="fas fa-bullseye text-slate-400 mr-2 w-4"></i> ${gf} Goles a favor / ${gc} Goles en contra</li>
+                <li class="mt-2 pt-2 border-t border-purple-200 dark:border-purple-800/50 text-purple-600 dark:text-purple-400 italic">⚠️ Las finanzas y deudas no se borran, se mantienen continuas.</li>
+            </ul>
+        `;
+    }
+    
+    document.getElementById('season-close-name').value = '';
+    document.getElementById('modalSeasonClose').classList.remove('hidden');
+};
+
+window.executeSeasonClose = async function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    const name = document.getElementById('season-close-name').value.trim();
+    if (!name) return window.showToast('Ingresa un nombre para la temporada', true);
+
+    const btn = document.getElementById('btn-confirm-season');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Archivando...';
+
+    const unassignedMatches = (window.matches || []).filter(m => !m.season || m.season.trim() === '' || m.season === 'all');
+    const batch = db.batch();
+
+    unassignedMatches.forEach(m => {
+        const ref = db.collection(window.matchesPath).doc(m.id);
+        batch.update(ref, { season: name });
+    });
+
+    try {
+        await batch.commit();
+        window.showToast('¡Temporada archivada con éxito!');
+        document.getElementById('modalSeasonClose').classList.add('hidden');
+        
+        // Refrescar el selector para que ahora tome las temporadas pasadas y vuelva al inicio
+        window.currentSeason = 'all'; 
+        window.updateSeasonDropdown();
+        window.setSeasonFilter('all');
+    } catch(e) {
+        window.showToast('Error al archivar la temporada', true);
+    } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-archive"></i> Archivar Temporada';
+    }
+};
 /* -----------------------------------------------------
    DASHBOARD / ESTADÍSTICAS
 ------------------------------------------------------ */
