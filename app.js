@@ -1449,11 +1449,11 @@ window.renderFinances = function() {
     if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') window.renderMonthlyDues();
 
     // CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos
-    const debtorsList = document.getElementById('debtors-list');
+   const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
         debtorsList.innerHTML = ''; let hasDebtors = false;
         (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
-            const totalDebt = p.debtAmount || 0; // <--- AQUÍ ESTÁ LA SOLUCIÓN
+            const totalDebt = p.debtAmount || 0;
             
             if (totalDebt > 0.01) {
                 hasDebtors = true; 
@@ -1463,16 +1463,20 @@ window.renderFinances = function() {
                 
                 let bsEquivalent = window.currentExchangeRate ? `<span class="text-[9px] text-slate-400 block mt-0.5">≈ ${(totalDebt * window.currentExchangeRate).toFixed(2)} Bs</span>` : '';
 
+                // El onclick de la fila y los botones solo funcionarán/aparecerán si window.isAdmin es true
+                const rowAction = window.isAdmin ? `onclick="window.openPaySpecific('${p.id}')" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"` : `class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 last:border-0"`;
+                
+                const adminButtons = window.isAdmin ? `<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${totalDebt})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase cursor-pointer" onclick="event.stopPropagation(); window.openPaySpecific('${p.id}')">💰 Pagar</span></div>` : '';
+
                 debtorsList.innerHTML += `
-                <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0" onclick="window.openPaySpecific('${p.id}')">
+                <li ${rowAction}>
                     <div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${validName === '?' ? 'Sin Nombre' : validName}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm"><i class="fas fa-exclamation-triangle"></i> EN MORA</span></div></div>
-                    <div class="text-right shrink-0 flex flex-col items-end gap-1"><p class="font-black text-lg leading-none text-red-500">$${totalDebt.toFixed(2)}</p>${bsEquivalent}<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${totalDebt})" class="admin-only w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase">💰 Pagar</span></div></div>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1"><p class="font-black text-lg leading-none text-red-500">$${totalDebt.toFixed(2)}</p>${bsEquivalent}${adminButtons}</div>
                 </li>`;
             }
         });
         if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">Todos los jugadores están al día</li>';
     }
-
     const transList = document.getElementById('transactions-list');
     if (transList) {
         transList.innerHTML = '';
