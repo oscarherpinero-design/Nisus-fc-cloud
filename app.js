@@ -1802,22 +1802,40 @@ function setupRealtimeListeners() {
     });
 }
 window.openArchiveCompetition = function() {
-    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    console.log("1. Botón presionado. Verificando permisos...");
     
+    if (!window.isAdmin) {
+        console.log("Bloqueado: No eres administrador.");
+        if (typeof window.showToast === 'function') window.showToast('Solo administradores', true);
+        return;
+    }
+    
+    console.log("2. Permisos correctos. Buscando torneos...");
     const comps = [...new Set((window.matches || [])
         .filter(m => m.status === 'finished' && m.tournament)
         .map(m => m.tournament))];
         
     const select = document.getElementById('comp-archive-select');
+    if (!select) {
+        console.error("ERROR: No se encontró el elemento <select> del modal en el HTML.");
+        return;
+    }
+    
     select.innerHTML = '<option value="">-- Selecciona un torneo --</option>';
-    
     comps.forEach(c => { select.innerHTML += `<option value="${c}">${c}</option>`; });
+    if (comps.length === 0) select.innerHTML = '<option value="">No hay torneos activos para cerrar</option>';
     
-    if (comps.length === 0) select.innerHTML = '<option value="">No hay torneos activos</option>';
+    console.log("3. Torneos cargados. Intentando abrir modal...");
+    const modal = document.getElementById('modal-archive-comp');
     
-    document.getElementById('modal-archive-comp').classList.remove('hidden');
+    if (!modal) {
+        console.error("ERROR: No se encontró la ventana modal 'modal-archive-comp' en el HTML.");
+        return;
+    }
+    
+    modal.classList.remove('hidden');
+    console.log("4. ¡Modal abierto con éxito!");
 };
-
 window.confirmArchiveCompetition = async function() {
     if (!window.isAdmin) return;
     const comp = document.getElementById('comp-archive-select').value;
