@@ -1804,31 +1804,6 @@ function setupRealtimeListeners() {
 window.openArchiveCompetition = function() {
     if (!window.isAdmin) return window.showToast('Solo administradores', true);
     
-    // Buscamos todos los nombres de torneos que tengan partidos activos ("finished")
-    const comps = [...new Set((window.matches || [])
-        .filter(m => m.status === 'finished' && m.tournament)
-        .map(m => m.tournament))];
-        
-    const select = document.getElementById('comp-archive-select');
-    select.innerHTML = '<option value="">-- Selecciona un torneo --</option>';
-    
-    comps.forEach(c => {
-        select.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-    
-    if (comps.length === 0) {
-        select.innerHTML = '<option value="">No hay torneos activos para cerrar</option>';
-    }
-    
-    document.getElementById('modal-archive-comp').classList.remove('hidden');
-};
-
-// ... (código anterior) ...
-
-// --- PEGAS LAS DOS FUNCIONES AQUÍ ---
-window.openArchiveCompetition = function() {
-    if (!window.isAdmin) return window.showToast('Solo administradores', true);
-    
     const comps = [...new Set((window.matches || [])
         .filter(m => m.status === 'finished' && m.tournament)
         .map(m => m.tournament))];
@@ -1877,13 +1852,6 @@ window.confirmArchiveCompetition = async function() {
     }
 };
 
-// --- Y AQUÍ SIGUE TU CÓDIGO INTACTO ---
-window.initApp = async function() { 
-    if(window.appInitialized) return; window.appInitialized = true;
-    
-    await loadInitialData(); 
-    setupRealtimeListeners(); 
-    // ... etc ...
 window.initApp = async function() { 
     if(window.appInitialized) return; window.appInitialized = true;
     
@@ -1897,7 +1865,7 @@ window.initApp = async function() {
     if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
 };
 
-// ¡ESTA ES LA LÍNEA VITAL QUE FALTABA! Enciende la aplicación.
+// ¡ESTA ES LA LÍNEA VITAL QUE FALTABA O SE BORRÓ!
 if (document.readyState === 'loading') { 
     document.addEventListener('DOMContentLoaded', window.initApp); 
 } else { 
