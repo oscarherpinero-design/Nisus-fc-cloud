@@ -1257,22 +1257,27 @@ window.switchFinancesTab = function(tab) {
     if(tabResumen) tabResumen.classList.add('hidden');
     if(tabCobros) tabCobros.classList.add('hidden');
     
-    // Quitamos el color azul de ambos botones
-    const btnResumen = document.getElementById('tab-fin-resumen');
-    const btnCobros = document.getElementById('tab-fin-cobros');
-    if(btnResumen) btnResumen.className = 'px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800';
-    if(btnCobros) btnCobros.className = 'px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800';
+    // Definimos los colores para inactivo y activo
+    const baseClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 ";
+    const activeClass = baseClass + "bg-brand-600 text-white shadow-sm";
+    const inactiveClass = baseClass + "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800";
     
-    // Activamos solo la que tocaste
+    // Quitamos el color de ambos botones
+    const btnResumen = document.getElementById('fin-tab-btn-resumen');
+    const btnCobros = document.getElementById('fin-tab-btn-cobros');
+    if(btnResumen) btnResumen.className = inactiveClass;
+    if(btnCobros) btnCobros.className = "admin-only " + inactiveClass; // Mantiene la protección admin
+    
+    // Activamos la pestaña y pintamos de azul el botón correcto
     const activeTab = document.getElementById('fin-tab-' + tab);
-    const activeBtn = document.getElementById('tab-fin-' + tab);
+    const activeBtn = document.getElementById('fin-tab-btn-' + tab);
     
     if(activeTab) activeTab.classList.remove('hidden');
-    if(activeBtn) activeBtn.className = 'px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 bg-brand-600 text-white shadow-sm';
+    if(activeBtn) activeBtn.className = (tab === 'cobros' ? "admin-only " : "") + activeClass;
     
     // Volvemos a dibujar los datos
     window.renderFinances();
-};;
+};
 
 window.getValidCashAmount = function(t) {
     if (t.type === 'expense') return t.amount || 0;
