@@ -1428,14 +1428,12 @@ window.renderFinances = function() {
         if(b_bs) b_bs.textContent = ''; if(i_bs) i_bs.textContent = ''; if(e_bs) e_bs.textContent = '';
     }
 
-    if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') window.renderMonthlyDues();
-
-    // CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos
+    // CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos original
     const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
         debtorsList.innerHTML = ''; let hasDebtors = false;
         (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
-            const totalDebt = p.debtAmount || 0; // <--- AQUÍ ESTÁ LA SOLUCIÓN
+            const totalDebt = p.debtAmount || 0; // Aquí estaba el error
             
             if (totalDebt > 0.01) {
                 hasDebtors = true; 
@@ -1481,12 +1479,8 @@ window.renderFinances = function() {
         });
     }
     
-    if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
-        setTimeout(() => {
-            if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
-            if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
-        }, 150);
-    }
+    if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
+    if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
 };
 
 window.openPaySpecific = function(playerId) {
