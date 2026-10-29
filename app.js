@@ -1250,11 +1250,29 @@ window.deleteTransaction = function(id) {
 
 window.switchFinancesTab = function(tab) {
     window.currentFinTab = tab;
-    const btnRes = document.getElementById('fin-tab-btn-resumen'), btnCob = document.getElementById('fin-tab-btn-cobros'), contRes = document.getElementById('fin-tab-resumen'), contCob = document.getElementById('fin-tab-cobros');
-    const activeClasses = ['bg-brand-600', 'text-white', 'shadow-sm'], inactiveClasses = ['text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-50', 'dark:hover:bg-slate-800'];
-    if (tab === 'resumen') { btnRes.classList.add(...activeClasses); btnRes.classList.remove(...inactiveClasses); btnCob.classList.add(...inactiveClasses); btnCob.classList.remove(...activeClasses); contRes.classList.remove('hidden'); contCob.classList.add('hidden'); } 
-    else { btnCob.classList.add(...activeClasses); btnCob.classList.remove(...inactiveClasses); btnRes.classList.add(...inactiveClasses); btnRes.classList.remove(...activeClasses); contCob.classList.remove('hidden'); contRes.classList.add('hidden'); window.renderMonthlyDues(); }
-};
+    
+    // Ocultamos ambas pestañas primero
+    const tabResumen = document.getElementById('fin-tab-resumen');
+    const tabCobros = document.getElementById('fin-tab-cobros');
+    if(tabResumen) tabResumen.classList.add('hidden');
+    if(tabCobros) tabCobros.classList.add('hidden');
+    
+    // Quitamos el color azul de ambos botones
+    const btnResumen = document.getElementById('tab-fin-resumen');
+    const btnCobros = document.getElementById('tab-fin-cobros');
+    if(btnResumen) btnResumen.className = 'px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800';
+    if(btnCobros) btnCobros.className = 'px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800';
+    
+    // Activamos solo la que tocaste
+    const activeTab = document.getElementById('fin-tab-' + tab);
+    const activeBtn = document.getElementById('tab-fin-' + tab);
+    
+    if(activeTab) activeTab.classList.remove('hidden');
+    if(activeBtn) activeBtn.className = 'px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 bg-brand-600 text-white shadow-sm';
+    
+    // Volvemos a dibujar los datos
+    window.renderFinances();
+};;
 
 window.getValidCashAmount = function(t) {
     if (t.type === 'expense') return t.amount || 0;
@@ -1428,12 +1446,14 @@ window.renderFinances = function() {
         if(b_bs) b_bs.textContent = ''; if(i_bs) i_bs.textContent = ''; if(e_bs) e_bs.textContent = '';
     }
 
-    // CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos original
+    if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') window.renderMonthlyDues();
+
+    // CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos
     const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
         debtorsList.innerHTML = ''; let hasDebtors = false;
         (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
-            const totalDebt = p.debtAmount || 0; // Aquí estaba el error
+            const totalDebt = p.debtAmount || 0; // <--- AQUÍ ESTÁ LA SOLUCIÓN
             
             if (totalDebt > 0.01) {
                 hasDebtors = true; 
@@ -1479,8 +1499,12 @@ window.renderFinances = function() {
         });
     }
     
-    if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
-    if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
+    if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
+        setTimeout(() => {
+            if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
+            if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
+        }, 150);
+    }
 };
 
 window.openPaySpecific = function(playerId) {
