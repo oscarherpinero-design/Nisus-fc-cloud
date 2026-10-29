@@ -1801,7 +1801,67 @@ function setupRealtimeListeners() {
         safeRenderFinances(); 
     });
 }
+window.openArchiveCompetition = function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    
+    // Buscamos todos los nombres de torneos que tengan partidos activos ("finished")
+    const comps = [...new Set((window.matches || [])
+        .filter(m => m.status === 'finished' && m.tournament)
+        .map(m => m.tournament))];
+        
+    const select = document.getElementById('comp-archive-select');
+    select.innerHTML = '<option value="">-- Selecciona un torneo --</option>';
+    
+    comps.forEach(c => {
+        select.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+    
+    if (comps.length === 0) {
+        select.innerHTML = '<option value="">No hay torneos activos para cerrar</option>';
+    }
+    
+    document.getElementById('modal-archive-comp').classList.remove('hidden');
+};
 
+window.confirmArchiveCompetition = async function() {
+    if (!window.isAdmin) return;
+    const comp = document.getElementById('comp-archive-select').value;
+    if (!comp) return window.showToast('Debes seleccionar un torneo', true);
+    
+    if (!confirm(`¿Confirmas que deseas cerrar definitivamente la competición "${comp}"?\n\nSus estadísticas (tarjetas, goles, etc) desaparecerán del rendimiento actual de los jugadores.`)) return;
+    
+    const btn = document.getElementById('btn-archive-comp');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    
+    try {
+        // Filtramos todos los partidos que pertenecen a ese torneo y están activos
+        const matchesToArchive = window.matches.filter(m => m.tournament === comp && m.status === 'finished');
+        
+        // Usamos un "Batch" de Firebase para actualizarlos todos al mismo tiempo de forma segura
+        const batch = db.batch(); 
+        
+        matchesToArchive.forEach(m => {
+            const ref = db.collection(window.matchesPath || 'matches').doc(m.id);
+            // Cambiamos el estado a 'archived' para que desaparezcan de los cálculos
+            batch.update(ref, { status: 'archived' });
+        });
+        
+        await batch.commit(); // Ejecutamos el guardado masivo
+        
+        window.showToast(`¡El torneo "${comp}" ha sido cerrado con éxito!`);
+        document.getElementById('modal-archive-comp').classList.add('hidden');
+        
+        // Recargamos la interfaz para que las arañas y tarjetas se limpien al instante
+        if (typeof window.renderMatches === 'function') window.renderMatches();
+        if (typeof window.renderPlayers === 'function') window.renderPlayers();
+        
+    } catch (error) {
+        console.error("Error archivando torneo:", error);
+        window.showToast('Hubo un error al conectar con la base de datos', true);
+    } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Archivar';
+    }
+};
 window.initApp = async function() { 
     if(window.appInitialized) return; window.appInitialized = true;
     
