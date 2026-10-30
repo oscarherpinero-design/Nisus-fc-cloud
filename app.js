@@ -1895,8 +1895,37 @@ window.initApp = async function() {
 if (document.readyState === 'loading') { 
     document.addEventListener('DOMContentLoaded', window.initApp); 
 } else { 
-   window.openPlayerFinancialReport = function(playerId) {
-    if (!window.isAdmin) return; // Bloqueo de seguridad extra por si acaso
+  window.sendPlayerFinancesWhatsApp = function(playerId) {
+    const player = (window.players || []).find(p => p.id === playerId);
+    if (!player) return;
+    
+    const playerTxs = (window.finances || [])
+        .filter(t => t && t.playerId === playerId)
+        .sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+        
+    let totalPaid = 0;
+    let txText = '';
+    
+    playerTxs.forEach(t => {
+        const dStr = new Date(t.date || Date.now()).toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
+        if (t.type === 'income') totalPaid += (t.amount || 0);
+        
+        let sign = t.type === 'income' ? '+' : '-';
+        if (t.isPaid === false) sign = '⏳ ';
+        
+        txText += `• ${t.category || 'Movimiento'}: ${sign}$${(t.amount||0).toFixed(2)} (${dStr})\n`;
+    });
+    
+    const text = `*ESTADO DE CUENTA: ${player.name.toUpperCase()}*\n\n` +
+                 `*Deuda Pendiente:* $${(player.debtAmount || 0).toFixed(2)}\n` +
+                 `*Total Aportado:* $${totalPaid.toFixed(2)}\n\n` +
+                 `*Historial de Movimientos:*\n${txText ? txText : 'Sin movimientos registrados.'}`;
+                 
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+};
+
+window.openPlayerFinancialReport = function(playerId) {
+    if (!window.isAdmin) return; 
     
     const player = (window.players || []).find(p => p.id === playerId);
     if (!player) return;
@@ -1904,68 +1933,57 @@ if (document.readyState === 'loading') {
     document.getElementById('pf-player-name').textContent = player.name || 'Jugador';
     document.getElementById('pf-debt').textContent = `$${(player.debtAmount || 0).toFixed(2)}`;
     
+    // Botón de WhatsApp
+    const waBtn = document.getElementById('pf-btn-wa');
+    if (waBtn) {
+        waBtn.onclick = () => window.sendPlayerFinancesWhatsApp(playerId);
+        if (window.isAdmin) { waBtn.classList.remove('hidden'); waBtn.classList.add('flex'); } 
+        else { waBtn.classList.add('hidden'); waBtn.classList.remove('flex'); }
+    }
+
+    // Botón de Pagar
     const payBtn = document.getElementById('pf-btn-pay');
     if (payBtn) {
         payBtn.onclick = () => {
             document.getElementById('modal-player-finances').classList.add('hidden');
             if (typeof window.openPaySpecific === 'function') window.openPaySpecific(playerId);
         };
-        if (player.debtAmount > 0 && window.isAdmin) {
-            payBtn.classList.remove('hidden'); payBtn.classList.add('flex');
-        } else {
-            payBtn.classList.add('hidden'); payBtn.classList.remove('flex');
-        }
+        if (player.debtAmount > 0 && window.isAdmin) { payBtn.classList.remove('hidden'); payBtn.classList.add('flex'); } 
+        else { payBtn.classList.add('hidden'); payBtn.classList.remove('flex'); }
     }
     
     const list = document.getElementById('pf-transactions-list');
     list.innerHTML = '';
     
-    const playerTxs = (window.finances || [])
-        .filter(t => t && t.playerId === playerId)
-        .sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
-        
+    const playerTxs = (window.finances || []).filter(t => t && t.playerId === playerId).sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
     let totalPaid = 0;
     
     if (playerTxs.length === 0) {
-        list.innerHTML = '<li class="p-8 text-center text-slate-500 text-sm font-medium">No hay registros financieros para este jugador.</li>';
+        list.innerHTML = '<li class="p-8 text-center text-slate-500 text-sm font-medium">No hay registros financieros.</li>';
     } else {
         playerTxs.forEach(t => {
             const dateVal = t.date && typeof t.date === 'string' && t.date.includes('-') ? t.date + 'T12:00:00' : new Date().toISOString();
             const dStr = new Date(dateVal).toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); 
             
             let displayAmt = '', iconBadge = '';
-            
             if (t.type === 'expense' || (t.category && t.category.toLowerCase().includes('multa'))) { 
                 displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-exclamation-triangle"></i></span>`; 
-            } 
-            else if (t.isPaid === false) { 
+            } else if (t.isPaid === false) { 
                 displayAmt = `<p class="font-black text-amber-500">⏳ $${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; 
-            } 
-            else if (t.type === 'income') {
+            } else if (t.type === 'income') {
                 totalPaid += (t.amount || 0);
                 displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-check-double"></i></span>`;
-            }
-            else { 
+            } else { 
                 displayAmt = `<p class="font-black text-slate-400 line-through">$${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; 
             } 
-
             list.innerHTML += `
             <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-800 last:border-0">
-                <div class="flex items-center gap-3">
-                    ${iconBadge}
-                    <div>
-                        <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category || 'Movimiento'}</p>
-                        <p class="text-[10px] text-slate-400">${t.description || ''}</p>
-                    </div>
-                </div>
-                <div class="text-right whitespace-nowrap">
-                    ${displayAmt}
-                    <p class="text-[10px] text-slate-400">${dStr}</p>
-                </div>
+                <div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category || 'Movimiento'}</p><p class="text-[10px] text-slate-400">${t.description || ''}</p></div></div>
+                <div class="text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></div>
             </li>`;
         });
     }
