@@ -1929,15 +1929,14 @@ window.sendPlayerFinancesWhatsApp = function(playerId) {
         const dStr = new Date(t.date || Date.now()).toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
         let sign = '';
         
-        // Lógica corregida: Diferenciar cargos (deudas) de pagos (abonos)
-        if (t.category === 'Cuota Mensual' || t.category === 'Multa Tarjeta' || t.category === 'Cobro Manual') {
-            sign = '-'; // Cargo a la deuda
-        } else if (t.category === 'Abono a Deuda (Jugador)') {
-            sign = '+'; // Pago recibido
-            totalPaid += (t.amount || 0);
+        // REGLA UNIVERSAL: Todo Egreso es un cargo (-). Cuotas y Cobros también.
+        const isCharge = t.type === 'expense' || ['Cuota Mensual', 'Cobro Manual', 'Inscripción'].includes(t.category);
+        
+        if (isCharge) {
+            sign = '-'; 
         } else {
-            sign = t.type === 'income' ? '+' : '-';
-            if (t.type === 'income') totalPaid += (t.amount || 0);
+            sign = '+'; 
+            totalPaid += (t.amount || 0);
         }
         
         txText += `• ${t.category || 'Movimiento'}: ${sign}$${(t.amount||0).toFixed(2)} (${dStr})\n`;
@@ -1960,7 +1959,6 @@ window.openPlayerFinancialReport = function(playerId) {
     document.getElementById('pf-player-name').textContent = player.name || 'Jugador';
     document.getElementById('pf-debt').textContent = `$${(player.debtAmount || 0).toFixed(2)}`;
     
-    // Botón de WhatsApp
     const waBtn = document.getElementById('pf-btn-wa');
     if (waBtn) {
         waBtn.onclick = () => window.sendPlayerFinancesWhatsApp(playerId);
@@ -1968,7 +1966,6 @@ window.openPlayerFinancialReport = function(playerId) {
         else { waBtn.classList.add('hidden'); waBtn.classList.remove('flex'); }
     }
 
-    // Botón de Pagar
     const payBtn = document.getElementById('pf-btn-pay');
     if (payBtn) {
         payBtn.onclick = () => {
@@ -1997,26 +1994,17 @@ window.openPlayerFinancialReport = function(playerId) {
             
             let displayAmt = '', iconBadge = '';
             
-            // Lógica visual: Las deudas se pintan en rojo, los pagos en verde
-            if (t.category === 'Cuota Mensual' || t.category === 'Multa Tarjeta' || t.category === 'Cobro Manual') {
+            // REGLA UNIVERSAL VISUAL:
+            const isCharge = t.type === 'expense' || ['Cuota Mensual', 'Cobro Manual', 'Inscripción'].includes(t.category);
+
+            if (isCharge) {
                 displayAmt = `<p class="font-black text-red-500 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-file-invoice"></i></span>`; 
-            } 
-            else if (t.category === 'Abono a Deuda (Jugador)') {
+            } else {
                 totalPaid += (t.amount || 0);
                 displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-money-bill-wave"></i></span>`;
             }
-            else { 
-                if(t.type === 'income') {
-                    totalPaid += (t.amount || 0);
-                    displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`;
-                    iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`;
-                } else {
-                    displayAmt = `<p class="font-black text-red-500 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`;
-                    iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`;
-                }
-            } 
 
             list.innerHTML += `
             <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-800 last:border-0">
