@@ -408,6 +408,17 @@ window.openPlayerProfile = function(id) {
     // Acción del botón Editar
     const editBtn = document.getElementById('pp-btn-edit');
     if (editBtn) editBtn.onclick = () => window.editPlayer(p.id);
+
+    // NUEVO: Acción del botón Estado de Cuenta
+    const ppFinBtn = document.getElementById('pp-btn-finances-report');
+    if (!ppFinBtn) {
+        // Si el botón no existe en el HTML, lo inyectamos dinámicamente al lado del botón editar
+        const btnContainer = editBtn.parentElement;
+        const btnHtml = `<button id="pp-btn-finances-report" onclick="window.openPlayerFinancialReport('${p.id}')" class="admin-only shrink-0 w-full sm:w-auto bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 hover:text-green-700 dark:hover:text-green-400 text-green-600 dark:text-green-500 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-green-200 dark:border-green-800 shadow-sm"><i class="fas fa-file-invoice-dollar"></i> Finanzas</button>`;
+        btnContainer.insertAdjacentHTML('beforeend', btnHtml);
+    } else {
+        ppFinBtn.onclick = () => window.openPlayerFinancialReport(p.id);
+    }
     
     const imgCont = document.getElementById('pp-image-container');
     const ini = validName.charAt(0).toUpperCase();
@@ -427,11 +438,6 @@ window.openPlayerProfile = function(id) {
     
     window.switchProfileTab('rendimiento');
     window.showSection('playerProfile');
-};
-
-window.closePlayerProfile = function() {
-    document.getElementById('playerProfile').classList.add('hidden');
-    window.showSection('players');
 };
 
 window.renderProfileRendimiento = function(p) {
