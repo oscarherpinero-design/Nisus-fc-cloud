@@ -405,7 +405,7 @@ window.openPlayerProfile = function(id) {
     const ageFootEl = document.getElementById('pp-age-foot');
     if (ageFootEl) ageFootEl.innerHTML = `<i class="fas fa-birthday-cake mr-1"></i> ${age} <span class="mx-2 text-slate-300 dark:text-slate-700">|</span> <i class="fas fa-shoe-prints mr-1"></i> Pie: ${ft}`;
     
-    // Acción del botón Editar y el nuevo botón de Finanzas juntos
+    // --- INICIO BLOQUE BOTONES CORREGIDO ---
     const actionsContainer = document.getElementById('pp-actions-container');
     if (!actionsContainer) {
         const editBtn = document.getElementById('pp-btn-edit');
@@ -429,6 +429,8 @@ window.openPlayerProfile = function(id) {
     
     const newFinBtn = document.getElementById('pp-btn-finances-report');
     if (newFinBtn) newFinBtn.onclick = () => window.openPlayerFinancialReport(p.id);
+    // --- FIN BLOQUE BOTONES CORREGIDO ---
+    
     const imgCont = document.getElementById('pp-image-container');
     const ini = validName.charAt(0).toUpperCase();
     imgCont.innerHTML = p.image 
