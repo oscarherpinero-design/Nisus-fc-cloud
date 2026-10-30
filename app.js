@@ -1391,35 +1391,34 @@ window.exportFinancesCSV = function() {
 window.exchangeRateBCV = null;
 
 window.fetchVenezuelaRates = async function() {
+    const btnIcon = document.getElementById('bcv-spinner');
+    if (btnIcon) btnIcon.classList.add('fa-spin'); // Activamos la animación de cargando
+    
     try {
-        // Cambiamos a DolarAPI que es súper estable y amigable con los navegadores (sin error CORS)
         const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         const data = await response.json();
         
         if (data && data.promedio) {
-            window.exchangeRateBCV = data.promedio;
-            const rateText = document.getElementById('rate-text');
-            const rateSpinner = document.getElementById('rate-spinner');
+            // 1. Lo guardamos en la variable CORRECTA que usa el resto de la app
+            window.currentExchangeRate = data.promedio;
             
-            if (rateText) rateText.innerHTML = `BCV: ${window.exchangeRateBCV.toFixed(2)} Bs`;
-            if (rateSpinner) {
-                rateSpinner.classList.remove('fa-spin', 'fa-sync');
-                rateSpinner.classList.add('fa-money-bill-wave');
-            }
+            // 2. Lo mostramos en el cajón de texto para que el usuario lo vea
+            const inputEl = document.getElementById('custom-rate-input');
+            if (inputEl) inputEl.value = data.promedio.toFixed(2);
             
-            // Si estamos en la pestaña de finanzas, actualizamos los cálculos inmediatamente
-            if (document.getElementById('finances') && !document.getElementById('finances').classList.contains('hidden')) {
-                window.renderFinances();
-            }
+            // 3. Detenemos la animación y avisamos que todo salió bien
+            if (btnIcon) btnIcon.classList.remove('fa-spin');
+            window.showToast(`Tasa BCV actualizada: ${data.promedio.toFixed(2)} Bs`);
+            
+            // 4. Mandamos a recalcular todos los saldos
+            window.renderFinances();
         } else {
-            throw new Error("No se encontró el promedio en la respuesta");
+            throw new Error("Sin datos de la API");
         }
     } catch (error) {
         console.error("Error obteniendo tasa:", error);
-        const rateText = document.getElementById('rate-text');
-        const rateSpinner = document.getElementById('rate-spinner');
-        if (rateText) rateText.textContent = "Sin conexión BCV";
-        if (rateSpinner) rateSpinner.classList.remove('fa-spin');
+        if (btnIcon) btnIcon.classList.remove('fa-spin');
+        window.showToast("Fallo al conectar con BCV. Ingresa la tasa manual.", true);
     }
 };
 window.applyCustomRate = function() {
