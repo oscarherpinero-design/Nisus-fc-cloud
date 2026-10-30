@@ -393,7 +393,6 @@ window.openPlayerProfile = function(id) {
     document.getElementById('pp-name').textContent = validName;
     document.getElementById('pp-alias-pos').textContent = p.alias ? `"${p.alias}" · ${pos}` : pos;
     
-    // Cálculo de Edad y Pie
     let age='--', ft=p.foot ? p.foot.toUpperCase() : 'N/E'; 
     if(p.birthdate && p.birthdate.includes('-')) { 
         const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1]-1, p.birthdate.split('-')[2]), td = new Date(); 
@@ -405,23 +404,21 @@ window.openPlayerProfile = function(id) {
     const ageFootEl = document.getElementById('pp-age-foot');
     if (ageFootEl) ageFootEl.innerHTML = `<i class="fas fa-birthday-cake mr-1"></i> ${age} <span class="mx-2 text-slate-300 dark:text-slate-700">|</span> <i class="fas fa-shoe-prints mr-1"></i> Pie: ${ft}`;
     
-    // --- INICIO BLOQUE BOTONES SEGURO ---
+    // --- BLOQUE BOTONES (CON ESPACIO PARA LA FLECHA) ---
     const editBtn = document.getElementById('pp-btn-edit');
     if (editBtn) {
         editBtn.onclick = () => window.editPlayer(p.id);
         
-        // Si no hemos creado el contenedor de los botones, lo creamos de forma segura sin borrar nada
-        if (!document.getElementById('pp-actions-container')) {
-            const container = document.createElement('div');
-            container.id = 'pp-actions-container';
-            container.className = 'flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-4 sm:mt-0 shrink-0';
+        if (!document.getElementById('pp-actions-wrapper')) {
+            const wrapper = document.createElement('div');
+            wrapper.id = 'pp-actions-wrapper';
+            // Le agregamos 'sm:pr-14' y 'mt-4' para separarlo de la flecha de regresar
+            wrapper.className = 'flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-6 sm:mt-0 sm:pr-14 shrink-0 relative z-20';
             
-            // Insertamos el contenedor antes del botón de editar y movemos el botón adentro
-            editBtn.parentNode.insertBefore(container, editBtn);
-            container.appendChild(editBtn);
+            editBtn.parentNode.insertBefore(wrapper, editBtn);
+            wrapper.appendChild(editBtn);
             
-            // Inyectamos el botón de Finanzas
-            container.insertAdjacentHTML('afterbegin', `
+            wrapper.insertAdjacentHTML('afterbegin', `
                 <button id="pp-btn-finances-report" class="admin-only bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 hover:text-green-700 dark:text-green-400 text-green-600 dark:text-green-500 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-green-200 dark:border-green-800 shadow-sm">
                     <i class="fas fa-file-invoice-dollar"></i> Finanzas
                 </button>
@@ -431,7 +428,7 @@ window.openPlayerProfile = function(id) {
         const ppFinBtn = document.getElementById('pp-btn-finances-report');
         if (ppFinBtn) ppFinBtn.onclick = () => window.openPlayerFinancialReport(p.id);
     }
-    // --- FIN BLOQUE BOTONES SEGURO ---
+    // --- FIN BLOQUE BOTONES ---
     
     const imgCont = document.getElementById('pp-image-container');
     const ini = validName.charAt(0).toUpperCase();
@@ -451,6 +448,11 @@ window.openPlayerProfile = function(id) {
     
     window.switchProfileTab('rendimiento');
     window.showSection('playerProfile');
+};
+
+window.closePlayerProfile = function() {
+    document.getElementById('playerProfile').classList.add('hidden');
+    window.showSection('players');
 };
 
 window.renderProfileRendimiento = function(p) {
