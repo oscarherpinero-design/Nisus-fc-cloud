@@ -778,8 +778,9 @@
                 <ul id="pf-transactions-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></ul>
             </div>
             
-            <div class="p-5 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-3">
-                <button type="button" onclick="document.getElementById('modal-player-finances').classList.add('hidden')" class="flex-1 px-4 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition">Cerrar</button>
+           <div class="p-5 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-2">
+                <button type="button" onclick="document.getElementById('modal-player-finances').classList.add('hidden')" class="px-4 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition">Cerrar</button>
+                <button type="button" id="pf-btn-wa" class="admin-only hidden px-4 py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 shadow-sm transition items-center justify-center"><i class="fab fa-whatsapp text-lg"></i></button>
                 <button type="button" id="pf-btn-pay" class="admin-only hidden flex-1 px-4 py-3 rounded-xl font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition items-center justify-center gap-2"><i class="fas fa-hand-holding-usd"></i> Cobrar</button>
             </div>
         </div>
