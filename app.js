@@ -1453,8 +1453,8 @@ window.renderFinances = function() {
 
     if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') window.renderMonthlyDues();
 
-    // CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos
-   const debtorsList = document.getElementById('debtors-list');
+// CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos
+    const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
         debtorsList.innerHTML = ''; let hasDebtors = false;
         (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
@@ -1468,10 +1468,18 @@ window.renderFinances = function() {
                 
                 let bsEquivalent = window.currentExchangeRate ? `<span class="text-[9px] text-slate-400 block mt-0.5">≈ ${(totalDebt * window.currentExchangeRate).toFixed(2)} Bs</span>` : '';
 
-                // El onclick de la fila y los botones solo funcionarán/aparecerán si window.isAdmin es true
-                const rowAction = window.isAdmin ? `onclick="window.openPaySpecific('${p.id}')" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"` : `class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 last:border-0"`;
+                // NUEVO: SOLO el admin puede hacer clic en la fila para abrir el reporte
+                const rowAction = window.isAdmin 
+                    ? `onclick="window.openPlayerFinancialReport('${p.id}')" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"`
+                    : `class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 last:border-0"`;
                 
-                const adminButtons = window.isAdmin ? `<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${totalDebt})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase cursor-pointer" onclick="event.stopPropagation(); window.openPaySpecific('${p.id}')">💰 Pagar</span></div>` : '';
+                // NUEVO: Botones visibles solo para admin
+                const adminButtons = window.isAdmin 
+                    ? `<div class="flex items-center gap-2 mt-1">
+                        <button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${totalDebt})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button>
+                        <span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase cursor-pointer px-2 py-1 bg-brand-50 rounded" onclick="event.stopPropagation(); window.openPaySpecific('${p.id}')">💰 Pagar</span>
+                       </div>` 
+                    : ``;
 
                 debtorsList.innerHTML += `
                 <li ${rowAction}>
@@ -1887,5 +1895,83 @@ window.initApp = async function() {
 if (document.readyState === 'loading') { 
     document.addEventListener('DOMContentLoaded', window.initApp); 
 } else { 
-    window.initApp(); 
+   window.openPlayerFinancialReport = function(playerId) {
+    if (!window.isAdmin) return; // Bloqueo de seguridad extra por si acaso
+    
+    const player = (window.players || []).find(p => p.id === playerId);
+    if (!player) return;
+    
+    document.getElementById('pf-player-name').textContent = player.name || 'Jugador';
+    document.getElementById('pf-debt').textContent = `$${(player.debtAmount || 0).toFixed(2)}`;
+    
+    const payBtn = document.getElementById('pf-btn-pay');
+    if (payBtn) {
+        payBtn.onclick = () => {
+            document.getElementById('modal-player-finances').classList.add('hidden');
+            if (typeof window.openPaySpecific === 'function') window.openPaySpecific(playerId);
+        };
+        if (player.debtAmount > 0 && window.isAdmin) {
+            payBtn.classList.remove('hidden'); payBtn.classList.add('flex');
+        } else {
+            payBtn.classList.add('hidden'); payBtn.classList.remove('flex');
+        }
+    }
+    
+    const list = document.getElementById('pf-transactions-list');
+    list.innerHTML = '';
+    
+    const playerTxs = (window.finances || [])
+        .filter(t => t && t.playerId === playerId)
+        .sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+        
+    let totalPaid = 0;
+    
+    if (playerTxs.length === 0) {
+        list.innerHTML = '<li class="p-8 text-center text-slate-500 text-sm font-medium">No hay registros financieros para este jugador.</li>';
+    } else {
+        playerTxs.forEach(t => {
+            const dateVal = t.date && typeof t.date === 'string' && t.date.includes('-') ? t.date + 'T12:00:00' : new Date().toISOString();
+            const dStr = new Date(dateVal).toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); 
+            
+            let displayAmt = '', iconBadge = '';
+            
+            if (t.type === 'expense' || (t.category && t.category.toLowerCase().includes('multa'))) { 
+                displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; 
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-exclamation-triangle"></i></span>`; 
+            } 
+            else if (t.isPaid === false) { 
+                displayAmt = `<p class="font-black text-amber-500">⏳ $${(t.amount||0).toFixed(2)}</p>`; 
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; 
+            } 
+            else if (t.type === 'income') {
+                totalPaid += (t.amount || 0);
+                displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; 
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-check-double"></i></span>`;
+            }
+            else { 
+                displayAmt = `<p class="font-black text-slate-400 line-through">$${(t.amount||0).toFixed(2)}</p>`; 
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; 
+            } 
+
+            list.innerHTML += `
+            <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <div class="flex items-center gap-3">
+                    ${iconBadge}
+                    <div>
+                        <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category || 'Movimiento'}</p>
+                        <p class="text-[10px] text-slate-400">${t.description || ''}</p>
+                    </div>
+                </div>
+                <div class="text-right whitespace-nowrap">
+                    ${displayAmt}
+                    <p class="text-[10px] text-slate-400">${dStr}</p>
+                </div>
+            </li>`;
+        });
+    }
+    
+    document.getElementById('pf-paid').textContent = `$${totalPaid.toFixed(2)}`;
+    document.getElementById('modal-player-finances').classList.remove('hidden');
+};
+   window.initApp(); 
 }
