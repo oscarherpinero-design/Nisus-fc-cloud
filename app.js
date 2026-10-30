@@ -405,21 +405,30 @@ window.openPlayerProfile = function(id) {
     const ageFootEl = document.getElementById('pp-age-foot');
     if (ageFootEl) ageFootEl.innerHTML = `<i class="fas fa-birthday-cake mr-1"></i> ${age} <span class="mx-2 text-slate-300 dark:text-slate-700">|</span> <i class="fas fa-shoe-prints mr-1"></i> Pie: ${ft}`;
     
-    // Acción del botón Editar
-    const editBtn = document.getElementById('pp-btn-edit');
-    if (editBtn) editBtn.onclick = () => window.editPlayer(p.id);
-
-    // NUEVO: Acción del botón Estado de Cuenta
-    const ppFinBtn = document.getElementById('pp-btn-finances-report');
-    if (!ppFinBtn) {
-        // Si el botón no existe en el HTML, lo inyectamos dinámicamente al lado del botón editar
-        const btnContainer = editBtn.parentElement;
-        const btnHtml = `<button id="pp-btn-finances-report" onclick="window.openPlayerFinancialReport('${p.id}')" class="admin-only shrink-0 w-full sm:w-auto bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 hover:text-green-700 dark:hover:text-green-400 text-green-600 dark:text-green-500 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-green-200 dark:border-green-800 shadow-sm"><i class="fas fa-file-invoice-dollar"></i> Finanzas</button>`;
-        btnContainer.insertAdjacentHTML('beforeend', btnHtml);
-    } else {
-        ppFinBtn.onclick = () => window.openPlayerFinancialReport(p.id);
+    // Acción del botón Editar y el nuevo botón de Finanzas juntos
+    const actionsContainer = document.getElementById('pp-actions-container');
+    if (!actionsContainer) {
+        const editBtn = document.getElementById('pp-btn-edit');
+        if (editBtn) {
+            const parent = editBtn.parentElement;
+            parent.innerHTML = `
+                <div id="pp-actions-container" class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                    <button id="pp-btn-finances-report" class="admin-only bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 hover:text-green-700 dark:text-green-400 text-green-600 dark:text-green-500 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-green-200 dark:border-green-800 shadow-sm">
+                        <i class="fas fa-file-invoice-dollar"></i> Finanzas
+                    </button>
+                    <button id="pp-btn-edit" class="admin-only bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-900/30 hover:text-brand-600 dark:text-brand-400 text-slate-500 dark:text-slate-400 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <i class="fas fa-edit"></i> Editar Ficha
+                    </button>
+                </div>
+            `;
+        }
     }
     
+    const newEditBtn = document.getElementById('pp-btn-edit');
+    if (newEditBtn) newEditBtn.onclick = () => window.editPlayer(p.id);
+    
+    const newFinBtn = document.getElementById('pp-btn-finances-report');
+    if (newFinBtn) newFinBtn.onclick = () => window.openPlayerFinancialReport(p.id);
     const imgCont = document.getElementById('pp-image-container');
     const ini = validName.charAt(0).toUpperCase();
     imgCont.innerHTML = p.image 
@@ -1901,7 +1910,7 @@ window.initApp = async function() {
 if (document.readyState === 'loading') { 
     document.addEventListener('DOMContentLoaded', window.initApp); 
 } else { 
-  window.sendPlayerFinancesWhatsApp = function(playerId) {
+window.sendPlayerFinancesWhatsApp = function(playerId) {
     const player = (window.players || []).find(p => p.id === playerId);
     if (!player) return;
     
@@ -1914,10 +1923,18 @@ if (document.readyState === 'loading') {
     
     playerTxs.forEach(t => {
         const dStr = new Date(t.date || Date.now()).toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
-        if (t.type === 'income') totalPaid += (t.amount || 0);
+        let sign = '';
         
-        let sign = t.type === 'income' ? '+' : '-';
-        if (t.isPaid === false) sign = '⏳ ';
+        // Lógica corregida: Diferenciar cargos (deudas) de pagos (abonos)
+        if (t.category === 'Cuota Mensual' || t.category === 'Multa Tarjeta' || t.category === 'Cobro Manual') {
+            sign = '-'; // Cargo a la deuda
+        } else if (t.category === 'Abono a Deuda (Jugador)') {
+            sign = '+'; // Pago recibido
+            totalPaid += (t.amount || 0);
+        } else {
+            sign = t.type === 'income' ? '+' : '-';
+            if (t.type === 'income') totalPaid += (t.amount || 0);
+        }
         
         txText += `• ${t.category || 'Movimiento'}: ${sign}$${(t.amount||0).toFixed(2)} (${dStr})\n`;
     });
@@ -1961,7 +1978,10 @@ window.openPlayerFinancialReport = function(playerId) {
     const list = document.getElementById('pf-transactions-list');
     list.innerHTML = '';
     
-    const playerTxs = (window.finances || []).filter(t => t && t.playerId === playerId).sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+    const playerTxs = (window.finances || [])
+        .filter(t => t && t.playerId === playerId)
+        .sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+        
     let totalPaid = 0;
     
     if (playerTxs.length === 0) {
@@ -1972,24 +1992,41 @@ window.openPlayerFinancialReport = function(playerId) {
             const dStr = new Date(dateVal).toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); 
             
             let displayAmt = '', iconBadge = '';
-            if (t.type === 'expense' || (t.category && t.category.toLowerCase().includes('multa'))) { 
-                displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; 
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-exclamation-triangle"></i></span>`; 
-            } else if (t.isPaid === false) { 
-                displayAmt = `<p class="font-black text-amber-500">⏳ $${(t.amount||0).toFixed(2)}</p>`; 
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; 
-            } else if (t.type === 'income') {
+            
+            // Lógica visual: Las deudas se pintan en rojo, los pagos en verde
+            if (t.category === 'Cuota Mensual' || t.category === 'Multa Tarjeta' || t.category === 'Cobro Manual') {
+                displayAmt = `<p class="font-black text-red-500 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; 
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-file-invoice"></i></span>`; 
+            } 
+            else if (t.category === 'Abono a Deuda (Jugador)') {
                 totalPaid += (t.amount || 0);
                 displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; 
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-check-double"></i></span>`;
-            } else { 
-                displayAmt = `<p class="font-black text-slate-400 line-through">$${(t.amount||0).toFixed(2)}</p>`; 
-                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; 
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-money-bill-wave"></i></span>`;
+            }
+            else { 
+                if(t.type === 'income') {
+                    totalPaid += (t.amount || 0);
+                    displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`;
+                    iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`;
+                } else {
+                    displayAmt = `<p class="font-black text-red-500 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`;
+                    iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`;
+                }
             } 
+
             list.innerHTML += `
             <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-800 last:border-0">
-                <div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category || 'Movimiento'}</p><p class="text-[10px] text-slate-400">${t.description || ''}</p></div></div>
-                <div class="text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></div>
+                <div class="flex items-center gap-3">
+                    ${iconBadge}
+                    <div>
+                        <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category || 'Movimiento'}</p>
+                        <p class="text-[10px] text-slate-400">${t.description || ''}</p>
+                    </div>
+                </div>
+                <div class="text-right whitespace-nowrap">
+                    ${displayAmt}
+                    <p class="text-[10px] text-slate-400">${dStr}</p>
+                </div>
             </li>`;
         });
     }
