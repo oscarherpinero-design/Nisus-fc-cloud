@@ -1503,12 +1503,14 @@ window.renderFinances = function() {
 
     if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') window.renderMonthlyDues();
 
-// CORRECCIÓN: Leemos directamente p.debtAmount de tu base de datos
     const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
         debtorsList.innerHTML = ''; let hasDebtors = false;
         (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
-            const totalDebt = p.debtAmount || 0;
+            
+            // SOLUCIÓN: Usar la calculadora dinámica para atrapar cuotas fijas Y arbitrajes
+            const debtData = window.getPlayerDebts(p.id);
+            const totalDebt = debtData.total;
             
             if (totalDebt > 0.01) {
                 hasDebtors = true; 
@@ -1518,12 +1520,10 @@ window.renderFinances = function() {
                 
                 let bsEquivalent = window.currentExchangeRate ? `<span class="text-[9px] text-slate-400 block mt-0.5">≈ ${(totalDebt * window.currentExchangeRate).toFixed(2)} Bs</span>` : '';
 
-                // NUEVO: SOLO el admin puede hacer clic en la fila para abrir el reporte
                 const rowAction = window.isAdmin 
                     ? `onclick="window.openPlayerFinancialReport('${p.id}')" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"`
                     : `class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 last:border-0"`;
                 
-                // NUEVO: Botones visibles solo para admin
                 const adminButtons = window.isAdmin 
                     ? `<div class="flex items-center gap-2 mt-1">
                         <button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${totalDebt})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button>
@@ -1540,6 +1540,7 @@ window.renderFinances = function() {
         });
         if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">Todos los jugadores están al día</li>';
     }
+    
     const transList = document.getElementById('transactions-list');
     if (transList) {
         transList.innerHTML = '';
