@@ -1169,6 +1169,7 @@ window.getPlayerDebts = function(playerId) {
     }
     
     (window.finances || []).forEach(t => {
+        // 1. Deudas por Cobros Manuales, Multas o Mensualidades
         if (t?.playerId === playerId && t?.type === 'income' && t?.isPaid === false) {
             const abonos = (window.finances || []).filter(x => x?.category === 'Abono a Deuda (Jugador)' && x?.specificDebtId === t.id);
             const totalAbonado = abonos.reduce((sum, x) => sum + (parseFloat(x?.amount) || 0), 0);
@@ -1177,8 +1178,37 @@ window.getPlayerDebts = function(playerId) {
                 debts.push({ id: t.id, desc: t.description || t.category || 'Deuda', amount: amt, date: t.date || '' });
             }
         }
+        
+        // 2. LÓGICA RESTAURADA: Cuotas de Arbitraje Automáticas
+        if (t?.category === 'Arbitraje' && t?.matchId) {
+            const match = (window.matches || []).find(m => m.id === t.matchId);
+            if (match && Array.isArray(match.lineup)) {
+                // Filtramos para dividir solo entre jugadores reales (excluye al DT)
+                const validPlayers = match.lineup.filter(l => {
+                    const pObj = window.players.find(x => x.id === l.playerId);
+                    return pObj && !pObj.isStaff;
+                });
+                
+                const isCalledUp = validPlayers.some(l => l.playerId === playerId);
+                const hasPaid = t.paidBy && Array.isArray(t.paidBy) && t.paidBy.includes(playerId);
+                
+                // Si el jugador fue convocado y NO está en la lista de los que ya pagaron, se le carga su parte
+                if (isCalledUp && !hasPaid) {
+                    const cuota = (parseFloat(t.amount) || 0) / validPlayers.length;
+                    if (cuota > 0) {
+                        debts.push({ 
+                            id: 'arb_' + t.id, 
+                            desc: `Cuota Arbitraje: vs ${match.opponent}`, 
+                            amount: cuota, 
+                            date: t.date || '' 
+                        });
+                    }
+                }
+            }
+        }
     });
     
+    // Ajuste y balance final
     const calcTotal = debts.reduce((sum, d) => sum + d.amount, 0);
     if (total > calcTotal + 0.01) {
         debts.push({ id: 'generic_' + playerId, desc: 'Saldo pendiente anterior', amount: total - calcTotal, date: '' });
