@@ -1360,19 +1360,53 @@ window.sendDirectWhatsApp = function(playerName, debtAmount) {
 // BLOQUEO ABSOLUTO DE MENSAJE GRUPAL PARA LECTORES
 window.copyGroupMessage = function() {
     if (!window.isAdmin) return window.showToast('Solo el administrador puede usar esta función', true);
+    
+    // Leemos el filtro actual
+    const debtFilter = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'all';
+    let filterName = "Estado de Pagos";
+    if (debtFilter === 'mensualidad') filterName = "Cuotas Mensuales Pendientes";
+    if (debtFilter === 'arbitraje') filterName = "Arbitrajes Pendientes";
+    if (debtFilter === 'multa') filterName = "Multas Disciplinarias";
+
     const enMora = [], enPlazo = [];
+    
     window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
         const d = window.getPlayerDebts(p.id);
-        if (d.total > 0.01) { const mor = window.getMorosityStatus(p.id); if (mor.status === 'mora') enMora.push(`🔴 ${p.name}: $${d.total.toFixed(2)}`); else enPlazo.push(`🟡 ${p.name}: $${d.total.toFixed(2)}`); }
+        let totalFiltered = 0;
+        
+        // Filtramos igual que en la pantalla
+        if (debtFilter === 'all') {
+            totalFiltered = d.total;
+        } else {
+            const filtered = d.debts.filter(x => {
+                const desc = x.desc.toLowerCase();
+                if (debtFilter === 'mensualidad') return desc.includes('mensual');
+                if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
+                if (debtFilter === 'multa') return desc.includes('multa');
+                return false;
+            });
+            totalFiltered = filtered.reduce((sum, x) => sum + x.amount, 0);
+        }
+
+        if (totalFiltered > 0.01) { 
+            const mor = window.getMorosityStatus(p.id); 
+            if (mor.status === 'mora') enMora.push(`🔴 ${p.name}: $${totalFiltered.toFixed(2)}`); 
+            else enPlazo.push(`🟡 ${p.name}: $${totalFiltered.toFixed(2)}`); 
+        }
     });
-    let msg = '*NISUS FC - Estado de Pagos*\n\n⚠️ _Límite de pago para no entrar en mora: **Día 25** de cada mes._\n\n';
-    if (enMora.length === 0 && enPlazo.length === 0) { msg += '✅ Todos los jugadores están al día. ¡Gracias!'; } 
-    else {
-        if (enMora.length > 0) msg += '🚨 *EN MORA (Vencido)*\n' + enMora.join('\n') + '\n\n';
-        if (enPlazo.length > 0) msg += '⏳ *EN PLAZO (Tienen hasta el 25)*\n' + enPlazo.join('\n') + '\n\n';
-        msg += '_Gracias por su compromiso._';
+    
+    let msg = `*NISUS FC - ${filterName}*\n\n`;
+    if (debtFilter === 'all') msg += '⚠️ _Límite de pago para no entrar en mora: **Día 25** de cada mes._\n\n';
+    
+    if (enMora.length === 0 && enPlazo.length === 0) { 
+        msg += '✅ Todos los jugadores están al día con este concepto. ¡Gracias!'; 
+    } else {
+        if (enMora.length > 0) msg += '🚨 *LISTA DE COBRO*\n' + enMora.join('\n') + '\n\n';
+        if (enPlazo.length > 0) msg += '⏳ *EN PLAZO*\n' + enPlazo.join('\n') + '\n\n';
+        msg += '_Gracias por su compromiso con el equipo._';
     }
-    navigator.clipboard.writeText(msg).then(() => window.showToast('Mensaje copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
+    
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Lista copiada al portapapeles')).catch(() => window.showToast('Error al copiar', true));
 };
 
 // ==========================================
@@ -1503,14 +1537,31 @@ window.renderFinances = function() {
 
     if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') window.renderMonthlyDues();
 
-    const debtorsList = document.getElementById('debtors-list');
+   const debtorsList = document.getElementById('debtors-list');
     if (debtorsList) {
         debtorsList.innerHTML = ''; let hasDebtors = false;
+        
+        // 1. Leemos qué filtro seleccionaste en pantalla
+        const debtFilter = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'all';
+
         (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
             
-            // SOLUCIÓN: Usar la calculadora dinámica para atrapar cuotas fijas Y arbitrajes
             const debtData = window.getPlayerDebts(p.id);
-            const totalDebt = debtData.total;
+            let totalDebt = 0;
+            
+            // 2. Filtramos la deuda según lo que quieres cobrar
+            if (debtFilter === 'all') {
+                totalDebt = debtData.total;
+            } else {
+                const filtered = debtData.debts.filter(d => {
+                    const desc = d.desc.toLowerCase();
+                    if (debtFilter === 'mensualidad') return desc.includes('mensual');
+                    if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
+                    if (debtFilter === 'multa') return desc.includes('multa');
+                    return false;
+                });
+                totalDebt = filtered.reduce((sum, d) => sum + d.amount, 0);
+            }
             
             if (totalDebt > 0.01) {
                 hasDebtors = true; 
@@ -1538,7 +1589,7 @@ window.renderFinances = function() {
                 </li>`;
             }
         });
-        if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">Todos los jugadores están al día</li>';
+        if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">No hay deudas en esta categoría</li>';
     }
     
     const transList = document.getElementById('transactions-list');
