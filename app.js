@@ -164,7 +164,32 @@ window.getDiscipline = function(playerId, tournament) {
     });
     return { suspended: suspensions > 0, yellows: accYellows, suspensionsLeft: suspensions };
 };
-
+window.getPlayerArchivedStat = function(player, statKey) {
+    if(!player) return 0; if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
+    let count = 0;
+    (window.matches || []).forEach(m => {
+        if (!m || m.status !== 'archived') return; // Solo lee los archivados
+        
+        const lArr = Array.isArray(m.lineup) ? m.lineup : [];
+        const eArr = Array.isArray(m.events) ? m.events : [];
+        const played = lArr.some(l => l && l.playerId === player.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === player.id);
+        
+        if (statKey === 'games' && played && !player.isStaff) count++;
+        if (statKey === 'cleanSheets' && played && (parseInt(m.goalsThem || 0) === 0)) { 
+            const posRaw = player.positions || player.position || [];
+            const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
+            if (pos.includes('Portero') && !player.isStaff) count++; 
+        }
+        if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
+        eArr.forEach(ev => { 
+            if (ev && ev.playerId === player.id) { 
+                if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++; 
+                else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++; 
+                else if (statKey === ev.type) count++; 
+            } 
+        });
+    }); return count;
+};
 window.getPlayerStat = function(player, statKey) {
     if(!player) return 0; if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
     let count = 0;
@@ -456,6 +481,7 @@ window.closePlayerProfile = function() {
 };
 
 window.renderProfileRendimiento = function(p) {
+    // 1. Estadísticas del Torneo Actual
     const games = window.getPlayerStat(p, 'games');
     const goals = window.getPlayerStat(p, 'goals');
     const assists = window.getPlayerStat(p, 'assists');
@@ -463,11 +489,17 @@ window.renderProfileRendimiento = function(p) {
     const yellows = window.getPlayerStat(p, 'yellows');
     const reds = window.getPlayerStat(p, 'reds');
     
+    // 2. Estadísticas del Historial (Torneos Archivados)
+    const aGames = window.getPlayerArchivedStat(p, 'games');
+    const aGoals = window.getPlayerArchivedStat(p, 'goals');
+    const aAssists = window.getPlayerArchivedStat(p, 'assists');
+    const aMvps = window.getPlayerArchivedStat(p, 'mvps');
+    
+    // 3. Asistencia y Defensa Real (TU LÓGICA)
     const totalTrainings = window.trainings ? window.trainings.length : 0;
     const attendance = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
     const attPct = totalTrainings > 0 ? Math.round((attendance/totalTrainings)*100) : 0;
 
-    // Calcular Defensa Real (Arcos en cero del equipo cuando este jugador estaba en la cancha)
     let defCleanSheets = 0;
     (window.matches || []).forEach(m => {
         if (m.status === 'finished') {
@@ -476,19 +508,31 @@ window.renderProfileRendimiento = function(p) {
         }
     });
 
+    // 4. Renderizado visual (Actual + Historial incorporado)
     document.getElementById('pp-stats-grid').innerHTML = `
+        <div class="col-span-full mb-1 border-b border-slate-200 dark:border-slate-800 pb-2">
+            <span class="text-xs font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest"><i class="fas fa-play-circle mr-1"></i> Torneo Actual</span>
+        </div>
         <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partidos</p><p class="text-2xl font-black text-slate-800 dark:text-white">${games}</p></div>
         <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Goles</p><p class="text-2xl font-black text-green-500">${goals}</p></div>
         <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencias</p><p class="text-2xl font-black text-blue-500">${assists}</p></div>
         <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencia</p><p class="text-2xl font-black ${attPct>=75?'text-green-500':attPct>=50?'text-yellow-500':'text-red-500'}">${attPct}%</p></div>
+        
+        <div class="col-span-full mt-4 mb-1 border-b border-slate-200 dark:border-slate-800 pb-2">
+            <span class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest"><i class="fas fa-archive mr-1"></i> Historial (Torneos Pasados)</span>
+        </div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Partidos</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aGames}</p></div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Goles</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aGoals}</p></div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Asistencias</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aAssists}</p></div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">MVPs</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aMvps}</p></div>
     `;
 
+    // 5. Radar Chart con puntuaciones balanceadas (TU LÓGICA)
     if (window.radarChart360) { window.radarChart360.destroy(); window.radarChart360 = null; }
     if (typeof Chart !== 'undefined' && document.getElementById('pp-radar-chart')) {
         const isDark = document.documentElement.classList.contains('dark');
         const textColor = isDark ? '#cbd5e1' : '#64748b';
         
-        // Puntuaciones Balanceadas
         const scoreAtaque = Math.min(100, (goals / (games || 1)) * 120); 
         const scoreCreacion = Math.min(100, (assists / (games || 1)) * 150); 
         const scoreDefensa = Math.min(100, (defCleanSheets / (games || 1)) * 200); 
@@ -507,6 +551,7 @@ window.renderProfileRendimiento = function(p) {
         });
     }
 
+    // 6. Guía de Forma y Partidos Recientes (TU LÓGICA)
     const fgEl = document.getElementById('pp-form-guide'); fgEl.innerHTML = '';
     const recentMatches = (window.matches || []).filter(m => m.status === 'finished' && Array.isArray(m.lineup) && m.lineup.some(l => l.playerId === p.id)).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
     
