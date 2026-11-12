@@ -1055,7 +1055,8 @@ window.updateDashboard = function() {
         btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
     } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
     
-    const fin = list.filter(m => m.status === 'finished' || m.status === 'forfait').slice(0, 3); const rD = document.getElementById('latest-results');
+    // CORRECCIÓN 1: Resultados Recientes (Aquí puedes decidir si quieres mostrar los archivados. Yo los incluí por si acaso)
+    const fin = list.filter(m => ['finished', 'forfait', 'archived'].includes(m.status)).slice(0, 3); const rD = document.getElementById('latest-results');
     if(rD) {
         rD.innerHTML = '';
         if(fin.length===0) rD.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium">No hay resultados.</p>';
@@ -1067,18 +1068,25 @@ window.updateDashboard = function() {
     
     window.renderBirthdaysAvailability();
 
+    // CORRECCIÓN 2: Para el cálculo de Goles, Asistencias, Partidos Jugados, etc. debemos
+    // usar la lógica que ya cuenta los archivados (window.getPlayerArchivedStat)
     let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
     let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
-    pL.forEach(p => { tG+=window.getPlayerStat(p,'goals'); tA+=window.getPlayerStat(p,'assists'); });
+    pL.forEach(p => { 
+        tG += window.getPlayerStat(p,'goals') + window.getPlayerArchivedStat(p, 'goals'); 
+        tA += window.getPlayerStat(p,'assists') + window.getPlayerArchivedStat(p, 'assists'); 
+    });
+    
     const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
     const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
     
     let tCS=0, maxGames=0, ironMan="--";
     pL.forEach(p => { 
-        const g = window.getPlayerStat(p,'games');
+        const g = window.getPlayerStat(p,'games') + window.getPlayerArchivedStat(p, 'games');
         if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : p.name.split(' ')[0]; }
-        tCS+=window.getPlayerStat(p,'cleanSheets'); 
+        tCS += window.getPlayerStat(p,'cleanSheets') + window.getPlayerArchivedStat(p, 'cleanSheets'); 
     });
+    
     const eTGm = document.getElementById('stat-total-games'); 
     if(eTGm) { 
         if(eTGm.previousElementSibling) eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; 
@@ -1086,26 +1094,37 @@ window.updateDashboard = function() {
     }
     const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
     
+    // Función auxiliar que ahora suma ambos estados
+    const getCombinedStat = (p, stat) => {
+        return window.getPlayerStat(p, stat) + window.getPlayerArchivedStat(p, stat);
+    };
+
     const rL = (arr, k, el) => {
         const d = document.getElementById(el); if(!d)return; d.innerHTML='';
-        arr.forEach((p,i) => { const v=window.getPlayerStat(p,k); if(v===0)return; const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${(p.name || '?').charAt(0).toUpperCase()}</div>`; d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${p.name}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; });
+        arr.forEach((p,i) => { 
+            const v = getCombinedStat(p, k); 
+            if(v===0)return; 
+            const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${(p.name || '?').charAt(0).toUpperCase()}</div>`; d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${p.name}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
+        });
         if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
     };
     
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'games')-window.getPlayerStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'games')-getCombinedStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
 
+    // CORRECCIÓN 3: Para la tabla de victorias/derrotas general de la temporada
     let w=0, d=0, l=0, gf=0, ga=0;
     list.forEach(m => {
-        if(m.status==='finished' || m.status==='forfait'){
+        if(['finished', 'forfait', 'archived'].includes(m.status)){
             if(m.status==='forfait'){ w++; gf+=3; return; }
             const us=parseInt(m.goalsUs)||0, them=parseInt(m.goalsThem)||0; gf+=us; ga+=them;
             if(us>them)w++; else if(us<them)l++; else d++;
         }
     });
+    
     const total=w+d+l;
     const eW=document.getElementById('perf-wins'),eD=document.getElementById('perf-draws'),eL=document.getElementById('perf-losses');
     if(eW)eW.textContent=w; if(eD)eD.textContent=d; if(eL)eL.textContent=l;
@@ -1121,7 +1140,7 @@ window.updateDashboard = function() {
     
     const formEl=document.getElementById('perf-form');
     if(formEl){
-        const recent=list.filter(m=>m.status==='finished'||m.status==='forfait').slice(0,5); formEl.innerHTML='';
+        const recent=list.filter(m=>['finished', 'forfait', 'archived'].includes(m.status)).slice(0,5); formEl.innerHTML='';
         if(recent.length===0)formEl.innerHTML='<p class="text-xs text-slate-400 italic">Sin partidos jugados</p>';
         else recent.forEach(m=>{
             let r='E',col='bg-slate-400 text-white';
@@ -1133,7 +1152,14 @@ window.updateDashboard = function() {
 
     const mvpEl=document.getElementById('mvp-card-content');
     if(mvpEl){
-        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ const g=window.getPlayerStat(p,'goals'),a=window.getPlayerStat(p,'assists'),gp=window.getPlayerStat(p,'games'),m=window.getPlayerStat(p,'mvps'); return {p,score:g*2+a+gp+m*3,g,a,gp,m}; }).sort((x,y)=>y.score-x.score);
+        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
+            const g = getCombinedStat(p,'goals');
+            const a = getCombinedStat(p,'assists');
+            const gp = getCombinedStat(p,'games');
+            const m = getCombinedStat(p,'mvps'); 
+            return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
+        }).sort((x,y)=>y.score-x.score);
+        
         if(mvpList.length>0&&mvpList[0].score>0){
             const t=mvpList[0];
             const img=t.p.image?`<img src="${t.p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg">`:`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">${t.p.name.charAt(0)}</div>`;
