@@ -2159,5 +2159,103 @@ window.openPlayerFinancialReport = function(playerId) {
     document.getElementById('pf-paid').textContent = `$${totalPaid.toFixed(2)}`;
     document.getElementById('modal-player-finances').classList.remove('hidden');
 };
+   // --- NUEVO: SISTEMA DE PESTAÑAS Y TORNEOS ARCHIVADOS ---
+
+window.switchMatchesTab = function(tab) {
+    const activeBtn = document.getElementById('btn-tab-active');
+    const archBtn = document.getElementById('btn-tab-archived');
+    const activeView = document.getElementById('view-active-matches');
+    const archView = document.getElementById('view-archived-matches');
+
+    if (!activeBtn || !archBtn) return;
+
+    if (tab === 'active') {
+        // Estilos Pestaña Activa
+        activeBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm";
+        archBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
+        activeView.classList.remove('hidden');
+        archView.classList.add('hidden');
+    } else {
+        // Estilos Pestaña Historial
+        archBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm";
+        activeBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
+        archView.classList.remove('hidden');
+        activeView.classList.add('hidden');
+        
+        window.renderArchivedTournaments();
+    }
+};
+
+window.renderArchivedTournaments = function() {
+    const container = document.getElementById('archived-tournaments-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Filtramos solo los archivados
+    const archivedMatches = (window.matches || []).filter(m => m.status === 'archived' && m.tournament);
+    
+    if (archivedMatches.length === 0) {
+        container.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500 font-medium bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800"><i class="fas fa-folder-open text-3xl mb-3 text-slate-300 dark:text-slate-700 block"></i> No hay torneos cerrados aún.</div>';
+        return;
+    }
+
+    // Agrupamos la data matemáticamente
+    const tourneys = {};
+    archivedMatches.forEach(m => {
+        if (!tourneys[m.tournament]) tourneys[m.tournament] = { pj:0, pg:0, pe:0, pp:0, gf:0, gc:0 };
+        tourneys[m.tournament].pj++;
+        
+        const us = parseInt(m.goalsUs)||0;
+        const them = parseInt(m.goalsThem)||0;
+        tourneys[m.tournament].gf += us;
+        tourneys[m.tournament].gc += them;
+        
+        if (us > them) tourneys[m.tournament].pg++;
+        else if (us < them) tourneys[m.tournament].pp++;
+        else tourneys[m.tournament].pe++;
+    });
+
+    // Dibujamos las tarjetas de resumen
+    Object.keys(tourneys).forEach(name => {
+        const t = tourneys[name];
+        const pts = (t.pg * 3) + (t.pe * 1);
+        const df = t.gf - t.gc;
+        
+        container.innerHTML += `
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-brand-50 dark:bg-brand-900/20 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                
+                <h4 class="font-black text-slate-800 dark:text-white text-lg mb-4 flex items-start gap-2">
+                    <i class="fas fa-trophy text-orange-500 mt-1"></i> 
+                    <span class="leading-tight">${name} <span class="block text-[9px] text-slate-400 tracking-widest uppercase mt-1">Torneo Cerrado</span></span>
+                </h4>
+                
+                <div class="grid grid-cols-4 gap-2 text-center mb-4">
+                    <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2.5 border border-slate-100 dark:border-slate-800">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase">PJ</p>
+                        <p class="font-black text-lg text-slate-700 dark:text-slate-300">${t.pj}</p>
+                    </div>
+                    <div class="bg-green-50 dark:bg-green-900/20 rounded-xl py-2.5 border border-green-100 dark:border-green-900/30">
+                        <p class="text-[9px] font-bold text-green-600/70 dark:text-green-500/70 uppercase">PG</p>
+                        <p class="font-black text-lg text-green-600 dark:text-green-500">${t.pg}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2.5 border border-slate-100 dark:border-slate-800">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase">PE</p>
+                        <p class="font-black text-lg text-slate-500">${t.pe}</p>
+                    </div>
+                    <div class="bg-red-50 dark:bg-red-900/20 rounded-xl py-2.5 border border-red-100 dark:border-red-900/30">
+                        <p class="text-[9px] font-bold text-red-600/70 dark:text-red-500/70 uppercase">PP</p>
+                        <p class="font-black text-lg text-red-600 dark:text-red-500">${t.pp}</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center text-xs font-bold bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl">
+                    <span class="text-slate-500 dark:text-slate-400">GF: ${t.gf} <span class="mx-1 opacity-50">|</span> GC: ${t.gc} <span class="mx-1 opacity-50">|</span> DIF: <span class="${df > 0 ? 'text-green-500' : (df < 0 ? 'text-red-500' : '')}">${df > 0 ? '+'+df : df}</span></span>
+                    <span class="text-brand-600 dark:text-brand-400 text-sm bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded-lg">PTS: ${pts}</span>
+                </div>
+            </div>
+        `;
+    });
+};
    window.initApp(); 
 }
