@@ -1921,8 +1921,9 @@ window.openArchiveCompetition = function() {
     }
     
     console.log("2. Permisos correctos. Buscando torneos...");
+    // CORRECCIÓN: Ahora busca torneos que tengan partidos finalizados O ganados por forfait
     const comps = [...new Set((window.matches || [])
-        .filter(m => m.status === 'finished' && m.tournament)
+        .filter(m => (m.status === 'finished' || m.status === 'forfait') && m.tournament)
         .map(m => m.tournament))];
         
     const select = document.getElementById('comp-archive-select');
@@ -1946,6 +1947,7 @@ window.openArchiveCompetition = function() {
     modal.classList.remove('hidden');
     console.log("4. ¡Modal abierto con éxito!");
 };
+
 window.confirmArchiveCompetition = async function() {
     if (!window.isAdmin) return;
     const comp = document.getElementById('comp-archive-select').value;
@@ -1957,7 +1959,8 @@ window.confirmArchiveCompetition = async function() {
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
     
     try {
-        const matchesToArchive = window.matches.filter(m => m.tournament === comp && m.status === 'finished');
+        // CORRECCIÓN: Ahora atrapa y archiva tanto los terminados normales como los forfait
+        const matchesToArchive = window.matches.filter(m => m.tournament === comp && (m.status === 'finished' || m.status === 'forfait'));
         const batch = db.batch(); 
         
         matchesToArchive.forEach(m => {
@@ -1969,8 +1972,10 @@ window.confirmArchiveCompetition = async function() {
         window.showToast(`¡El torneo "${comp}" ha sido cerrado con éxito!`);
         document.getElementById('modal-archive-comp').classList.add('hidden');
         
+        // Actualizamos todas las pantallas para que los puntos desaparezcan de inmediato
         if (typeof window.renderMatches === 'function') window.renderMatches();
         if (typeof window.renderPlayers === 'function') window.renderPlayers();
+        if (typeof window.updateDashboard === 'function') window.updateDashboard();
         
     } catch (error) {
         console.error("Error archivando torneo:", error);
