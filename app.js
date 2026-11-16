@@ -3,9 +3,7 @@
 ------------------------------------------------------ */
 const firebaseConfig = { apiKey: "AIzaSyCXssxxTsyNBrp6x08dCX9QAPts6mon_1U", authDomain: "nisus-fc.firebaseapp.com", projectId: "nisus-fc", storageBucket: "nisus-fc.firebasestorage.app", messagingSenderId: "1095183265565", appId: "1:1095183265565:web:019161bbd603bba7ccfbf4" };
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const db = firebase.firestore();
 db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
 
@@ -17,7 +15,7 @@ window.currentSeason = 'all'; window.currentFilter = 'all'; let deferredPrompt;
 window.generateId = function() { return crypto.randomUUID ? crypto.randomUUID() : 'x-x-4-y-x'.replace(/[xy]/g, c => { var r = Math.random()*16|0; return (c==='x'?r:r&0x3|0x8).toString(16); }); };
 
 /* -----------------------------------------------------
-   LÓGICA CORE Y UTILIDADES
+   LÓGICA CORE, NAVEGACIÓN Y UTILIDADES
 ------------------------------------------------------ */
 window.showToast = function(msg, isError = false) {
     const t = document.getElementById('toast'); if(!t) return; document.getElementById('toast-msg').textContent = msg;
@@ -336,14 +334,11 @@ window.switchProfileTab = function(tab) {
 window.openPlayerProfile = function(id) {
     const p = (window.players || []).find(x => x?.id === id); if (!p) return;
     window.currentPlayer360 = p;
-    
     const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'Sin Nombre';
     const posRaw = Array.isArray(p.positions) && p.positions.length > 0 ? p.positions[0] : (typeof p.positions === 'string' ? p.positions.split(',')[0] : (p.position || 'Jugador'));
     const pos = p.isStaff ? 'Cuerpo Técnico' : posRaw;
-    
     document.getElementById('pp-name').textContent = validName;
     document.getElementById('pp-alias-pos').textContent = p.alias ? `"${p.alias}" · ${pos}` : pos;
-    
     let age='--', ft=p.foot ? p.foot.toUpperCase() : 'N/E'; 
     if(p.birthdate && p.birthdate.includes('-')) { 
         const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1]-1, p.birthdate.split('-')[2]), td = new Date(); 
@@ -352,7 +347,6 @@ window.openPlayerProfile = function(id) {
     }
     const ageFootEl = document.getElementById('pp-age-foot');
     if (ageFootEl) ageFootEl.innerHTML = `<i class="fas fa-birthday-cake mr-1"></i> ${age} <span class="mx-2 text-slate-300 dark:text-slate-700">|</span> <i class="fas fa-shoe-prints mr-1"></i> Pie: ${ft}`;
-    
     const editBtn = document.getElementById('pp-btn-edit');
     if (editBtn) {
         editBtn.onclick = () => window.editPlayer(p.id);
@@ -365,16 +359,13 @@ window.openPlayerProfile = function(id) {
         const ppFinBtn = document.getElementById('pp-btn-finances-report');
         if (ppFinBtn) ppFinBtn.onclick = () => window.openPlayerFinancialReport(p.id);
     }
-    
     const imgCont = document.getElementById('pp-image-container');
     const ini = validName.charAt(0).toUpperCase();
     imgCont.innerHTML = p.image ? `<img src="${p.image}" class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white dark:border-slate-800 shadow-lg">` : `<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl ${p.isStaff?'bg-purple-100 text-purple-600':'bg-brand-100 text-brand-600'} font-black flex items-center justify-center text-4xl border-4 border-white dark:border-slate-800 shadow-lg">${ini}</div>`;
-    
     const badgesEl = document.getElementById('pp-badges'); badgesEl.innerHTML = '';
     if(p.number) badgesEl.innerHTML += `<span class="bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-black shadow-sm">#${p.number}</span>`;
     if(p.availableF11) badgesEl.innerHTML += `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F11</span>`;
     if(p.availableF7) badgesEl.innerHTML += `<span class="bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F7</span>`;
-    
     window.renderProfileRendimiento(p); window.renderProfileClinica(p); window.renderProfileFinanzas(p); window.renderProfileFicha(p);
     window.switchProfileTab('rendimiento'); window.showSection('playerProfile');
 };
@@ -430,250 +421,79 @@ window.renderProfileRendimiento = function(p) {
     });
 };
 
-/* -----------------------------------------------------
-   DASHBOARD Y GRÁFICOS
------------------------------------------------------- */
-window.renderBirthdaysAvailability = function() {
-    const allPlayers = (window.players || []).filter(p => p && !p.isStaff); 
-    const bEl = document.getElementById('birthdays-strip');
-    if(bEl) {
-        const today = new Date(); const ty = today.getFullYear();
-        const upcoming = allPlayers.filter(p => p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')).map(p => {
-            const parts = p.birthdate.split('-'); const bm = parseInt(parts[1])-1, bd = parseInt(parts[2]);
-            let next = new Date(ty, bm, bd);
-            const days = Math.ceil((next - today) / (1000*60*60*24));
-            if (days < 0) { next = new Date(ty+1, bm, bd); }
-            const dCalc = Math.ceil((next - today) / (1000*60*60*24));
-            return { p, dCalc, next };
-        }).sort((a,b)=>a.dCalc-b.dCalc).slice(0,6);
-        
-        bEl.innerHTML = '';
-        if(upcoming.length===0) bEl.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium py-2 px-1">Sin fechas de nacimiento registradas</p>';
-        else upcoming.forEach(item => {
-            const p = item.p; const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?'; const ini = validName.charAt(0).toUpperCase();
-            const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${ini}</div>`;
-            const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'}); const isToday = item.dCalc === 0;
-            const badge = isToday ? `<span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">¡Hoy!</span>` : `<span class="text-[10px] font-bold text-slate-400">${item.dCalc}d</span>`;
-            bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
-        });
-    }
+window.renderProfileClinica = function(p) {
+    const medEl = document.getElementById('pp-medical-status');
+    const returnDateStr = p.returnDate && p.returnDate.includes('-') ? p.returnDate.split('-').reverse().join('/') : 'Indefinido';
+    const notesHtml = p.statusNotes ? `<p class="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-black/20 p-2.5 rounded-lg italic">"${p.statusNotes}"</p>` : '';
+    
+    if(p.status === 'injured') { medEl.innerHTML = `<div class="bg-red-50 dark:bg-red-900/20 p-5 rounded-xl border border-red-200 dark:border-red-800/50 text-center"><i class="fas fa-briefcase-medical text-3xl text-red-500 mb-2"></i><p class="font-black text-red-700 dark:text-red-400">Lesionado</p><p class="text-xs text-red-600 dark:text-red-300 mt-1">Regreso estimado: ${returnDateStr}</p>${notesHtml}</div>`; } 
+    else if(p.status === 'suspended') { medEl.innerHTML = `<div class="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-xl border border-orange-200 dark:border-orange-800/50 text-center"><i class="fas fa-ban text-3xl text-orange-500 mb-2"></i><p class="font-black text-orange-700 dark:text-orange-400">Suspendido</p><p class="text-xs text-orange-600 dark:text-orange-300 mt-1">Sanción disciplinaria</p>${notesHtml}</div>`; } 
+    else if(p.status === 'absent') { medEl.innerHTML = `<div class="bg-slate-100 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-300 dark:border-slate-700 text-center"><i class="fas fa-plane text-3xl text-slate-500 mb-2"></i><p class="font-black text-slate-700 dark:text-slate-300">Ausente</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Regreso estimado: ${returnDateStr}</p>${notesHtml}</div>`; } 
+    else { medEl.innerHTML = `<div class="bg-green-50 dark:bg-green-900/20 p-5 rounded-xl border border-green-200 dark:border-green-800/50 text-center"><i class="fas fa-heartbeat text-3xl text-green-500 mb-2"></i><p class="font-black text-green-700 dark:text-green-400">En Forma Óptima</p><p class="text-xs text-green-600 dark:text-green-300 mt-1">Apto para jugar</p></div>`; }
 
-    const aEl = document.getElementById('availability-strip');
-    if(aEl) {
-        const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' }, inactive: { lbl:'Inactivo', icon:'fa-pause-circle', col:'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700' } };
-        const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
-        const activeCount = allPlayers.length - unavailable.length;
-        aEl.innerHTML = '';
-        aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
-        if(unavailable.length === 0) { aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`; } 
-        else { 
-            unavailable.sort((a,b)=>((a.name||'').localeCompare(b.name||''))).forEach(p => { 
-                const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
-                const s = statusMap[p.status] || statusMap.absent; 
-                const ret = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : ''; 
-                aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${validName} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`; 
-            }); 
-        }
-    }
+    const discEl = document.getElementById('pp-discipline-list'); discEl.innerHTML = '';
+    const tournaments = [...new Set((window.matches || []).filter(m => m && (m.status === 'finished' || m.status === 'forfait')).map(m => m.tournament))].filter(Boolean);
+    
+    tournaments.forEach(t => {
+        const d = window.getDiscipline(p.id, t);
+        if(d.yellows > 0 || d.suspended) { discEl.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl mb-2 border border-slate-100 dark:border-slate-800"><span class="font-bold text-xs text-slate-700 dark:text-slate-300">${t}</span><div><span class="text-yellow-500 font-black text-xs mr-3">🟨 ${d.yellows}/3</span>${d.suspended ? '<span class="bg-red-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-sm">Sancionado</span>' : '<span class="bg-green-500 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-sm">Ok</span>'}</div></div>`; }
+    });
+    if(discEl.innerHTML === '') discEl.innerHTML = '<p class="text-sm text-slate-500 italic text-center py-4">Historial limpio. ¡Buen comportamiento!</p>';
 };
 
-window.updateDashboard = function() {
-    let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
-    list.sort((a,b) => new Date(b.date) - new Date(a.date));
-    const nx = list.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date))[0];
-    const btn = document.getElementById('btn-tactics-next');
-    if (nx) {
-        document.getElementById('next-match-vs').textContent = nx.opponent;
-        let loc=''; if(nx.location) loc=nx.location.startsWith('http')?`<a href="${nx.location}" target="_blank" class="text-white hover:text-brand-100 flex items-center justify-center gap-1 mt-2 text-xs bg-white/10 px-3 py-1 rounded-full w-fit mx-auto"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-brand-100/70 flex items-center justify-center gap-1 mt-2 text-[10px] uppercase tracking-widest"><i class="fas fa-map-marker-alt"></i> ${nx.location}</p>`;
-        document.getElementById('next-match-date').innerHTML = new Date(nx.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
-        document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament}`;
-        btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
-    } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
+window.renderProfileFinanzas = function(p) {
+    const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0, debts: [] };
+    const mor = typeof window.getMorosityStatus === 'function' ? window.getMorosityStatus(p.id) : { label: 'Deuda', color: 'yellow' };
     
-    const fin = list.filter(m => ['finished', 'forfait', 'archived'].includes(m.status)).slice(0, 3); const rD = document.getElementById('latest-results');
-    if(rD) {
-        rD.innerHTML = '';
-        if(fin.length===0) rD.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium">No hay resultados.</p>';
-        else fin.forEach(m => {
-            let rC='E', col='bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)){rC='V'; col='bg-green-500 text-white shadow-sm shadow-green-500/30';} else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){rC='D'; col='bg-red-500 text-white shadow-sm shadow-red-500/30';}
-            rD.innerHTML += `<div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer border border-slate-100 dark:border-slate-800 transition" onclick="window.editMatch('${m.id}')"><div class="flex items-center gap-3"><span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${col}">${rC}</span><span class="text-xs font-bold text-slate-800 dark:text-slate-200">vs ${m.opponent} <span class="text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm ml-1 ${m.modality==='f11'?'bg-blue-500 text-white':'bg-green-500 text-white'}">F${m.modality==='f11'?11:7}</span></span></div><span class="font-black text-slate-900 dark:text-white text-base">${m.goalsUs} - ${m.goalsThem}</span></div>`;
-        });
-    }
-    
-    window.renderBirthdaysAvailability();
+    const badgeColors = mor.color === 'green' ? 'bg-green-100 text-green-700' : mor.color === 'yellow' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+    document.getElementById('pp-debt-badge').className = `px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${badgeColors}`;
+    document.getElementById('pp-debt-badge').innerHTML = `${mor.label}: $${dData.total.toFixed(2)}`;
 
-    let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
-    let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
-    pL.forEach(p => { tG += window.getPlayerStat(p,'goals') + window.getPlayerArchivedStat(p, 'goals'); tA += window.getPlayerStat(p,'assists') + window.getPlayerArchivedStat(p, 'assists'); });
+    const listEl = document.getElementById('pp-finances-list'); listEl.innerHTML = '';
+    const myTxs = (window.finances || []).filter(t => t.playerId === p.id).sort((a,b) => new Date(b.date||0) - new Date(a.date||0)).slice(0,10);
     
-    const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
-    const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
-    
-    let tCS=0, maxGames=0, ironMan="--";
-    pL.forEach(p => { 
-        const g = window.getPlayerStat(p,'games') + window.getPlayerArchivedStat(p, 'games');
-        if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : (p.name || 'N/A').split(' ')[0]; }
-        tCS += window.getPlayerStat(p,'cleanSheets') + window.getPlayerArchivedStat(p, 'cleanSheets'); 
-    });
-    
-    const eTGm = document.getElementById('stat-total-games'); 
-    if(eTGm) { if(eTGm.previousElementSibling) eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; eTGm.innerHTML = `${maxGames} <span class="text-sm font-bold text-brand-500 ml-1 truncate">${ironMan}</span>`; }
-    const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
-    
-    const getCombinedStat = (p, stat) => window.getPlayerStat(p, stat) + window.getPlayerArchivedStat(p, stat);
-
-    const rL = (arr, k, el) => {
-        const d = document.getElementById(el); if(!d)return; d.innerHTML='';
-        arr.forEach((p,i) => { 
-            const v = getCombinedStat(p, k); if(v===0)return; 
-            const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
-            const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${validName.charAt(0).toUpperCase()}</div>`; 
-            d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${validName}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
-        });
-        if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
-    };
-    
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'games')-getCombinedStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
-
-    let w=0, d=0, l=0, gf=0, ga=0;
-    list.forEach(m => {
-        if(['finished', 'forfait', 'archived'].includes(m.status)){
-            if(m.status==='forfait'){ w++; gf+=3; return; }
-            const us=parseInt(m.goalsUs)||0, them=parseInt(m.goalsThem)||0; gf+=us; ga+=them;
-            if(us>them)w++; else if(us<them)l++; else d++;
-        }
-    });
-    
-    const total=w+d+l;
-    const eW=document.getElementById('perf-wins'),eD=document.getElementById('perf-draws'),eL=document.getElementById('perf-losses');
-    if(eW)eW.textContent=w; if(eD)eD.textContent=d; if(eL)eL.textContent=l;
-    const eGF=document.getElementById('perf-gf'),eGA=document.getElementById('perf-ga'),ePP=document.getElementById('perf-played'),ePT=document.getElementById('perf-points');
-    if(eGF)eGF.textContent=gf; if(eGA)eGA.textContent=ga; if(ePP)ePP.textContent=total; if(ePT)ePT.textContent=(w*3+d);
-    
-    const donut=document.getElementById('perf-donut');
-    if(donut){
-        const wDeg=total>0?(w/total)*360:0, dDeg=total>0?(d/total)*360:0, lDeg=total>0?(l/total)*360:0;
-        donut.style.background=`conic-gradient(#10b981 0deg ${wDeg}deg, #64748b ${wDeg}deg ${wDeg+dDeg}deg, #ef4444 ${wDeg+dDeg}deg ${wDeg+dDeg+lDeg}deg, #e2e8f0 ${wDeg+dDeg+lDeg}deg 360deg)`;
-        const ePct=document.getElementById('perf-win-pct'); if(ePct)ePct.textContent=total>0?Math.round((w/total)*100)+'%':'0%';
-    }
-    
-    const formEl=document.getElementById('perf-form');
-    if(formEl){
-        const recent=list.filter(m=>['finished', 'forfait', 'archived'].includes(m.status)).slice(0,5); formEl.innerHTML='';
-        if(recent.length===0)formEl.innerHTML='<p class="text-xs text-slate-400 italic">Sin partidos jugados</p>';
-        else recent.forEach(m=>{
-            let r='E',col='bg-slate-400 text-white';
-            if(m.status==='forfait'||parseInt(m.goalsUs)>parseInt(m.goalsThem)){r='V';col='bg-green-500 text-white';}
-            else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){r='D';col='bg-red-500 text-white';}
-            formEl.innerHTML+=`<span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${col}">${r}</span>`;
-        });
-    }
-
-    const mvpEl=document.getElementById('mvp-card-content');
-    if(mvpEl){
-        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
-            const g = getCombinedStat(p,'goals'), a = getCombinedStat(p,'assists'), gp = getCombinedStat(p,'games'), m = getCombinedStat(p,'mvps'); 
-            return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
-        }).sort((x,y)=>y.score-x.score);
-        
-        if(mvpList.length>0&&mvpList[0].score>0){
-            const t=mvpList[0];
-            const validName = (typeof t.p.name === 'string' && t.p.name.trim() !== '') ? t.p.name.trim() : '?';
-            const img=t.p.image?`<img src="${t.p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg">`:`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">${validName.charAt(0).toUpperCase()}</div>`;
-            const name=t.p.alias&&t.p.showAlias?t.p.alias:validName;
-            mvpEl.innerHTML=`${img}<div><p class="text-white font-black text-xl leading-tight">${name}</p><p class="text-white/80 text-xs font-bold">${t.p.positions&&t.p.positions.length?t.p.positions[0]:'Jugador'}</p></div>`;
-            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML=`<div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">PJ</p><p class="text-white font-black text-lg">${t.gp}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Goles</p><p class="text-white font-black text-lg">${t.g}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Asis.</p><p class="text-white font-black text-lg">${t.a}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">MVP</p><p class="text-white font-black text-lg">${t.m}</p></div>`;
-        } else {
-            mvpEl.innerHTML=`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30"><i class="fas fa-trophy"></i></div><div><p class="text-white font-black text-xl leading-tight">Sin datos</p><p class="text-white/80 text-xs font-bold">Registra partidos</p></div>`;
-            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML='';
-        }
-    }
-
-    const rankEl=document.getElementById('attendance-ranking');
-    if(rankEl){
-        const totalTrainings=window.trainings?window.trainings.length:0;
-        if(totalTrainings===0){ rankEl.innerHTML='<p class="text-sm text-slate-500 italic text-center py-6">No hay sesiones registradas</p>'; }
-        else {
-            const ranked=[...pL].filter(p=>!p.isStaff).map(p=>{ const attended=window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length; return {p,attended,pct:Math.round((attended/totalTrainings)*100)}; }).sort((a,b)=>b.pct-a.pct||b.attended-a.attended).slice(0,5);
-            rankEl.innerHTML=ranked.map((r,i)=>{
-                const validName = (typeof r.p.name === 'string' && r.p.name.trim() !== '') ? r.p.name.trim() : '?';
-                const img=r.p.image?`<img src="${r.p.image}" class="w-9 h-9 rounded-full object-cover">`:`<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${validName.charAt(0).toUpperCase()}</div>`;
-                const barColor=r.pct>=75?'bg-green-500':r.pct>=50?'bg-yellow-500':'bg-red-500';
-                const medal=i===0?'text-yellow-500':i===1?'text-slate-400':i===2?'text-orange-400':'text-slate-300';
-                return `<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><span class="w-5 text-center font-black ${medal}"><i class="fas ${i<3?'fa-medal':'fa-hashtag'} text-sm"></i></span>${img}<div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</span><span class="text-[10px] font-black text-slate-500 ml-2">${r.attended}/${totalTrainings}</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${r.pct}%"></div></div></div><span class="font-black text-sm ${r.pct>=75?'text-green-600':r.pct>=50?'text-yellow-600':'text-red-600'}">${r.pct}%</span></div>`;
-            }).join('');
-        }
-    }
-    setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
-};
-
-window.cashflowCharts = [];
-window.renderCashflowChart = function() {
-    if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
-    window.cashflowCharts = [];
-    if (typeof Chart === 'undefined') return;
-
-    const now = new Date(); const labels = [], incomeData = [], expenseData = [];
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const ym = d.toISOString().slice(0, 7);
-        const monthLabel = d.toLocaleDateString('es-ES', { month: 'short' });
-        labels.push(monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1));
-        let inc = 0, exp = 0;
-        window.finances.forEach(t => {
-            const tMonth = (t.date || '').slice(0, 7);
-            if (tMonth === ym) { if (t.type === 'income') inc += window.getValidCashAmount(t); else if (t.type === 'expense') exp += window.getValidCashAmount(t); }
-        });
-        incomeData.push(inc); expenseData.push(exp);
-    }
-    
-    const isDark = document.documentElement.classList.contains('dark'); 
-    const textColor = isDark ? '#94a3b8' : '#64748b', gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-
-    const chartConfig = {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } }
-    };
-
-    ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig));
+    if(myTxs.length === 0) listEl.innerHTML = '<tr><td class="py-4 text-sm text-slate-500 italic text-center">Sin movimientos financieros</td></tr>';
+    myTxs.forEach(t => {
+        const dStr = new Date((t.date||'')+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
+        const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
+        let estado = '', color = '';
+        if (t.isPaid === false) { estado = 'Pendiente'; color = 'text-amber-500'; } else if (t.category === 'Abono a Deuda (Jugador)') { estado = 'Abono'; color = 'text-green-500'; } else { estado = 'Pagado'; color = 'text-slate-400'; }
+        listEl.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0"><td class="py-3"><p class="text-xs font-bold text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${dStr}</p></td><td class="py-3 text-right"><p class="text-sm font-black ${color}">$${(t.amount||0).toFixed(2)}</p><p class="text-[9px] font-bold uppercase ${color}">${estado}</p></td></tr>`;
     });
 };
 
-window.donutCharts = [];
-window.renderExpensesDonutChart = function() {
-    if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
-    window.donutCharts = [];
-    if (typeof Chart === 'undefined') return;
+window.renderProfileFicha = function(p) {
+    const c = document.getElementById('pp-card-container');
+    const n = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'N/A';
+    const a = p.alias ? `<p class="text-sm font-medium italic text-slate-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
+    const pos = p.isStaff ? 'CT' : String(Array.isArray(p.positions) && p.positions.length > 0 ? p.positions[0] : (p.position || 'N/A')).substring(0,3).toUpperCase();
     
-    const expenseCategories = {};
-    window.finances.forEach(t => {
-        if (t.type === 'expense') {
-            const amt = window.getValidCashAmount(t);
-            if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
-        }
-    });
+    let fL = window.currentFilter==='all'?'GLOBAL':window.currentFilter.toUpperCase(), sL = window.currentSeason==='all'?'HISTÓRICO':`T. ${window.currentSeason}`;
+    let age='--', ft=p.foot?p.foot.toUpperCase():'N/E'; 
+    if(p.birthdate && p.birthdate.includes('-')) { const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1]-1, p.birthdate.split('-')[2]), td = new Date(); let ca = td.getFullYear()-bd.getFullYear(); const m = td.getMonth()-bd.getMonth(); if(m<0||(m===0&&td.getDate()<bd.getDate())) ca--; age = ca+' AÑOS'; }
+    
+    let fontSize = "1.75rem"; if(n.length > 18) fontSize = "1.25rem"; else if(n.length > 14) fontSize = "1.5rem";
 
-    const labels = Object.keys(expenseCategories), data = Object.values(expenseCategories);
-    const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
-    const isDark = document.documentElement.classList.contains('dark'), textColor = isDark ? '#94a3b8' : '#64748b';
-    
-    const chartConfig = {
-        type: 'doughnut',
-        data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } }
+    c.innerHTML = `
+        <div id="pp-card-export-node" class="player-card-export">
+            <div class="absolute top-5 left-5 text-center"><p class="text-3xl font-black text-yellow-400 leading-none drop-shadow-md">${p.number||'--'}</p><p class="text-[10px] font-black uppercase tracking-widest mt-1 text-slate-300">${pos}</p></div>
+            <div class="absolute top-5 right-5 opacity-40"><img src="escudo.png" class="w-10 h-10 object-contain drop-shadow" onerror="this.style.display='none'"></div>
+            <div class="w-28 h-28 rounded-[2rem] border-4 border-slate-600 bg-slate-800 flex items-center justify-center mt-6 mb-4 overflow-hidden shadow-2xl">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-black">${n.charAt(0)}</span>`}</div>
+            <h2 class="font-black uppercase tracking-wide text-center w-full px-4 leading-tight drop-shadow-md" style="font-size:${fontSize}">${n}</h2>
+            ${a}
+            <div class="flex justify-center gap-3 mt-2 text-[8px] font-black tracking-widest text-slate-400 uppercase"><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">EDAD: ${age}</span><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">PIE: ${ft}</span></div>
+            <div class="w-full border-t border-slate-700 mt-5 pt-3"><p class="text-[8px] text-brand-400 uppercase tracking-widest font-black text-center w-full">ESTADÍSTICAS ${fL} - ${sL}</p></div>
+            <div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Goles</p><p class="text-2xl font-black">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Asist.</p><p class="text-2xl font-black">${window.getPlayerStat(p,'assists')}</p></div></div>
+            <div class="absolute bottom-3 text-[7px] text-slate-600 font-black tracking-widest uppercase">NISUS FC PREMIUM</div>
+        </div>`;
+
+    document.getElementById('btn-pp-download-card').onclick = function() {
+        const node = document.getElementById('pp-card-export-node'); const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+        html2canvas(node, { backgroundColor:null, scale:3, useCORS:true, allowTaint:true }).then(cv => { 
+            const a = document.createElement('a'); a.download=`Ficha_${n.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click(); 
+            btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download"></i> Descargar Ficha',2000); 
+        }).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download"></i> Descargar Ficha'; });
     };
-
-    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
-    });
 };
 
 /* -----------------------------------------------------
@@ -744,7 +564,6 @@ window.toggleScoreFields = () => { const s = document.getElementById('m-status')
 window.renderCallupList = function() {
     const list = document.getElementById('m-callup-list'); if(!list) return; list.innerHTML = '';
     const m = document.getElementById('m-modality').value, t = document.getElementById('m-tournament').value;
-    
     window.players.filter(p => p && (p.status === 'active' || !p.status)).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
         if(m==='f11' && !p.availableF11) return; if(m==='f7' && !p.availableF7) return;
         const isC = (window.currentLineup || []).some(l=>l.playerId===p.id), d = window.getDiscipline(p.id, t);
@@ -758,12 +577,10 @@ window.renderCallupList = function() {
 window.handleModalityChange = () => { 
     window.updateFormationOptions(); 
     const m = document.getElementById('m-modality').value, mx = m==='f11'?11:7; 
-    
     window.currentLineup = (window.currentLineup || []).filter(l => { 
         const p = window.players.find(x=>x.id===l.playerId); 
         return p && (p.status === 'active' || !p.status) && (m==='f11'?p.availableF11:p.availableF7); 
     }); 
-    
     let c=0; (window.currentLineup || []).forEach(p => { 
         const s = window.players.find(x=>x.id===p.playerId)?.isStaff; 
         if(!s && p.x!==null && p.y!==null) { c++; if(c>mx) {p.x=null;p.y=null;} } 
@@ -799,7 +616,10 @@ window.renderMatchEvents = function() {
     });
 };
 
-window.updateFormationOptions = () => { const m = document.getElementById('m-modality').value, s = document.getElementById('m-formation'); if(!s)return; let h='<option value="">Formación Libre</option>'; for(let k in formations[m]) h+=`<option value="${k}">${k}</option>`; s.innerHTML=h; };
+const posValid = { POR: ['Portero'], DFC: ['Defensa Central', 'Mediocentro Defensivo', 'Lateral Derecho', 'Lateral Izquierdo'], LD: ['Lateral Derecho', 'Carrilero', 'Defensa Central'], LI: ['Lateral Izquierdo', 'Carrilero', 'Defensa Central'], CAR: ['Carrilero', 'Lateral Derecho', 'Lateral Izquierdo', 'Interior'], MCD: ['Mediocentro Defensivo', 'Mediocentro', 'Defensa Central'], MC: ['Mediocentro', 'Mediocentro Defensivo', 'Interior', 'Mediapunta'], MI: ['Interior', 'Extremo Izquierdo', 'Mediocentro', 'Carrilero'], MD: ['Interior', 'Extremo Derecho', 'Mediocentro', 'Carrilero'], MCO: ['Mediapunta', 'Interior', 'Segundo Delantero', 'Mediocentro'], ED: ['Extremo Derecho', 'Segundo Delantero', 'Delantero Centro', 'Interior'], EI: ['Extremo Izquierdo', 'Segundo Delantero', 'Delantero Centro', 'Interior'], DC: ['Delantero Centro', 'Segundo Delantero', 'Extremo Derecho', 'Extremo Izquierdo', 'Mediapunta'] };
+const formations = { f11: { "4-4-2": [{x:50,y:90,valid:posValid.POR},{x:20,y:75,valid:posValid.LI},{x:40,y:75,valid:posValid.DFC},{x:60,y:75,valid:posValid.DFC},{x:80,y:75,valid:posValid.LD},{x:20,y:50,valid:posValid.MI},{x:40,y:50,valid:posValid.MC},{x:60,y:50,valid:posValid.MC},{x:80,y:50,valid:posValid.MD},{x:35,y:25,valid:posValid.DC},{x:65,y:25,valid:posValid.DC}], "4-3-3": [{x:50,y:90,valid:posValid.POR},{x:20,y:75,valid:posValid.LI},{x:40,y:75,valid:posValid.DFC},{x:60,y:75,valid:posValid.DFC},{x:80,y:75,valid:posValid.LD},{x:30,y:55,valid:posValid.MC},{x:50,y:55,valid:posValid.MCD},{x:70,y:55,valid:posValid.MC},{x:20,y:25,valid:posValid.EI},{x:50,y:25,valid:posValid.DC},{x:80,y:25,valid:posValid.ED}] }, f7: { "3-2-1": [{x:50,y:90,valid:posValid.POR},{x:25,y:70,valid:posValid.LI},{x:50,y:70,valid:posValid.DFC},{x:75,y:70,valid:posValid.LD},{x:35,y:45,valid:posValid.MC},{x:65,y:45,valid:posValid.MC},{x:50,y:20,valid:posValid.DC}] } };
+
+window.updateFormationOptions = () => { const m = document.getElementById('m-modality').value, s = document.getElementById('m-formation'); if(!s)return; let h='<option value="">Formación Libre</option>'; if(formations[m]) { for(let k in formations[m]) h+=`<option value="${k}">${k}</option>`; } s.innerHTML=h; };
 
 window.applyFormation = function() {
     if(!window.isAdmin) return window.showToast('Solo edición', true);
@@ -858,7 +678,7 @@ window.dragEnd = function(e) { if(!window.draggedElement) return; const p = docu
         let nx = ((cx - r.left)/r.width)*100, ny = ((cy - r.top)/r.height)*100;
         if(idx>=0) {
             const ox = window.currentLineup[idx].x, oy = window.currentLineup[idx].y;
-            if(fk && formations[m][fk]) {
+            if(fk && formations[m] && formations[m][fk]) {
                 const coords = formations[m][fk]; let nrst = coords[0], mD = Infinity;
                 coords.forEach(c => { const d = Math.sqrt(Math.pow(nx-c.x,2)+Math.pow(ny-c.y,2)); if(d<mD){mD=d; nrst=c;} });
                 const occIdx = window.currentLineup.findIndex(l=>l.x===nrst.x && l.y===nrst.y && l.playerId!==pid);
@@ -871,9 +691,539 @@ window.dragEnd = function(e) { if(!window.draggedElement) return; const p = docu
 };
 
 window.exportPitchImage = function() { const p = document.getElementById('tactical-pitch'); if(!p)return; const ob = p.style.borderRadius; p.style.borderRadius='0px'; html2canvas(p, {backgroundColor:'#22c55e', scale:2}).then(c => { const a = document.createElement('a'); a.download = `Alineacion_NISUS_vs_${document.getElementById('m-opponent').value||'Partido'}.png`; a.href = c.toDataURL('image/png'); a.click(); p.style.borderRadius=ob; window.showToast("Pizarra exportada"); }).catch(e => { p.style.borderRadius=ob; window.showToast("Error",true); }); };
-// ==========================================
-// MOTOR DE GRÁFICOS (FLUJO Y DONA)
-// ==========================================
+
+/* -----------------------------------------------------
+   ASISTENCIAS Y ENTRENAMIENTOS
+------------------------------------------------------ */
+window.newAttendance = function() { document.getElementById('attendance-form').reset(); document.getElementById('a-id').value = ''; document.getElementById('a-date').value = new Date().toISOString().split('T')[0]; window.currentAttendees=[]; window.renderAttendanceChecklist(); window.updateAdminUI(); window.showSection('attendanceForm'); };
+window.renderAttendanceChecklist = function() { 
+    const c = document.getElementById('a-players-list'); if(!c)return; c.innerHTML=''; 
+    window.players.filter(p => p && (p.status === 'active' || !p.status)).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ 
+        const ch = (window.currentAttendees || []).includes(p.id)?'checked':''; 
+        c.innerHTML+=`<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="att-${p.id}" ${ch} onchange="window.handleAttChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600"><label for="att-${p.id}" class="text-sm font-bold flex-1 cursor-pointer text-slate-700 dark:text-slate-300">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.name}</label></div>`; 
+    }); 
+}; 
+
+window.handleAttChange = (id,chk) => { if(!window.isAdmin) return window.showToast('Solo edición', true); if(chk){if(!window.currentAttendees.includes(id))window.currentAttendees.push(id);}else window.currentAttendees=window.currentAttendees.filter(x=>x!==id); };
+window.saveAttendance = async function(e) { e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); const docId = document.getElementById('a-id').value||window.generateId(); try { await db.collection(window.trainingsPath).doc(docId).set({ id:docId, date:document.getElementById('a-date').value, location:document.getElementById('a-location').value, notes:document.getElementById('a-notes').value, attendees:window.currentAttendees }); window.showToast('Guardado'); window.showSection('attendance'); } catch(er){window.showToast('Error',true);} };
+window.editAttendance = function(id) { const t = window.trainings.find(x=>x.id===id); if(!t)return; document.getElementById('a-id').value=t.id; document.getElementById('a-date').value=t.date; document.getElementById('a-location').value=t.location||''; document.getElementById('a-notes').value=t.notes||''; window.currentAttendees=[...(t.attendees||[])]; window.renderAttendanceChecklist(); window.updateAdminUI(); window.showSection('attendanceForm'); };
+window.deleteAttendance = function(id) { window.showConfirm('¿Borrar entreno permanentemente?', async()=>{ try{ await db.collection(window.trainingsPath).doc(id).delete(); window.showToast('Eliminado'); }catch(e){window.showToast('Error',true);} }); };
+
+window.copyAttendanceList = function(id) {
+    const t = window.trainings.find(x => x.id === id); if (!t) return;
+    const dateStr = new Date(t.date + 'T12:00:00').toLocaleDateString('es-ES', {weekday: 'long', day: 'numeric', month: 'long'}).toUpperCase();
+    let msg = `*⚽ ASISTENCIA ENTRENAMIENTO*\n📅 ${dateStr}\n📍 ${t.location || 'Sin ubicación'}\n\n`;
+    const presentes = [], ausentes = [];
+    
+    window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+        if (t.attendees && t.attendees.includes(p.id)) presentes.push(`✅ ${p.name}`); else ausentes.push(`❌ ${p.name}`);
+    });
+    
+    msg += `*PRESENTES (${presentes.length}):*\n`;
+    if (presentes.length > 0) msg += presentes.join('\n') + '\n\n'; else msg += 'Ninguno\n\n';
+    msg += `*AUSENTES (${ausentes.length}):*\n`;
+    if (ausentes.length > 0) msg += ausentes.join('\n'); else msg += 'Ninguno';
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Lista copiada para WhatsApp')).catch(() => window.showToast('Error al copiar', true));
+};
+
+window.renderTrainings = function() {
+    const u = document.getElementById('attendance-grid-upcoming'), p = document.getElementById('attendance-grid-past'); if(!u || !p) return;
+    u.innerHTML = ''; p.innerHTML = ''; const td = new Date().toISOString().split('T')[0]; let upcoming = [], past = [];
+    window.trainings.forEach(t => { if(t.date >= td) upcoming.push(t); else past.push(t); });
+    upcoming.sort((a,b) => new Date(a.date) - new Date(b.date)); past.sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    if(upcoming.length === 0) u.innerHTML = '<div class="col-span-full text-slate-500 text-sm p-4 bg-white dark:bg-darkcard rounded-xl border border-slate-200 dark:border-slate-800">No hay sesiones programadas</div>';
+    upcoming.forEach(t => {
+        let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
+        u.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800"><div class="flex justify-between items-center mb-3"><span class="font-black text-brand-600 dark:text-brand-400"><i class="far fa-calendar text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<div class="flex gap-2"><button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Editar</button><button onclick="window.copyAttendanceList('${t.id}')" class="w-10 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg flex items-center justify-center transition" title="Copiar a WhatsApp"><i class="fab fa-whatsapp"></i></button><button onclick="window.deleteAttendance('${t.id}')" class="admin-only w-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition"><i class="fas fa-trash"></i></button></div></div>`;
+    });
+    
+    if(past.length === 0) p.innerHTML = '<div class="col-span-full text-slate-500 text-sm p-4 bg-white dark:bg-darkcard rounded-xl border border-slate-200 dark:border-slate-800">No hay historial</div>';
+    past.forEach(t => {
+        let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
+        p.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 opacity-80 hover:opacity-100 transition"><div class="flex justify-between items-center mb-3"><span class="font-black text-slate-600 dark:text-slate-400"><i class="far fa-check-circle text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<div class="flex gap-2"><button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Ver Lista</button><button onclick="window.copyAttendanceList('${t.id}')" class="w-10 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg flex items-center justify-center transition" title="Copiar a WhatsApp"><i class="fab fa-whatsapp"></i></button></div></div>`;
+    });
+};
+
+/* -----------------------------------------------------
+   FINANZAS
+------------------------------------------------------ */
+const finCategories = { income: ['Cuota Mensual', 'Inscripción', 'Cobro Manual', 'Abono a Deuda (Jugador)', 'Sponsor', 'Otro Ingreso'], expense: ['Arbitraje', 'Cancha', 'Uniformes', 'Materiales', 'Multa Tarjeta', 'Otro Egreso'] };
+
+window.getPlayerDebts = function(playerId) {
+    let total = 0, debts = []; if (!playerId) return { total, debts };
+    const p = (window.players || []).find(x => x?.id === playerId);
+    if (p && parseFloat(p.debtAmount) > 0) total = parseFloat(p.debtAmount);
+    
+    (window.finances || []).forEach(t => {
+        if (t?.playerId === playerId && t?.type === 'income' && t?.isPaid === false) {
+            const abonos = (window.finances || []).filter(x => x?.category === 'Abono a Deuda (Jugador)' && x?.specificDebtId === t.id);
+            const totalAbonado = abonos.reduce((sum, x) => sum + (parseFloat(x?.amount) || 0), 0);
+            const amt = (parseFloat(t?.amount) || 0) - totalAbonado;
+            if (amt > 0.01) debts.push({ id: t.id, desc: t.description || t.category || 'Deuda', amount: amt, date: t.date || '' });
+        }
+        if (t?.category === 'Arbitraje' && t?.matchId) {
+            const match = (window.matches || []).find(m => m.id === t.matchId);
+            if (match && Array.isArray(match.lineup)) {
+                const validPlayers = match.lineup.filter(l => { const pObj = window.players.find(x => x.id === l.playerId); return pObj && !pObj.isStaff; });
+                const isCalledUp = validPlayers.some(l => l.playerId === playerId);
+                const hasPaid = t.paidBy && Array.isArray(t.paidBy) && t.paidBy.includes(playerId);
+                if (isCalledUp && !hasPaid) {
+                    const cuota = (parseFloat(t.amount) || 0) / validPlayers.length;
+                    if (cuota > 0) debts.push({ id: 'arb_' + t.id, desc: `Cuota Arbitraje: vs ${match.opponent}`, amount: cuota, date: t.date || '' });
+                }
+            }
+        }
+    });
+    
+    const calcTotal = debts.reduce((sum, d) => sum + d.amount, 0);
+    if (total > calcTotal + 0.01) debts.push({ id: 'generic_' + playerId, desc: 'Saldo pendiente anterior', amount: total - calcTotal, date: '' });
+    else if (calcTotal > total) total = calcTotal;
+    return { total, debts };
+};
+
+window.getMorosityStatus = function(playerId) {
+    const dData = window.getPlayerDebts(playerId);
+    if (dData.total <= 0.01) return { status: 'aldia', label: 'Al Día', color: 'green' };
+    let hasVencida = false; const today = new Date();
+    dData.debts.forEach(d => {
+        if (d.date && typeof d.date === 'string') {
+            const parts = d.date.split('-');
+            if (parts.length === 3) { const dDate = new Date(parts[0], parts[1] - 1, 25); if (today > dDate) hasVencida = true; }
+        }
+    });
+    if (hasVencida || today.getDate() > 25) return { status: 'mora', label: 'En Mora', color: 'red' };
+    return { status: 'plazo', label: 'En Plazo', color: 'yellow' };
+};
+
+window.newTransaction = function(type) {
+    document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Nuevo Ingreso' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso';
+    const catSelect = document.getElementById('f-category'); catSelect.innerHTML = ''; finCategories[type].forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSelect.appendChild(o); });
+    document.getElementById('f-date').value = new Date().toISOString().split('T')[0]; document.getElementById('f-match-container').classList.add('hidden'); document.getElementById('f-player-container').classList.add('hidden'); document.getElementById('f-specific-debt-container').classList.add('hidden');
+    const matchSelect = document.getElementById('f-match'); matchSelect.innerHTML = '<option value="">Selecciona...</option>'; window.matches.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = `${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})} - vs ${m.opponent}`; matchSelect.appendChild(o); });
+    window.toggleMatchSelect(); window.updateAdminUI(); window.showSection('financesForm');
+};
+
+window.toggleMatchSelect = function() {
+    const cat = document.getElementById('f-category').value, mc = document.getElementById('f-match-container'), pc = document.getElementById('f-player-container'), sdc = document.getElementById('f-specific-debt-container');
+    if (cat === 'Arbitraje' || cat === 'Multa Tarjeta') mc.classList.remove('hidden'); else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
+    if (cat === 'Cobro Manual' || cat === 'Multa Tarjeta' || cat === 'Abono a Deuda (Jugador)') { pc.classList.remove('hidden'); window.populateFinPlayerSelect(); } else { pc.classList.add('hidden'); document.getElementById('f-player').value = ''; }
+    if (cat === 'Abono a Deuda (Jugador)') { sdc.classList.remove('hidden'); window.populateSpecificDebts(); } else { sdc.classList.add('hidden'); document.getElementById('f-specific-debt').value = ''; }
+    window.calcArbitraje();
+};
+
+window.populateFinPlayerSelect = function() { const sel = document.getElementById('f-player'); sel.innerHTML = '<option value="">Selecciona...</option>'; window.players.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); }); };
+
+window.calcArbitraje = function() {
+    const cat = document.getElementById('f-category').value, calcDiv = document.getElementById('f-arbitraje-calc');
+    if (cat !== 'Arbitraje') { calcDiv.classList.add('hidden'); return; }
+    const matchId = document.getElementById('f-match').value, amount = parseFloat(document.getElementById('f-amount').value) || 0;
+    if (!matchId || amount <= 0) { calcDiv.classList.add('hidden'); return; }
+    const match = window.matches.find(m => m.id === matchId); if (!match || !match.lineup) { calcDiv.classList.add('hidden'); return; }
+    const valid = match.lineup.filter(l => { const p = window.players.find(x => x.id === l.playerId); return p && !p.isStaff; }); if (valid.length === 0) { calcDiv.classList.add('hidden'); return; }
+    const cuota = amount / valid.length; calcDiv.classList.remove('hidden'); calcDiv.innerHTML = `<p class="text-xs font-bold"><i class="fas fa-users mr-1"></i> ${valid.length} jugadores convocados</p><p class="text-lg font-black text-brand-600 dark:text-brand-400 mt-1">Cuota por jugador: ${cuota.toFixed(2)}</p>`;
+};
+
+window.handleAmountInput = function() { window.calcArbitraje(); };
+window.populateSpecificDebts = function() {
+    const playerId = document.getElementById('f-player').value, sel = document.getElementById('f-specific-debt'); sel.innerHTML = '<option value="">Abono general a cuenta</option>'; if (!playerId) return;
+    window.getPlayerDebts(playerId).debts.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = `${d.desc.substring(0,35)} - ${d.amount.toFixed(2)}`; sel.appendChild(o); });
+};
+
+window.handleSpecificDebtSelect = function() { const debtId = document.getElementById('f-specific-debt').value; if (!debtId) return; const playerId = document.getElementById('f-player').value; const debt = window.getPlayerDebts(playerId).debts.find(d => d.id === debtId); if (debt) document.getElementById('f-amount').value = debt.amount.toFixed(2); };
+
+window.saveTransaction = async function(e) {
+    e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const btn = document.getElementById('btn-save-fin'); btn.disabled = true; btn.textContent = "Guardando...";
+    const docId = document.getElementById('f-id').value || window.generateId(), type = document.getElementById('f-type').value, category = document.getElementById('f-category').value, amount = parseFloat(document.getElementById('f-amount').value), date = document.getElementById('f-date').value, description = document.getElementById('f-desc').value, matchId = document.getElementById('f-match').value || null, playerId = document.getElementById('f-player').value || null, specificDebtId = document.getElementById('f-specific-debt').value || null;
+    const tData = { id: docId, type: type, amount: amount, date: date, category: category, description: description, matchId: matchId, playerId: playerId };
+    if (specificDebtId) tData.specificDebtId = specificDebtId; if (category === 'Cobro Manual' || category === 'Multa Tarjeta') tData.isPaid = false; if (category === 'Arbitraje') tData.paidBy = [];
+    const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(docId), tData);
+    if (playerId) {
+        const p = window.players.find(x => x.id === playerId);
+        if (p) {
+            if (category === 'Cobro Manual' || category === 'Multa Tarjeta') { batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true }); } 
+            else if (category === 'Abono a Deuda (Jugador)' && !specificDebtId) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
+        }
+    }
+    try { await batch.commit(); window.showToast('Movimiento guardado'); window.showSection('finances'); } catch(err) { window.showToast('Error al guardar', true); } finally { btn.disabled = false; btn.textContent = "Guardar"; }
+};
+
+window.deleteTransaction = function(id) {
+    window.showConfirm('¿Eliminar este movimiento?', async () => {
+        try {
+            const t = window.finances.find(x => x.id === id);
+            if (t && t.playerId && (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && !t.isPaid) {
+                const p = window.players.find(x => x.id === t.playerId); if (p) await db.collection(window.playersPath).doc(t.playerId).set({ debtAmount: Math.max(0, (p.debtAmount || 0) - t.amount) }, { merge: true });
+            }
+            await db.collection(window.financesPath).doc(id).delete(); window.showToast('Movimiento eliminado');
+        } catch(e) { window.showToast('Error', true); }
+    });
+};
+
+window.switchFinancesTab = function(tab) {
+    window.currentFinTab = tab;
+    const tabResumen = document.getElementById('fin-tab-resumen'), tabCobros = document.getElementById('fin-tab-cobros');
+    if(tabResumen) tabResumen.classList.add('hidden'); if(tabCobros) tabCobros.classList.add('hidden');
+    
+    const baseClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 ";
+    const activeClass = baseClass + "bg-brand-600 text-white shadow-sm";
+    const inactiveClass = baseClass + "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800";
+    
+    const btnResumen = document.getElementById('fin-tab-btn-resumen'), btnCobros = document.getElementById('fin-tab-btn-cobros');
+    if(btnResumen) btnResumen.className = inactiveClass; if(btnCobros) btnCobros.className = "admin-only " + inactiveClass;
+    
+    const activeTab = document.getElementById('fin-tab-' + tab), activeBtn = document.getElementById('fin-tab-btn-' + tab);
+    if(activeTab) activeTab.classList.remove('hidden'); if(activeBtn) activeBtn.className = (tab === 'cobros' ? "admin-only " : "") + activeClass;
+    window.renderFinances();
+};
+
+window.getValidCashAmount = function(t) {
+    if (t.type === 'expense') return t.amount || 0;
+    if (t.type === 'income') {
+        if (t.isPaid === false) return 0;
+        if (t.isPaid === true && (t.category === 'Cuota Mensual' || t.category === 'Cobro Manual')) {
+            const hasAbono = window.finances.some(x => x.category === 'Abono a Deuda (Jugador)' && x.specificDebtId === t.id); if (hasAbono) return 0;
+        }
+        return t.amount || 0;
+    }
+    return 0;
+};
+
+window.monthlyCloseReport = function() {
+    const now = new Date(); const currentMonth = now.toISOString().slice(0, 7); const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
+    let inc = 0, exp = 0;
+    window.finances.forEach(t => { if ((t.date || '').startsWith(currentMonth)) { if (t.type === 'income') inc += window.getValidCashAmount(t); else if (t.type === 'expense') exp += window.getValidCashAmount(t); } });
+    let msg = `*📊 CIERRE DE MES NISUS FC - ${monthName}*\n\n🟩 *Ingresos del mes:* $${inc.toFixed(2)}\n🟥 *Egresos del mes:* $${exp.toFixed(2)}\n💵 *Balance Mensual:* $${(inc - exp).toFixed(2)}\n\n_Balance total histórico en caja:_ *$${document.getElementById('fin-balance').textContent}*\n\n¡Gracias a todos por mantener al club funcionando! ⚽`;
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Reporte copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
+};
+
+window.sendDirectWhatsApp = function(playerName, debtAmount) {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`; window.open(url, '_blank');
+};
+
+window.copyGroupMessage = function() {
+    if (!window.isAdmin) return window.showToast('Solo el administrador puede usar esta función', true);
+    const debtFilter = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'all';
+    let filterName = "Estado de Pagos";
+    if (debtFilter === 'mensualidad') filterName = "Cuotas Mensuales Pendientes";
+    if (debtFilter === 'arbitraje') filterName = "Arbitrajes Pendientes";
+    if (debtFilter === 'multa') filterName = "Multas Disciplinarias";
+
+    const enMora = [], enPlazo = [];
+    window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+        const d = window.getPlayerDebts(p.id); let totalFiltered = 0;
+        if (debtFilter === 'all') { totalFiltered = d.total; } 
+        else {
+            const filtered = d.debts.filter(x => {
+                const desc = x.desc.toLowerCase();
+                if (debtFilter === 'mensualidad') return desc.includes('mensual');
+                if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
+                if (debtFilter === 'multa') return desc.includes('multa');
+                return false;
+            });
+            totalFiltered = filtered.reduce((sum, x) => sum + x.amount, 0);
+        }
+
+        if (totalFiltered > 0.01) { 
+            const mor = window.getMorosityStatus(p.id); 
+            if (mor.status === 'mora') enMora.push(`🔴 ${p.name}: $${totalFiltered.toFixed(2)}`); 
+            else enPlazo.push(`🟡 ${p.name}: $${totalFiltered.toFixed(2)}`); 
+        }
+    });
+    
+    let msg = `*NISUS FC - ${filterName}*\n\n`;
+    if (debtFilter === 'all') msg += '⚠️ _Límite de pago para no entrar en mora: **Día 25** de cada mes._\n\n';
+    
+    if (enMora.length === 0 && enPlazo.length === 0) { msg += '✅ Todos los jugadores están al día con este concepto. ¡Gracias!'; } 
+    else {
+        if (enMora.length > 0) msg += '🚨 *LISTA DE COBRO*\n' + enMora.join('\n') + '\n\n';
+        if (enPlazo.length > 0) msg += '⏳ *EN PLAZO*\n' + enPlazo.join('\n') + '\n\n';
+        msg += '_Gracias por su compromiso con el equipo._';
+    }
+    
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Lista copiada al portapapeles')).catch(() => window.showToast('Error al copiar', true));
+};
+
+window.exportFinancesCSV = function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores pueden exportar', true);
+    if (!window.finances || window.finances.length === 0) return window.showToast('No hay datos para exportar', true);
+
+    let csvContent = "\uFEFF"; 
+    csvContent += "ID Movimiento,Fecha,Tipo,Categoría,Descripción,Jugador / Rival,Monto ($),Estado\n";
+
+    const sorted = [...window.finances].sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+    sorted.forEach(t => {
+        const id = t.id || ''; const fecha = t.date ? new Date(t.date+'T12:00:00').toLocaleDateString('es-ES') : '';
+        const tipo = t.type === 'income' ? 'Ingreso' : 'Egreso'; const categoria = `"${t.category || ''}"`; const desc = `"${(t.description || '').replace(/"/g, '""')}"`;
+        let extra = '""';
+        if (t.matchId) { const m = (window.matches || []).find(x => x.id === t.matchId); if (m) extra = `"vs ${m.opponent || ''}"`; }
+        if (t.playerId) { const p = (window.players || []).find(x => x.id === t.playerId); if (p) extra = `"${p.name || ''}"`; }
+
+        const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
+        const monto = (t.amount || 0).toFixed(2);
+        
+        let estado = 'Pagado / Saldado';
+        if (t.type === 'income' && t.isPaid === false) estado = 'Pendiente de Cobro';
+        if (t.type === 'income' && validAmt === 0 && t.isPaid !== false) estado = 'Pagado (Saldado con Abonos)';
+
+        csvContent += `${id},${fecha},${tipo},${categoria},${desc},${extra},${monto},${estado}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url); link.setAttribute("download", `Tesoreria_NISUS_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    window.showToast("Excel descargado correctamente");
+};
+
+window.exchangeRateBCV = null;
+
+window.fetchVenezuelaRates = async function() {
+    const btnIcon = document.getElementById('bcv-spinner'); if (btnIcon) btnIcon.classList.add('fa-spin'); 
+    try {
+        const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        const data = await response.json();
+        if (data && data.promedio) {
+            window.currentExchangeRate = data.promedio;
+            const inputEl = document.getElementById('custom-rate-input'); if (inputEl) inputEl.value = data.promedio.toFixed(2);
+            if (btnIcon) btnIcon.classList.remove('fa-spin');
+            window.showToast(`Tasa BCV actualizada: ${data.promedio.toFixed(2)} Bs`);
+            window.renderFinances();
+        } else throw new Error("Sin datos de la API");
+    } catch (error) {
+        if (btnIcon) btnIcon.classList.remove('fa-spin');
+        window.showToast("Fallo al conectar con BCV. Ingresa la tasa manual.", true);
+    }
+};
+
+window.applyCustomRate = function() {
+    const inputEl = document.getElementById('custom-rate-input'); if (!inputEl) return; 
+    const val = parseFloat(inputEl.value.replace(/[^0-9,.]/g, '').replace(',', '.'));
+    if (!isNaN(val) && val > 0) window.currentExchangeRate = val; else window.currentExchangeRate = null; 
+    window.renderFinances();
+};
+
+window.clearRate = function() { window.currentExchangeRate = null; const input = document.getElementById('custom-rate-input'); if(input) input.value = ''; window.renderFinances(); };
+
+window.renderFinances = function() {
+    let income = 0, expense = 0;
+    (window.finances || []).forEach(t => { 
+        if(!t) return;
+        if (t.type === 'income') income += window.getValidCashAmount(t); 
+        else if (t.type === 'expense') expense += window.getValidCashAmount(t); 
+    });
+    
+    const balance = income - expense;
+    const elB = document.getElementById('fin-balance'); if(elB) elB.textContent = `$${balance.toFixed(2)}`;
+    const elI = document.getElementById('fin-income'); if(elI) elI.textContent = `+$${income.toFixed(2)}`;
+    const elE = document.getElementById('fin-expense'); if(elE) elE.textContent = `-$${expense.toFixed(2)}`;
+
+    const b_bs = document.getElementById('fin-balance-bs'); const i_bs = document.getElementById('fin-income-bs'); const e_bs = document.getElementById('fin-expense-bs');
+    if (window.currentExchangeRate) {
+        if(b_bs) b_bs.textContent = `≈ ${(balance * window.currentExchangeRate).toFixed(2)} Bs`;
+        if(i_bs) i_bs.textContent = `≈ ${(income * window.currentExchangeRate).toFixed(2)} Bs`;
+        if(e_bs) e_bs.textContent = `≈ ${(expense * window.currentExchangeRate).toFixed(2)} Bs`;
+    } else {
+        if(b_bs) b_bs.textContent = ''; if(i_bs) i_bs.textContent = ''; if(e_bs) e_bs.textContent = '';
+    }
+
+    if (window.currentFinTab === 'cobros' && typeof window.renderMonthlyDues === 'function') window.renderMonthlyDues();
+
+    const debtorsList = document.getElementById('debtors-list');
+    if (debtorsList) {
+        debtorsList.innerHTML = ''; let hasDebtors = false;
+        const debtFilter = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'all';
+
+        (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
+            const debtData = window.getPlayerDebts(p.id); let totalDebt = 0;
+            if (debtFilter === 'all') { totalDebt = debtData.total; } 
+            else {
+                const filtered = debtData.debts.filter(d => {
+                    const desc = d.desc.toLowerCase();
+                    if (debtFilter === 'mensualidad') return desc.includes('mensual');
+                    if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
+                    if (debtFilter === 'multa') return desc.includes('multa');
+                    return false;
+                });
+                totalDebt = filtered.reduce((sum, d) => sum + d.amount, 0);
+            }
+            
+            if (totalDebt > 0.01) {
+                hasDebtors = true; 
+                const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+                const ini = validName.charAt(0).toUpperCase();
+                const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center shadow-sm">${ini}</div>`;
+                let bsEquivalent = window.currentExchangeRate ? `<span class="text-[9px] text-slate-400 block mt-0.5">≈ ${(totalDebt * window.currentExchangeRate).toFixed(2)} Bs</span>` : '';
+                const rowAction = window.isAdmin ? `onclick="window.openPlayerFinancialReport('${p.id}')" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"` : `class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 last:border-0"`;
+                const adminButtons = window.isAdmin ? `<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${totalDebt})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase cursor-pointer px-2 py-1 bg-brand-50 rounded" onclick="event.stopPropagation(); window.openPaySpecific('${p.id}')">💰 Pagar</span></div>` : ``;
+
+                debtorsList.innerHTML += `<li ${rowAction}><div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${validName}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm"><i class="fas fa-exclamation-triangle"></i> EN MORA</span></div></div><div class="text-right shrink-0 flex flex-col items-end gap-1"><p class="font-black text-lg leading-none text-red-500">$${totalDebt.toFixed(2)}</p>${bsEquivalent}${adminButtons}</div></li>`;
+            }
+        });
+        if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">No hay deudas en esta categoría</li>';
+    }
+    
+    const transList = document.getElementById('transactions-list');
+    if (transList) {
+        transList.innerHTML = '';
+        const sorted = [...(window.finances || [])].filter(Boolean).sort((a,b) => new Date(b?.date || 0) - new Date(a?.date || 0));
+        if (sorted.length === 0) { transList.innerHTML = '<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin movimientos registrados</td></tr>'; }
+        else sorted.forEach(t => {
+            const dateVal = t?.date && typeof t.date === 'string' && t.date.includes('-') ? t.date + 'T12:00:00' : new Date().toISOString();
+            const dStr = new Date(dateVal).toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); 
+            let extra = '';
+            if (t?.matchId) { const m = (window.matches || []).find(x => x?.id === t.matchId); if (m) extra = ` vs ${m?.opponent || 'Rival desconocido'}`; }
+            if (t?.playerId) { const p = (window.players || []).find(x => x?.id === t.playerId); if (p) extra += ` · ${p?.name || 'Jugador desconocido'}`; }
+            
+            const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0; 
+            let displayAmt = '', iconBadge = '';
+            if (t?.type === 'expense') { displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`; } 
+            else if (t?.isPaid === false) { displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; } 
+            else if (validAmt === 0) { displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; } 
+            else { displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`; }
+
+            let receiptBtn = '';
+            if (t?.type === 'income' && t?.playerId && validAmt > 0) { receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`; }
+
+            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t?.category || 'Sin categoría'}</p><p class="text-[10px] text-slate-400">${t?.description || ''}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right flex items-center justify-end">${receiptBtn}<button onclick="window.deleteTransaction('${t?.id}')" class="admin-only text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Anular"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+    }
+    
+    if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
+        setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
+    }
+};
+
+window.openPaySpecific = function(playerId) {
+    if (!window.isAdmin) return window.showToast('Solo los administradores pueden registrar cobros', true);
+    const p = window.players.find(x => x.id === playerId); if (!p) return;
+    document.getElementById('pay-spec-name').textContent = p.name;
+    const list = document.getElementById('pay-spec-list'); const debts = window.getPlayerDebts(playerId);
+    list.innerHTML = '';
+    
+    if (debts.debts.length === 0) { list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; } 
+    else {
+        debts.debts.forEach(d => {
+            const dStr = new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+            list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700"><div class="flex-1 min-w-0 pr-2"><p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${d.desc}">${d.desc}</p><p class="text-[10px] text-slate-400">${dStr}</p></div><div class="flex items-center gap-2 shrink-0"><span class="text-slate-400 font-bold text-xs">$</span><input type="number" id="pay-amt-${d.id}" value="${d.amount.toFixed(2)}" max="${d.amount.toFixed(2)}" step="0.01" class="w-16 sm:w-20 py-1.5 px-2 text-right text-sm font-black text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 shadow-sm"><button onclick="window.processSpecificPayment('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Abonar</button></div></div>`;
+        });
+    }
+    document.getElementById('pay-spec-total').textContent = `${debts.total.toFixed(2)}`; document.getElementById('modalPaySpecific').classList.remove('hidden'); window.updateAdminUI();
+};
+
+window.processSpecificPayment = function(playerId, debtId, maxAmount) {
+    const inputEl = document.getElementById(`pay-amt-${debtId}`); if (!inputEl) return;
+    let payAmount = parseFloat(inputEl.value);
+    if (isNaN(payAmount) || payAmount <= 0) return window.showToast('Ingresa un monto válido', true);
+    if (payAmount > maxAmount) { payAmount = maxAmount; inputEl.value = maxAmount.toFixed(2); }
+    window.paySpecificDebt(playerId, debtId, payAmount, maxAmount);
+};
+
+window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    
+    const isFullPayment = Math.abs(maxAmount - amount) < 0.01; const finId = window.generateId();
+    const tData = { id: finId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: isFullPayment ? 'Pago total de deuda' : 'Abono parcial a deuda', playerId: playerId, specificDebtId: debtId };
+    const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(finId), tData);
+
+    if (debtId.startsWith('arb_')) {
+        if (isFullPayment) { const parentId = debtId.split('_')[1]; const arbTx = (window.finances||[]).find(x => x.id === parentId); if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true }); }
+    } else {
+        if (isFullPayment) batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
+        const p = (window.players||[]).find(x => x.id === playerId);
+        if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
+    }
+
+    try {
+        await batch.commit(); window._lastPaidTx = tData; window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
+        window.openPaySpecific(playerId); window.renderFinances();
+    } catch(e) { window.showToast('Error al registrar abono', true); }
+};
+
+window.downloadReceiptFromTx = function(txId) {
+    const tx = window.finances.find(t => t.id === txId) || window._lastPaidTx;
+    if (!tx || !tx.playerId) return window.showToast('Solo aplica para cobros a jugadores', true);
+    const p = window.players.find(x => x.id === tx.playerId); if (!p) return;
+    const dateStr = new Date(tx.date+'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+    
+    document.getElementById('receipt-player').textContent = p.name;
+    document.getElementById('receipt-concept').textContent = tx.description || tx.category;
+    document.getElementById('receipt-amount').textContent = `$${tx.amount.toFixed(2)}`;
+    document.getElementById('receipt-date').textContent = `FECHA: ${dateStr}`;
+    document.getElementById('receipt-id').textContent = `REF: ${tx.id.substring(0,8).toUpperCase()}`;
+
+    const node = document.getElementById('receipt-template'); node.style.left = '0px'; node.style.zIndex = '-50'; window.showToast('Generando recibo...');
+
+    setTimeout(() => {
+        html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true }).then(cv => {
+            const a = document.createElement('a'); a.download = `Recibo_NISUS_${(p.name||'').replace(/\s+/g, '_')}_${dateStr.replace(/\s+/g, '')}.png`; 
+            a.href = cv.toDataURL('image/png'); a.click(); node.style.left = '-9999px'; 
+        }).catch(e => { node.style.left = '-9999px'; window.showToast('Error al generar', true); });
+    }, 500); 
+};
+
+window.renderMonthlyDues = function() {
+    const grid = document.getElementById('monthly-dues-grid'); if (!grid) return;
+    const monthInput = document.getElementById('dues-month'); if (monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
+    const month = monthInput ? monthInput.value : new Date().toISOString().slice(0, 7);
+    const amountInput = document.getElementById('dues-amount'), amount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
+    const activePlayers = window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    grid.innerHTML = ''; if (activePlayers.length === 0) { grid.innerHTML = '<p class="col-span-full text-center text-sm text-slate-500 py-6">No hay jugadores en el plantel</p>'; return; }
+
+    activePlayers.forEach(p => {
+        const tx = window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id), paid = tx && tx.isPaid;
+        const img = p.image ? `<img src="${p.image}" class="w-9 h-9 rounded-full object-cover">` : `<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${(p.name || '?').charAt(0).toUpperCase()}</div>`;
+        let statusBadge;
+        if (paid) { statusBadge = '<span class="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded uppercase">Pagada</span>'; } 
+        else if (tx) { statusBadge = '<span class="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded uppercase">Pendiente</span>'; } 
+        else { statusBadge = `<label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded w-fit border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><input type="checkbox" class="dues-charge-cb rounded text-brand-600 w-3.5 h-3.5 cursor-pointer bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" value="${p.id}" checked><span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Cobrar</span></label>`; }
+
+        let actionBtn = '';
+        if (tx) { 
+            let btnPagar = !paid ? `<button onclick="window.markDuesPaid('${tx.id}','${p.id}')" class="admin-only bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-check"></i> Pagada</button>` : '';
+            actionBtn = `<div class="flex items-center justify-end gap-1.5">${btnPagar}<button onclick="window.deleteTransaction('${tx.id}')" class="admin-only bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 w-8 h-8 rounded-lg text-sm font-bold transition flex items-center justify-center border border-red-100 dark:border-red-800/30 shadow-sm" title="Anular cobro"><i class="fas fa-trash-alt"></i></button></div>`; 
+        }
+        grid.innerHTML += `<div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800"><div class="flex items-center gap-2.5 min-w-0"><div class="shrink-0">${img}</div><div class="min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${p.name}</p><div class="mt-0.5">${statusBadge}</div></div></div><div class="shrink-0">${actionBtn}</div></div>`;
+    });
+
+    const summaryEl = document.getElementById('dues-summary');
+    if (summaryEl) {
+        const charged = activePlayers.filter(p => window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id)).length;
+        const paidCount = activePlayers.filter(p => { const t = window.finances.find(t => t.category === 'Cuota Mensual' && t.duesMonth === month && t.playerId === p.id); return t && t.isPaid; }).length;
+        summaryEl.textContent = `${paidCount}/${activePlayers.length} pagadas · ${charged} cobradas`;
+    }
+};
+
+window.chargeMonthlyDues = async function() {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const month = document.getElementById('dues-month').value, amount = parseFloat(document.getElementById('dues-amount').value);
+    if (!month) return window.showToast('Selecciona un mes', true); if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
+    const checkboxes = document.querySelectorAll('.dues-charge-cb:checked'); if (checkboxes.length === 0) return window.showToast('Selecciona al menos un jugador para cobrar', true);
+    const toChargeIds = Array.from(checkboxes).map(cb => cb.value), toCharge = window.players.filter(p => toChargeIds.includes(p.id));
+    const batch = db.batch(), dateStr = month + '-01';
+    
+    toCharge.forEach(p => {
+        const id = window.generateId();
+        batch.set(db.collection(window.financesPath).doc(id), { id, type: 'income', amount, date: dateStr, category: 'Cuota Mensual', description: 'Cuota mensual ' + month, playerId: p.id, duesMonth: month, isPaid: false });
+        batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
+    });
+    try { await batch.commit(); window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); } catch(e) { window.showToast('Error al cobrar', true); }
+};
+
+window.markDuesPaid = async function(txId, playerId) {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const tx = window.finances.find(t => t.id === txId); if (!tx) return;
+    const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(txId), { isPaid: true }, { merge: true });
+    const p = window.players.find(x => x.id === playerId); if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - tx.amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
+    try { await batch.commit(); window.showToast('Cuota marcada como pagada'); } catch(e) { window.showToast('Error', true); }
+};
+
 window.cashflowCharts = [];
 window.renderCashflowChart = function() {
     if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
@@ -938,6 +1288,7 @@ window.renderExpensesDonutChart = function() {
         if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
     });
 };
+
 /* -----------------------------------------------------
    INICIALIZACIÓN Y OPTIMIZACIÓN DE RENDIMIENTO
 ------------------------------------------------------ */
@@ -963,10 +1314,7 @@ async function loadInitialData() {
 
 function debounceRender(func, wait = 150) {
     let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
+    return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); };
 }
 
 const safeUpdateDashboard = debounceRender(() => { if(!document.getElementById('dashboard').classList.contains('hidden') || !document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); });
@@ -992,8 +1340,7 @@ function setupRealtimeListeners() {
     db.collection(window.playersPath).onSnapshot((s) => { 
         if(!window.isReady) return; 
         window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id })); 
-        window.checkAutoActivations(); 
-        safeRenderPlayers(); safeUpdateDashboard(); safeRenderFinances();
+        window.checkAutoActivations(); safeRenderPlayers(); safeUpdateDashboard(); safeRenderFinances();
         if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList(); 
         if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist(); 
     });
@@ -1001,8 +1348,7 @@ function setupRealtimeListeners() {
     db.collection(window.matchesPath).onSnapshot((s) => { 
         if(!window.isReady) return; 
         window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id })); 
-        window.updateSeasonDropdown(); 
-        safeRenderMatches(); safeUpdateDashboard(); safeRenderPlayers(); safeRenderFinances(); 
+        window.updateSeasonDropdown(); safeRenderMatches(); safeUpdateDashboard(); safeRenderPlayers(); safeRenderFinances(); 
     });
     
     db.collection(window.trainingsPath).onSnapshot((s) => { 
@@ -1032,10 +1378,7 @@ window.initApp = async function() {
     document.addEventListener('mousemove', window.dragMove); 
     document.addEventListener('mouseup', window.dragEnd); 
     const p = document.getElementById('tactical-pitch'); 
-    if(p) { 
-        p.addEventListener('touchmove', window.dragMove, {passive: false}); 
-        p.addEventListener('touchend', window.dragEnd); 
-    } 
+    if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
 };
 
 if (document.readyState === 'loading') { 
