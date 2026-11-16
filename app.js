@@ -763,15 +763,6 @@ window.renderCallupList = function() {
     });
     const c = document.getElementById('count-convocados'); if(c) c.textContent = (window.currentLineup || []).length; window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
 };
-    window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
-        if(m==='f11' && !p.availableF11) return; if(m==='f7' && !p.availableF7) return;
-        const isC = window.currentLineup.some(l=>l.playerId===p.id), d = window.getDiscipline(p.id, t);
-        const bg = d.suspended ? `<span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded ml-2 font-black shadow-sm">SANC</span>` : (d.yellows > 0 ? `<span class="text-yellow-600 text-[10px] ml-1 font-black shadow-sm" title="${d.yellows} Amarillas">🟨${d.yellows}</span>` : '');
-        const col = d.suspended ? 'text-red-500 line-through opacity-70' : 'text-slate-700 dark:text-slate-300';
-        list.innerHTML += `<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 cursor-pointer"><label for="cb-${p.id}" class="truncate ${col} text-xs font-bold cursor-pointer flex-1">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.number?p.number+'-':''}${p.name} ${bg}</label></div>`;
-    });
-    const c = document.getElementById('count-convocados'); if(c) c.textContent = window.currentLineup.length; window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
-};
 
 window.handleCallupChange = (id, chk) => { if(!window.isAdmin) return window.showToast('Solo edición', true); if(chk) { if(!window.currentLineup.some(l=>l.playerId===id)) window.currentLineup.push({playerId:id,x:null,y:null}); } else { window.currentLineup = window.currentLineup.filter(l=>l.playerId!==id); const c = document.getElementById('m-captain'); if(c&&c.value===id) c.value=''; } window.drawTacticalBoard(); window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect(); const cn = document.getElementById('count-convocados'); if(cn) cn.textContent = window.currentLineup.length; };
 window.updateCaptainSelect = () => { const s = document.getElementById('m-captain'); if(!s)return; const cur = s.value; let h='<option value="">Ninguno</option>'; window.players.filter(p=>window.currentLineup.some(l=>l.playerId===p.id)&&!p.isStaff).forEach(p=>h+=`<option value="${p.id}">${p.name}</option>`); s.innerHTML=h; if(window.players.find(p=>p.id===cur)) s.value=cur; };
