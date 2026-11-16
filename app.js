@@ -731,12 +731,28 @@ window.saveMatch = async function(e) {
 
 window.deleteMatch = function(id) { window.showConfirm('¿Borrar partido permanentemente?', async () => { try { await db.collection(window.matchesPath).doc(id).delete(); window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
 window.toggleScoreFields = () => { const s = document.getElementById('m-status').value, c = document.getElementById('m-score-container'), l = document.getElementById('label-opponent'); if(l) l.textContent = document.getElementById('m-opponent').value || 'Rival'; if(s==='finished') { c.classList.remove('hidden'); window.updateMvpSelect(); } else c.classList.add('hidden'); };
-window.handleModalityChange = () => { window.updateFormationOptions(); const m = document.getElementById('m-modality').value, mx = m==='f11'?11:7; window.currentLineup = window.currentLineup.filter(l => { const p = window.players.find(x=>x.id===l.playerId); return p && (m==='f11'?p.availableF11:p.availableF7); }); let c=0; window.currentLineup.forEach(p => { const s = window.players.find(x=>x.id===p.playerId)?.isStaff; if(!s && p.x!==null && p.y!==null) { c++; if(c>mx) {p.x=null;p.y=null;} } }); window.renderCallupList(); window.drawTacticalBoard(); };
-window.updateFormationOptions = () => { const m = document.getElementById('m-modality').value, s = document.getElementById('m-formation'); if(!s)return; let h='<option value="">Formación Libre</option>'; for(let k in formations[m]) h+=`<option value="${k}">${k}</option>`; s.innerHTML=h; };
+window.handleModalityChange = () => { 
+    window.updateFormationOptions(); 
+    const m = document.getElementById('m-modality').value, mx = m==='f11'?11:7; 
+    // NUEVO: Expulsa a los inactivos de la alineación actual si cambian la modalidad
+    window.currentLineup = window.currentLineup.filter(l => { const p = window.players.find(x=>x.id===l.playerId); return p && p.status === 'active' && (m==='f11'?p.availableF11:p.availableF7); }); 
+    let c=0; window.currentLineup.forEach(p => { const s = window.players.find(x=>x.id===p.playerId)?.isStaff; if(!s && p.x!==null && p.y!==null) { c++; if(c>mx) {p.x=null;p.y=null;} } }); 
+    window.renderCallupList(); window.drawTacticalBoard(); 
+};window.updateFormationOptions = () => { const m = document.getElementById('m-modality').value, s = document.getElementById('m-formation'); if(!s)return; let h='<option value="">Formación Libre</option>'; for(let k in formations[m]) h+=`<option value="${k}">${k}</option>`; s.innerHTML=h; };
 
 window.renderCallupList = function() {
     const list = document.getElementById('m-callup-list'); if(!list) return; list.innerHTML = '';
     const m = document.getElementById('m-modality').value, t = document.getElementById('m-tournament').value;
+    // NUEVO: Filtramos para mostrar SOLO a los jugadores con status 'active'
+    window.players.filter(p => p.status === 'active').sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
+        if(m==='f11' && !p.availableF11) return; if(m==='f7' && !p.availableF7) return;
+        const isC = window.currentLineup.some(l=>l.playerId===p.id), d = window.getDiscipline(p.id, t);
+        const bg = d.suspended ? `<span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded ml-2 font-black shadow-sm">SANC</span>` : (d.yellows > 0 ? `<span class="text-yellow-600 text-[10px] ml-1 font-black shadow-sm" title="${d.yellows} Amarillas">🟨${d.yellows}</span>` : '');
+        const col = d.suspended ? 'text-red-500 line-through opacity-70' : 'text-slate-700 dark:text-slate-300';
+        list.innerHTML += `<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 cursor-pointer"><label for="cb-${p.id}" class="truncate ${col} text-xs font-bold cursor-pointer flex-1">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.number?p.number+'-':''}${p.name} ${bg}</label></div>`;
+    });
+    const c = document.getElementById('count-convocados'); if(c) c.textContent = window.currentLineup.length; window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
+};
     window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
         if(m==='f11' && !p.availableF11) return; if(m==='f7' && !p.availableF7) return;
         const isC = window.currentLineup.some(l=>l.playerId===p.id), d = window.getDiscipline(p.id, t);
@@ -1194,8 +1210,14 @@ window.updateDashboard = function() {
    ASISTENCIAS Y ENTRENAMIENTOS
 ------------------------------------------------------ */
 window.newAttendance = function() { document.getElementById('attendance-form').reset(); document.getElementById('a-id').value = ''; document.getElementById('a-date').value = new Date().toISOString().split('T')[0]; window.currentAttendees=[]; window.renderAttendanceChecklist(); window.updateAdminUI(); window.showSection('attendanceForm'); };
-window.renderAttendanceChecklist = function() { const c = document.getElementById('a-players-list'); if(!c)return; c.innerHTML=''; window.players.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ const ch = window.currentAttendees.includes(p.id)?'checked':''; c.innerHTML+=`<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="att-${p.id}" ${ch} onchange="window.handleAttChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600"><label for="att-${p.id}" class="text-sm font-bold flex-1 cursor-pointer text-slate-700 dark:text-slate-300">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.name}</label></div>`; }); };
-window.handleAttChange = (id,chk) => { if(!window.isAdmin) return window.showToast('Solo edición', true); if(chk){if(!window.currentAttendees.includes(id))window.currentAttendees.push(id);}else window.currentAttendees=window.currentAttendees.filter(x=>x!==id); };
+window.renderAttendanceChecklist = function() { 
+    const c = document.getElementById('a-players-list'); if(!c)return; c.innerHTML=''; 
+    // NUEVO: Filtramos para mostrar SOLO a los jugadores con status 'active'
+    window.players.filter(p => p.status === 'active').sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ 
+        const ch = window.currentAttendees.includes(p.id)?'checked':''; 
+        c.innerHTML+=`<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="att-${p.id}" ${ch} onchange="window.handleAttChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600"><label for="att-${p.id}" class="text-sm font-bold flex-1 cursor-pointer text-slate-700 dark:text-slate-300">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.name}</label></div>`; 
+    }); 
+};window.handleAttChange = (id,chk) => { if(!window.isAdmin) return window.showToast('Solo edición', true); if(chk){if(!window.currentAttendees.includes(id))window.currentAttendees.push(id);}else window.currentAttendees=window.currentAttendees.filter(x=>x!==id); };
 window.saveAttendance = async function(e) { e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); const docId = document.getElementById('a-id').value||window.generateId(); try { await db.collection(window.trainingsPath).doc(docId).set({ id:docId, date:document.getElementById('a-date').value, location:document.getElementById('a-location').value, notes:document.getElementById('a-notes').value, attendees:window.currentAttendees }); window.showToast('Guardado'); window.showSection('attendance'); } catch(er){window.showToast('Error',true);} };
 window.editAttendance = function(id) { const t = window.trainings.find(x=>x.id===id); if(!t)return; document.getElementById('a-id').value=t.id; document.getElementById('a-date').value=t.date; document.getElementById('a-location').value=t.location||''; document.getElementById('a-notes').value=t.notes||''; window.currentAttendees=[...(t.attendees||[])]; window.renderAttendanceChecklist(); window.updateAdminUI(); window.showSection('attendanceForm'); };
 window.deleteAttendance = function(id) { window.showConfirm('¿Borrar entreno permanentemente?', async()=>{ try{ await db.collection(window.trainingsPath).doc(id).delete(); window.showToast('Eliminado'); }catch(e){window.showToast('Error',true);} }); };
