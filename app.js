@@ -2142,51 +2142,27 @@ window.initApp = async function() {
     if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
 };
 
-// ¡ESTA ES LA LÍNEA VITAL QUE FALTABA O SE BORRÓ!
-if (document.readyState === 'loading') { 
-    document.addEventListener('DOMContentLoaded', window.initApp); 
-} else { 
+// ==========================================
+// 1. FINANZAS: WHATSAPP Y REPORTE
+// ==========================================
 window.sendPlayerFinancesWhatsApp = function(playerId) {
-    const player = (window.players || []).find(p => p.id === playerId);
-    if (!player) return;
-    
-    const playerTxs = (window.finances || [])
-        .filter(t => t && t.playerId === playerId)
-        .sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
-        
-    let totalPaid = 0;
-    let txText = '';
-    
+    const player = (window.players || []).find(p => p.id === playerId); if (!player) return;
+    const playerTxs = (window.finances || []).filter(t => t && t.playerId === playerId).sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+    let totalPaid = 0; let txText = '';
     playerTxs.forEach(t => {
         const dStr = new Date(t.date || Date.now()).toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
         let sign = '';
-        
-        // REGLA UNIVERSAL: Todo Egreso es un cargo (-). Cuotas y Cobros también.
         const isCharge = t.type === 'expense' || ['Cuota Mensual', 'Cobro Manual', 'Inscripción'].includes(t.category);
-        
-        if (isCharge) {
-            sign = '-'; 
-        } else {
-            sign = '+'; 
-            totalPaid += (t.amount || 0);
-        }
-        
+        if (isCharge) { sign = '-'; } else { sign = '+'; totalPaid += (t.amount || 0); }
         txText += `• ${t.category || 'Movimiento'}: ${sign}$${(t.amount||0).toFixed(2)} (${dStr})\n`;
     });
-    
-    const text = `*ESTADO DE CUENTA: ${player.name.toUpperCase()}*\n\n` +
-                 `*Deuda Pendiente:* $${(player.debtAmount || 0).toFixed(2)}\n` +
-                 `*Total Aportado:* $${totalPaid.toFixed(2)}\n\n` +
-                 `*Historial de Movimientos:*\n${txText ? txText : 'Sin movimientos registrados.'}`;
-                 
+    const text = `*ESTADO DE CUENTA: ${player.name.toUpperCase()}*\n\n*Deuda Pendiente:* $${(player.debtAmount || 0).toFixed(2)}\n*Total Aportado:* $${totalPaid.toFixed(2)}\n\n*Historial de Movimientos:*\n${txText ? txText : 'Sin movimientos registrados.'}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 };
 
 window.openPlayerFinancialReport = function(playerId) {
     if (!window.isAdmin) return; 
-    
-    const player = (window.players || []).find(p => p.id === playerId);
-    if (!player) return;
+    const player = (window.players || []).find(p => p.id === playerId); if (!player) return;
     
     document.getElementById('pf-player-name').textContent = player.name || 'Jugador';
     document.getElementById('pf-debt').textContent = `$${(player.debtAmount || 0).toFixed(2)}`;
@@ -2194,167 +2170,345 @@ window.openPlayerFinancialReport = function(playerId) {
     const waBtn = document.getElementById('pf-btn-wa');
     if (waBtn) {
         waBtn.onclick = () => window.sendPlayerFinancesWhatsApp(playerId);
-        if (window.isAdmin) { waBtn.classList.remove('hidden'); waBtn.classList.add('flex'); } 
-        else { waBtn.classList.add('hidden'); waBtn.classList.remove('flex'); }
+        if (window.isAdmin) { waBtn.classList.remove('hidden'); waBtn.classList.add('flex'); } else { waBtn.classList.add('hidden'); waBtn.classList.remove('flex'); }
     }
 
     const payBtn = document.getElementById('pf-btn-pay');
     if (payBtn) {
-        payBtn.onclick = () => {
-            document.getElementById('modal-player-finances').classList.add('hidden');
-            if (typeof window.openPaySpecific === 'function') window.openPaySpecific(playerId);
-        };
-        if (player.debtAmount > 0 && window.isAdmin) { payBtn.classList.remove('hidden'); payBtn.classList.add('flex'); } 
-        else { payBtn.classList.add('hidden'); payBtn.classList.remove('flex'); }
+        payBtn.onclick = () => { document.getElementById('modal-player-finances').classList.add('hidden'); if (typeof window.openPaySpecific === 'function') window.openPaySpecific(playerId); };
+        if (player.debtAmount > 0 && window.isAdmin) { payBtn.classList.remove('hidden'); payBtn.classList.add('flex'); } else { payBtn.classList.add('hidden'); payBtn.classList.remove('flex'); }
     }
     
-    const list = document.getElementById('pf-transactions-list');
-    list.innerHTML = '';
-    
-    const playerTxs = (window.finances || [])
-        .filter(t => t && t.playerId === playerId)
-        .sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
-        
+    const list = document.getElementById('pf-transactions-list'); list.innerHTML = '';
+    const playerTxs = (window.finances || []).filter(t => t && t.playerId === playerId).sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
     let totalPaid = 0;
     
-    if (playerTxs.length === 0) {
-        list.innerHTML = '<li class="p-8 text-center text-slate-500 text-sm font-medium">No hay registros financieros.</li>';
-    } else {
+    if (playerTxs.length === 0) { list.innerHTML = '<li class="p-8 text-center text-slate-500 text-sm font-medium">No hay registros financieros.</li>'; } 
+    else {
         playerTxs.forEach(t => {
             const dateVal = t.date && typeof t.date === 'string' && t.date.includes('-') ? t.date + 'T12:00:00' : new Date().toISOString();
             const dStr = new Date(dateVal).toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'}); 
-            
             let displayAmt = '', iconBadge = '';
-            
-            // REGLA UNIVERSAL VISUAL:
             const isCharge = t.type === 'expense' || ['Cuota Mensual', 'Cobro Manual', 'Inscripción'].includes(t.category);
 
             if (isCharge) {
                 displayAmt = `<p class="font-black text-red-500 dark:text-red-400">-$${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-file-invoice"></i></span>`; 
             } else {
-                totalPaid += (t.amount || 0);
-                displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; 
+                totalPaid += (t.amount || 0); displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t.amount||0).toFixed(2)}</p>`; 
                 iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-money-bill-wave"></i></span>`;
             }
-
-            list.innerHTML += `
-            <li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-800 last:border-0">
-                <div class="flex items-center gap-3">
-                    ${iconBadge}
-                    <div>
-                        <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category || 'Movimiento'}</p>
-                        <p class="text-[10px] text-slate-400">${t.description || ''}</p>
-                    </div>
-                </div>
-                <div class="text-right whitespace-nowrap">
-                    ${displayAmt}
-                    <p class="text-[10px] text-slate-400">${dStr}</p>
-                </div>
-            </li>`;
+            list.innerHTML += `<li class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-800 last:border-0"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.category || 'Movimiento'}</p><p class="text-[10px] text-slate-400">${t.description || ''}</p></div></div><div class="text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></div></li>`;
         });
     }
-    
     document.getElementById('pf-paid').textContent = `$${totalPaid.toFixed(2)}`;
     document.getElementById('modal-player-finances').classList.remove('hidden');
 };
-   // --- NUEVO: SISTEMA DE PESTAÑAS Y TORNEOS ARCHIVADOS ---
 
+// ==========================================
+// 2. PARTIDOS Y TORNEOS ARCHIVADOS
+// ==========================================
 window.switchMatchesTab = function(tab) {
-    const activeBtn = document.getElementById('btn-tab-active');
-    const archBtn = document.getElementById('btn-tab-archived');
-    const activeView = document.getElementById('view-active-matches');
-    const archView = document.getElementById('view-archived-matches');
-
+    const activeBtn = document.getElementById('btn-tab-active'), archBtn = document.getElementById('btn-tab-archived');
+    const activeView = document.getElementById('view-active-matches'), archView = document.getElementById('view-archived-matches');
     if (!activeBtn || !archBtn) return;
-
     if (tab === 'active') {
-        // Estilos Pestaña Activa
         activeBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm";
         archBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
-        activeView.classList.remove('hidden');
-        archView.classList.add('hidden');
+        activeView.classList.remove('hidden'); archView.classList.add('hidden');
     } else {
-        // Estilos Pestaña Historial
         archBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm";
         activeBtn.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
-        archView.classList.remove('hidden');
-        activeView.classList.add('hidden');
-        
+        archView.classList.remove('hidden'); activeView.classList.add('hidden');
         window.renderArchivedTournaments();
     }
 };
 
 window.renderArchivedTournaments = function() {
-    const container = document.getElementById('archived-tournaments-list');
-    if (!container) return;
-    container.innerHTML = '';
-
-    // Filtramos solo los archivados
+    const container = document.getElementById('archived-tournaments-list'); if (!container) return; container.innerHTML = '';
     const archivedMatches = (window.matches || []).filter(m => m.status === 'archived' && m.tournament);
-    
-    if (archivedMatches.length === 0) {
-        container.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500 font-medium bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800"><i class="fas fa-folder-open text-3xl mb-3 text-slate-300 dark:text-slate-700 block"></i> No hay torneos cerrados aún.</div>';
-        return;
-    }
+    if (archivedMatches.length === 0) { container.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500 font-medium bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800"><i class="fas fa-folder-open text-3xl mb-3 text-slate-300 dark:text-slate-700 block"></i> No hay torneos cerrados aún.</div>'; return; }
 
-    // Agrupamos la data matemáticamente
     const tourneys = {};
     archivedMatches.forEach(m => {
         if (!tourneys[m.tournament]) tourneys[m.tournament] = { pj:0, pg:0, pe:0, pp:0, gf:0, gc:0 };
         tourneys[m.tournament].pj++;
-        
-        const us = parseInt(m.goalsUs)||0;
-        const them = parseInt(m.goalsThem)||0;
-        tourneys[m.tournament].gf += us;
-        tourneys[m.tournament].gc += them;
-        
-        if (us > them) tourneys[m.tournament].pg++;
-        else if (us < them) tourneys[m.tournament].pp++;
-        else tourneys[m.tournament].pe++;
+        const us = parseInt(m.goalsUs)||0; const them = parseInt(m.goalsThem)||0;
+        tourneys[m.tournament].gf += us; tourneys[m.tournament].gc += them;
+        if (us > them) tourneys[m.tournament].pg++; else if (us < them) tourneys[m.tournament].pp++; else tourneys[m.tournament].pe++;
     });
 
-    // Dibujamos las tarjetas de resumen
     Object.keys(tourneys).forEach(name => {
-        const t = tourneys[name];
-        const pts = (t.pg * 3) + (t.pe * 1);
-        const df = t.gf - t.gc;
-        
-        container.innerHTML += `
-            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-brand-50 dark:bg-brand-900/20 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                
-                <h4 class="font-black text-slate-800 dark:text-white text-lg mb-4 flex items-start gap-2">
-                    <i class="fas fa-trophy text-orange-500 mt-1"></i> 
-                    <span class="leading-tight">${name} <span class="block text-[9px] text-slate-400 tracking-widest uppercase mt-1">Torneo Cerrado</span></span>
-                </h4>
-                
-                <div class="grid grid-cols-4 gap-2 text-center mb-4">
-                    <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2.5 border border-slate-100 dark:border-slate-800">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase">PJ</p>
-                        <p class="font-black text-lg text-slate-700 dark:text-slate-300">${t.pj}</p>
-                    </div>
-                    <div class="bg-green-50 dark:bg-green-900/20 rounded-xl py-2.5 border border-green-100 dark:border-green-900/30">
-                        <p class="text-[9px] font-bold text-green-600/70 dark:text-green-500/70 uppercase">PG</p>
-                        <p class="font-black text-lg text-green-600 dark:text-green-500">${t.pg}</p>
-                    </div>
-                    <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2.5 border border-slate-100 dark:border-slate-800">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase">PE</p>
-                        <p class="font-black text-lg text-slate-500">${t.pe}</p>
-                    </div>
-                    <div class="bg-red-50 dark:bg-red-900/20 rounded-xl py-2.5 border border-red-100 dark:border-red-900/30">
-                        <p class="text-[9px] font-bold text-red-600/70 dark:text-red-500/70 uppercase">PP</p>
-                        <p class="font-black text-lg text-red-600 dark:text-red-500">${t.pp}</p>
-                    </div>
-                </div>
-                
-                <div class="flex justify-between items-center text-xs font-bold bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl">
-                    <span class="text-slate-500 dark:text-slate-400">GF: ${t.gf} <span class="mx-1 opacity-50">|</span> GC: ${t.gc} <span class="mx-1 opacity-50">|</span> DIF: <span class="${df > 0 ? 'text-green-500' : (df < 0 ? 'text-red-500' : '')}">${df > 0 ? '+'+df : df}</span></span>
-                    <span class="text-brand-600 dark:text-brand-400 text-sm bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded-lg">PTS: ${pts}</span>
-                </div>
-            </div>
-        `;
+        const t = tourneys[name]; const pts = (t.pg * 3) + (t.pe * 1); const df = t.gf - t.gc;
+        container.innerHTML += `<div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition"><div class="absolute top-0 right-0 w-24 h-24 bg-brand-50 dark:bg-brand-900/20 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div><h4 class="font-black text-slate-800 dark:text-white text-lg mb-4 flex items-start gap-2"><i class="fas fa-trophy text-orange-500 mt-1"></i> <span class="leading-tight">${name} <span class="block text-[9px] text-slate-400 tracking-widest uppercase mt-1">Torneo Cerrado</span></span></h4><div class="grid grid-cols-4 gap-2 text-center mb-4"><div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2.5 border border-slate-100 dark:border-slate-800"><p class="text-[9px] font-bold text-slate-400 uppercase">PJ</p><p class="font-black text-lg text-slate-700 dark:text-slate-300">${t.pj}</p></div><div class="bg-green-50 dark:bg-green-900/20 rounded-xl py-2.5 border border-green-100 dark:border-green-900/30"><p class="text-[9px] font-bold text-green-600/70 dark:text-green-500/70 uppercase">PG</p><p class="font-black text-lg text-green-600 dark:text-green-500">${t.pg}</p></div><div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2.5 border border-slate-100 dark:border-slate-800"><p class="text-[9px] font-bold text-slate-400 uppercase">PE</p><p class="font-black text-lg text-slate-500">${t.pe}</p></div><div class="bg-red-50 dark:bg-red-900/20 rounded-xl py-2.5 border border-red-100 dark:border-red-900/30"><p class="text-[9px] font-bold text-red-600/70 dark:text-red-500/70 uppercase">PP</p><p class="font-black text-lg text-red-600 dark:text-red-500">${t.pp}</p></div></div><div class="flex justify-between items-center text-xs font-bold bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl"><span class="text-slate-500 dark:text-slate-400">GF: ${t.gf} <span class="mx-1 opacity-50">|</span> GC: ${t.gc} <span class="mx-1 opacity-50">|</span> DIF: <span class="${df > 0 ? 'text-green-500' : (df < 0 ? 'text-red-500' : '')}">${df > 0 ? '+'+df : df}</span></span><span class="text-brand-600 dark:text-brand-400 text-sm bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded-lg">PTS: ${pts}</span></div></div>`;
     });
 };
-   window.initApp(); 
+
+// ==========================================
+// 3. ESTADÍSTICAS DEL PERFIL Y DASHBOARD
+// ==========================================
+window.renderProfileRendimiento = function(p) {
+    const games = window.getPlayerStat(p, 'games'); const goals = window.getPlayerStat(p, 'goals'); const assists = window.getPlayerStat(p, 'assists'); const mvps = window.getPlayerStat(p, 'mvps'); const yellows = window.getPlayerStat(p, 'yellows'); const reds = window.getPlayerStat(p, 'reds');
+    const aGames = window.getPlayerArchivedStat(p, 'games'); const aGoals = window.getPlayerArchivedStat(p, 'goals'); const aAssists = window.getPlayerArchivedStat(p, 'assists'); const aMvps = window.getPlayerArchivedStat(p, 'mvps');
+    
+    const totalTrainings = window.trainings ? window.trainings.length : 0;
+    const attendance = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
+    const attPct = totalTrainings > 0 ? Math.round((attendance/totalTrainings)*100) : 0;
+    let defCleanSheets = 0;
+    (window.matches || []).forEach(m => {
+        if (m.status === 'finished') {
+            const played = (Array.isArray(m.lineup) && m.lineup.some(l => l.playerId === p.id)) || (Array.isArray(m.events) && m.events.some(e => e.type === 'sub' && e.playerId === p.id));
+            if (played && parseInt(m.goalsThem || 0) === 0) defCleanSheets++;
+        }
+    });
+
+    document.getElementById('pp-stats-grid').innerHTML = `
+        <div class="col-span-full mb-1 border-b border-slate-200 dark:border-slate-800 pb-2"><span class="text-xs font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest"><i class="fas fa-play-circle mr-1"></i> Torneo Actual</span></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partidos</p><p class="text-2xl font-black text-slate-800 dark:text-white">${games}</p></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Goles</p><p class="text-2xl font-black text-green-500">${goals}</p></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencias</p><p class="text-2xl font-black text-blue-500">${assists}</p></div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center"><p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asistencia</p><p class="text-2xl font-black ${attPct>=75?'text-green-500':attPct>=50?'text-yellow-500':'text-red-500'}">${attPct}%</p></div>
+        <div class="col-span-full mt-4 mb-1 border-b border-slate-200 dark:border-slate-800 pb-2"><span class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest"><i class="fas fa-archive mr-1"></i> Historial (Torneos Pasados)</span></div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Partidos</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aGames}</p></div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Goles</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aGoals}</p></div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Asistencias</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aAssists}</p></div>
+        <div class="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center opacity-80"><p class="text-[9px] font-bold uppercase tracking-widest text-slate-500">MVPs</p><p class="text-lg font-black text-slate-700 dark:text-slate-300">${aMvps}</p></div>
+    `;
+
+    if (window.radarChart360) { window.radarChart360.destroy(); window.radarChart360 = null; }
+    if (typeof Chart !== 'undefined' && document.getElementById('pp-radar-chart')) {
+        const isDark = document.documentElement.classList.contains('dark'); const textColor = isDark ? '#cbd5e1' : '#64748b';
+        const scoreAtaque = Math.min(100, (goals / (games || 1)) * 120); const scoreCreacion = Math.min(100, (assists / (games || 1)) * 150); const scoreDefensa = Math.min(100, (defCleanSheets / (games || 1)) * 200); const scoreMVP = Math.min(100, (mvps / (games || 1)) * 400); const scoreDisciplina = Math.max(0, 100 - (yellows * 15) - (reds * 30));
+        const radarData = p.isStaff ? [10, 10, 10, 10, 10] : [scoreAtaque, scoreCreacion, scoreDefensa, scoreMVP, scoreDisciplina];
+        window.radarChart360 = new Chart(document.getElementById('pp-radar-chart'), { type: 'radar', data: { labels: ['Ataque', 'Creación', 'Defensa', 'Relevancia (MVP)', 'Disciplina'], datasets: [{ label: 'Nivel', data: radarData, backgroundColor: 'rgba(14, 165, 233, 0.2)', borderColor: '#0ea5e9', pointBackgroundColor: '#0ea5e9', borderWidth: 2 }] }, options: { scales: { r: { angleLines: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }, pointLabels: { color: textColor, font: {size: 10, weight: 'bold'} }, ticks: { display: false, max: 100, min: 0, stepSize: 20 } } }, plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false } });
+    }
+
+    const fgEl = document.getElementById('pp-form-guide'); fgEl.innerHTML = '';
+    const recentMatches = (window.matches || []).filter(m => m.status === 'finished' && Array.isArray(m.lineup) && m.lineup.some(l => l.playerId === p.id)).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    
+    if(recentMatches.length === 0) fgEl.innerHTML = '<p class="text-sm text-slate-500 italic py-4 text-center">No ha jugado partidos recientes</p>';
+    recentMatches.forEach(m => {
+        let us = parseInt(m.goalsUs)||0, them = parseInt(m.goalsThem)||0; let res = us > them ? 'V' : (us < them ? 'D' : 'E'); let col = res === 'V' ? 'bg-green-500' : (res === 'D' ? 'bg-red-500' : 'bg-slate-400');
+        let evs = ''; (m.events || []).forEach(e => { if(e.playerId === p.id) { if(['goals', 'penalty', 'freekick'].includes(e.type)) evs += '⚽ '; if(e.type === 'assists') evs += '👟 '; if(e.type === 'yellows') evs += '🟨 '; if(e.type === 'reds' || e.type === 'double_yellow') evs += '🟥 '; } });
+        fgEl.innerHTML += `<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800"><div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-sm ${col}">${res}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">vs ${m.opponent}</p><p class="text-[10px] text-slate-400">${new Date(m.date+'T12:00:00').toLocaleDateString('es-ES')}</p></div><div class="text-right text-xs shrink-0">${evs}</div></div>`;
+    });
+};
+
+window.updateDashboard = function() {
+    let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
+    const nx = list.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date))[0];
+    const btn = document.getElementById('btn-tactics-next');
+    if (nx) {
+        document.getElementById('next-match-vs').textContent = nx.opponent;
+        let loc=''; if(nx.location) loc=nx.location.startsWith('http')?`<a href="${nx.location}" target="_blank" class="text-white hover:text-brand-100 flex items-center justify-center gap-1 mt-2 text-xs bg-white/10 px-3 py-1 rounded-full w-fit mx-auto"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-brand-100/70 flex items-center justify-center gap-1 mt-2 text-[10px] uppercase tracking-widest"><i class="fas fa-map-marker-alt"></i> ${nx.location}</p>`;
+        document.getElementById('next-match-date').innerHTML = new Date(nx.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
+        document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament}`;
+        btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
+    } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
+    
+    const fin = list.filter(m => ['finished', 'forfait', 'archived'].includes(m.status)).slice(0, 3); const rD = document.getElementById('latest-results');
+    if(rD) {
+        rD.innerHTML = '';
+        if(fin.length===0) rD.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium">No hay resultados.</p>';
+        else fin.forEach(m => {
+            let rC='E', col='bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)){rC='V'; col='bg-green-500 text-white shadow-sm shadow-green-500/30';} else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){rC='D'; col='bg-red-500 text-white shadow-sm shadow-red-500/30';}
+            rD.innerHTML += `<div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer border border-slate-100 dark:border-slate-800 transition" onclick="window.editMatch('${m.id}')"><div class="flex items-center gap-3"><span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${col}">${rC}</span><span class="text-xs font-bold text-slate-800 dark:text-slate-200">vs ${m.opponent} <span class="text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm ml-1 ${m.modality==='f11'?'bg-blue-500 text-white':'bg-green-500 text-white'}">F${m.modality==='f11'?11:7}</span></span></div><span class="font-black text-slate-900 dark:text-white text-base">${m.goalsUs} - ${m.goalsThem}</span></div>`;
+        });
+    }
+    
+    window.renderBirthdaysAvailability();
+
+    let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
+    let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
+    pL.forEach(p => { tG += window.getPlayerStat(p,'goals') + window.getPlayerArchivedStat(p, 'goals'); tA += window.getPlayerStat(p,'assists') + window.getPlayerArchivedStat(p, 'assists'); });
+    
+    const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
+    const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
+    
+    let tCS=0, maxGames=0, ironMan="--";
+    pL.forEach(p => { 
+        const g = window.getPlayerStat(p,'games') + window.getPlayerArchivedStat(p, 'games');
+        if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : p.name.split(' ')[0]; }
+        tCS += window.getPlayerStat(p,'cleanSheets') + window.getPlayerArchivedStat(p, 'cleanSheets'); 
+    });
+    
+    const eTGm = document.getElementById('stat-total-games'); 
+    if(eTGm) { if(eTGm.previousElementSibling) eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; eTGm.innerHTML = `${maxGames} <span class="text-sm font-bold text-brand-500 ml-1 truncate">${ironMan}</span>`; }
+    const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
+    
+    const getCombinedStat = (p, stat) => window.getPlayerStat(p, stat) + window.getPlayerArchivedStat(p, stat);
+
+    const rL = (arr, k, el) => {
+        const d = document.getElementById(el); if(!d)return; d.innerHTML='';
+        arr.forEach((p,i) => { 
+            const v = getCombinedStat(p, k); if(v===0)return; 
+            const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${(p.name || '?').charAt(0).toUpperCase()}</div>`; d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${p.name}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
+        });
+        if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
+    };
+    
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'games')-getCombinedStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
+
+    let w=0, d=0, l=0, gf=0, ga=0;
+    list.forEach(m => {
+        if(['finished', 'forfait', 'archived'].includes(m.status)){
+            if(m.status==='forfait'){ w++; gf+=3; return; }
+            const us=parseInt(m.goalsUs)||0, them=parseInt(m.goalsThem)||0; gf+=us; ga+=them;
+            if(us>them)w++; else if(us<them)l++; else d++;
+        }
+    });
+    
+    const total=w+d+l;
+    const eW=document.getElementById('perf-wins'),eD=document.getElementById('perf-draws'),eL=document.getElementById('perf-losses');
+    if(eW)eW.textContent=w; if(eD)eD.textContent=d; if(eL)eL.textContent=l;
+    const eGF=document.getElementById('perf-gf'),eGA=document.getElementById('perf-ga'),ePP=document.getElementById('perf-played'),ePT=document.getElementById('perf-points');
+    if(eGF)eGF.textContent=gf; if(eGA)eGA.textContent=ga; if(ePP)ePP.textContent=total; if(ePT)ePT.textContent=(w*3+d);
+    
+    const donut=document.getElementById('perf-donut');
+    if(donut){
+        const wDeg=total>0?(w/total)*360:0, dDeg=total>0?(d/total)*360:0, lDeg=total>0?(l/total)*360:0;
+        donut.style.background=`conic-gradient(#10b981 0deg ${wDeg}deg, #64748b ${wDeg}deg ${wDeg+dDeg}deg, #ef4444 ${wDeg+dDeg}deg ${wDeg+dDeg+lDeg}deg, #e2e8f0 ${wDeg+dDeg+lDeg}deg 360deg)`;
+        const ePct=document.getElementById('perf-win-pct'); if(ePct)ePct.textContent=total>0?Math.round((w/total)*100)+'%':'0%';
+    }
+    
+    const formEl=document.getElementById('perf-form');
+    if(formEl){
+        const recent=list.filter(m=>['finished', 'forfait', 'archived'].includes(m.status)).slice(0,5); formEl.innerHTML='';
+        if(recent.length===0)formEl.innerHTML='<p class="text-xs text-slate-400 italic">Sin partidos jugados</p>';
+        else recent.forEach(m=>{
+            let r='E',col='bg-slate-400 text-white';
+            if(m.status==='forfait'||parseInt(m.goalsUs)>parseInt(m.goalsThem)){r='V';col='bg-green-500 text-white';}
+            else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){r='D';col='bg-red-500 text-white';}
+            formEl.innerHTML+=`<span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${col}">${r}</span>`;
+        });
+    }
+
+    const mvpEl=document.getElementById('mvp-card-content');
+    if(mvpEl){
+        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
+            const g = getCombinedStat(p,'goals'), a = getCombinedStat(p,'assists'), gp = getCombinedStat(p,'games'), m = getCombinedStat(p,'mvps'); 
+            return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
+        }).sort((x,y)=>y.score-x.score);
+        
+        if(mvpList.length>0&&mvpList[0].score>0){
+            const t=mvpList[0];
+            const img=t.p.image?`<img src="${t.p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg">`:`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">${t.p.name.charAt(0)}</div>`;
+            const name=t.p.alias&&t.p.showAlias?t.p.alias:t.p.name;
+            mvpEl.innerHTML=`${img}<div><p class="text-white font-black text-xl leading-tight">${name}</p><p class="text-white/80 text-xs font-bold">${t.p.positions&&t.p.positions.length?t.p.positions[0]:'Jugador'}</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML=`<div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">PJ</p><p class="text-white font-black text-lg">${t.gp}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Goles</p><p class="text-white font-black text-lg">${t.g}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Asis.</p><p class="text-white font-black text-lg">${t.a}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">MVP</p><p class="text-white font-black text-lg">${t.m}</p></div>`;
+        } else {
+            mvpEl.innerHTML=`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30"><i class="fas fa-trophy"></i></div><div><p class="text-white font-black text-xl leading-tight">Sin datos</p><p class="text-white/80 text-xs font-bold">Registra partidos</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML='';
+        }
+    }
+
+    const rankEl=document.getElementById('attendance-ranking');
+    if(rankEl){
+        const totalTrainings=window.trainings?window.trainings.length:0;
+        if(totalTrainings===0){ rankEl.innerHTML='<p class="text-sm text-slate-500 italic text-center py-6">No hay sesiones registradas</p>'; }
+        else {
+            const ranked=[...pL].filter(p=>!p.isStaff).map(p=>{ const attended=window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length; return {p,attended,pct:Math.round((attended/totalTrainings)*100)}; }).sort((a,b)=>b.pct-a.pct||b.attended-a.attended).slice(0,5);
+            rankEl.innerHTML=ranked.map((r,i)=>{
+                const img=r.p.image?`<img src="${r.p.image}" class="w-9 h-9 rounded-full object-cover">`:`<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${r.p.name.charAt(0)}</div>`;
+                const barColor=r.pct>=75?'bg-green-500':r.pct>=50?'bg-yellow-500':'bg-red-500';
+                const medal=i===0?'text-yellow-500':i===1?'text-slate-400':i===2?'text-orange-400':'text-slate-300';
+                return `<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><span class="w-5 text-center font-black ${medal}"><i class="fas ${i<3?'fa-medal':'fa-hashtag'} text-sm"></i></span>${img}<div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${r.p.name}</span><span class="text-[10px] font-black text-slate-500 ml-2">${r.attended}/${totalTrainings}</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${r.pct}%"></div></div></div><span class="font-black text-sm ${r.pct>=75?'text-green-600':r.pct>=50?'text-yellow-600':'text-red-600'}">${r.pct}%</span></div>`;
+            }).join('');
+        }
+    }
+    setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
+};
+
+// ==========================================
+// 4. CONVOCATORIAS CON FILTRO DE ACTIVOS
+// ==========================================
+window.renderCallupList = function() {
+    const list = document.getElementById('m-callup-list'); if(!list) return; list.innerHTML = '';
+    const m = document.getElementById('m-modality').value, t = document.getElementById('m-tournament').value;
+    
+    window.players.filter(p => p && (p.status === 'active' || !p.status)).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p => {
+        if(m==='f11' && !p.availableF11) return; if(m==='f7' && !p.availableF7) return;
+        const isC = (window.currentLineup || []).some(l=>l.playerId===p.id), d = window.getDiscipline(p.id, t);
+        const bg = d.suspended ? `<span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded ml-2 font-black shadow-sm">SANC</span>` : (d.yellows > 0 ? `<span class="text-yellow-600 text-[10px] ml-1 font-black shadow-sm" title="${d.yellows} Amarillas">🟨${d.yellows}</span>` : '');
+        const col = d.suspended ? 'text-red-500 line-through opacity-70' : 'text-slate-700 dark:text-slate-300';
+        list.innerHTML += `<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="cb-${p.id}" ${isC?'checked':''} onchange="window.handleCallupChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 cursor-pointer"><label for="cb-${p.id}" class="truncate ${col} text-xs font-bold cursor-pointer flex-1">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.number?p.number+'-':''}${p.name} ${bg}</label></div>`;
+    });
+    const c = document.getElementById('count-convocados'); if(c) c.textContent = (window.currentLineup || []).length; window.updateEventPlayerSelect(); window.updateMvpSelect(); window.updateCaptainSelect();
+};
+
+window.handleModalityChange = () => { 
+    window.updateFormationOptions(); 
+    const m = document.getElementById('m-modality').value, mx = m==='f11'?11:7; 
+    
+    window.currentLineup = (window.currentLineup || []).filter(l => { 
+        const p = window.players.find(x=>x.id===l.playerId); 
+        return p && (p.status === 'active' || !p.status) && (m==='f11'?p.availableF11:p.availableF7); 
+    }); 
+    
+    let c=0; (window.currentLineup || []).forEach(p => { 
+        const s = window.players.find(x=>x.id===p.playerId)?.isStaff; 
+        if(!s && p.x!==null && p.y!==null) { c++; if(c>mx) {p.x=null;p.y=null;} } 
+    }); 
+    window.renderCallupList(); window.drawTacticalBoard(); 
+};
+
+// ==========================================
+// 5. ASISTENCIAS CON FILTRO DE ACTIVOS Y WA
+// ==========================================
+window.renderAttendanceChecklist = function() { 
+    const c = document.getElementById('a-players-list'); if(!c)return; c.innerHTML=''; 
+    window.players.filter(p => p && (p.status === 'active' || !p.status)).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ 
+        const ch = (window.currentAttendees || []).includes(p.id)?'checked':''; 
+        c.innerHTML+=`<div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors"><input type="checkbox" id="att-${p.id}" ${ch} onchange="window.handleAttChange('${p.id}',this.checked)" class="rounded w-4 h-4 text-brand-600 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600"><label for="att-${p.id}" class="text-sm font-bold flex-1 cursor-pointer text-slate-700 dark:text-slate-300">${p.isStaff?'<i class="fas fa-user-tie text-purple-500 mr-1"></i> ':''}${p.name}</label></div>`; 
+    }); 
+};
+
+window.copyAttendanceList = function(id) {
+    const t = window.trainings.find(x => x.id === id); if (!t) return;
+    const dateStr = new Date(t.date + 'T12:00:00').toLocaleDateString('es-ES', {weekday: 'long', day: 'numeric', month: 'long'}).toUpperCase();
+    let msg = `*⚽ ASISTENCIA ENTRENAMIENTO*\n📅 ${dateStr}\n📍 ${t.location || 'Sin ubicación'}\n\n`;
+    const presentes = [], ausentes = [];
+    
+    window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+        if (t.attendees && t.attendees.includes(p.id)) presentes.push(`✅ ${p.name}`); else ausentes.push(`❌ ${p.name}`);
+    });
+    
+    msg += `*PRESENTES (${presentes.length}):*\n`;
+    if (presentes.length > 0) msg += presentes.join('\n') + '\n\n'; else msg += 'Ninguno\n\n';
+    msg += `*AUSENTES (${ausentes.length}):*\n`;
+    if (ausentes.length > 0) msg += ausentes.join('\n'); else msg += 'Ninguno';
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Lista copiada para WhatsApp')).catch(() => window.showToast('Error al copiar', true));
+};
+
+window.renderTrainings = function() {
+    const u = document.getElementById('attendance-grid-upcoming'), p = document.getElementById('attendance-grid-past'); if(!u || !p) return;
+    u.innerHTML = ''; p.innerHTML = ''; const td = new Date().toISOString().split('T')[0]; let upcoming = [], past = [];
+    window.trainings.forEach(t => { if(t.date >= td) upcoming.push(t); else past.push(t); });
+    upcoming.sort((a,b) => new Date(a.date) - new Date(b.date)); past.sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    if(upcoming.length === 0) u.innerHTML = '<div class="col-span-full text-slate-500 text-sm p-4 bg-white dark:bg-darkcard rounded-xl border border-slate-200 dark:border-slate-800">No hay sesiones programadas</div>';
+    upcoming.forEach(t => {
+        let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
+        u.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800"><div class="flex justify-between items-center mb-3"><span class="font-black text-brand-600 dark:text-brand-400"><i class="far fa-calendar text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<div class="flex gap-2"><button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Editar</button><button onclick="window.copyAttendanceList('${t.id}')" class="w-10 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg flex items-center justify-center transition" title="Copiar a WhatsApp"><i class="fab fa-whatsapp"></i></button><button onclick="window.deleteAttendance('${t.id}')" class="admin-only w-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition"><i class="fas fa-trash"></i></button></div></div>`;
+    });
+    
+    if(past.length === 0) p.innerHTML = '<div class="col-span-full text-slate-500 text-sm p-4 bg-white dark:bg-darkcard rounded-xl border border-slate-200 dark:border-slate-800">No hay historial</div>';
+    past.forEach(t => {
+        let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
+        const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
+        p.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 opacity-80 hover:opacity-100 transition"><div class="flex justify-between items-center mb-3"><span class="font-black text-slate-600 dark:text-slate-400"><i class="far fa-check-circle text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<div class="flex gap-2"><button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Ver Lista</button><button onclick="window.copyAttendanceList('${t.id}')" class="w-10 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg flex items-center justify-center transition" title="Copiar a WhatsApp"><i class="fab fa-whatsapp"></i></button></div></div>`;
+    });
+};
+
+// --- ARRANQUE DE LA APP ---
+if (document.readyState === 'loading') { 
+    document.addEventListener('DOMContentLoaded', window.initApp); 
+} else { 
+    window.initApp(); 
 }
