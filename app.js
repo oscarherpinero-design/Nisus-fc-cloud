@@ -1061,6 +1061,254 @@ window.renderArchivedTournaments = function() {
 /* -----------------------------------------------------
    INICIALIZACIÓN Y OPTIMIZACIÓN DE RENDIMIENTO
 ------------------------------------------------------ */
+// ==========================================
+// DASHBOARD Y GRÁFICOS (RESTAURADO)
+// ==========================================
+window.renderBirthdaysAvailability = function() {
+    const allPlayers = (window.players || []).filter(p => p && !p.isStaff); 
+    const bEl = document.getElementById('birthdays-strip');
+    if(bEl) {
+        const today = new Date(); const ty = today.getFullYear();
+        const upcoming = allPlayers.filter(p => p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')).map(p => {
+            const parts = p.birthdate.split('-'); const bm = parseInt(parts[1])-1, bd = parseInt(parts[2]);
+            let next = new Date(ty, bm, bd);
+            const days = Math.ceil((next - today) / (1000*60*60*24));
+            if (days < 0) { next = new Date(ty+1, bm, bd); }
+            const dCalc = Math.ceil((next - today) / (1000*60*60*24));
+            return { p, dCalc, next };
+        }).sort((a,b)=>a.dCalc-b.dCalc).slice(0,6);
+        
+        bEl.innerHTML = '';
+        if(upcoming.length===0) bEl.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium py-2 px-1">Sin fechas de nacimiento registradas</p>';
+        else upcoming.forEach(item => {
+            const p = item.p; 
+            const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+            const ini = validName.charAt(0).toUpperCase();
+            const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${ini}</div>`;
+            const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'}); const isToday = item.dCalc === 0;
+            const badge = isToday ? `<span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">¡Hoy!</span>` : `<span class="text-[10px] font-bold text-slate-400">${item.dCalc}d</span>`;
+            bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
+        });
+    }
+
+    const aEl = document.getElementById('availability-strip');
+    if(aEl) {
+        const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' }, inactive: { lbl:'Inactivo', icon:'fa-pause-circle', col:'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700' } };
+        const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
+        const activeCount = allPlayers.length - unavailable.length;
+        aEl.innerHTML = '';
+        aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
+        if(unavailable.length === 0) { aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`; } 
+        else { 
+            unavailable.sort((a,b)=>((a.name||'').localeCompare(b.name||''))).forEach(p => { 
+                const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+                const s = statusMap[p.status] || statusMap.absent; 
+                const ret = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : ''; 
+                aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${validName} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`; 
+            }); 
+        }
+    }
+};
+
+window.updateDashboard = function() {
+    let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
+    const nx = list.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date))[0];
+    const btn = document.getElementById('btn-tactics-next');
+    if (nx) {
+        document.getElementById('next-match-vs').textContent = nx.opponent;
+        let loc=''; if(nx.location) loc=nx.location.startsWith('http')?`<a href="${nx.location}" target="_blank" class="text-white hover:text-brand-100 flex items-center justify-center gap-1 mt-2 text-xs bg-white/10 px-3 py-1 rounded-full w-fit mx-auto"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-brand-100/70 flex items-center justify-center gap-1 mt-2 text-[10px] uppercase tracking-widest"><i class="fas fa-map-marker-alt"></i> ${nx.location}</p>`;
+        document.getElementById('next-match-date').innerHTML = new Date(nx.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
+        document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament}`;
+        btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
+    } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
+    
+    const fin = list.filter(m => ['finished', 'forfait', 'archived'].includes(m.status)).slice(0, 3); const rD = document.getElementById('latest-results');
+    if(rD) {
+        rD.innerHTML = '';
+        if(fin.length===0) rD.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium">No hay resultados.</p>';
+        else fin.forEach(m => {
+            let rC='E', col='bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)){rC='V'; col='bg-green-500 text-white shadow-sm shadow-green-500/30';} else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){rC='D'; col='bg-red-500 text-white shadow-sm shadow-red-500/30';}
+            rD.innerHTML += `<div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer border border-slate-100 dark:border-slate-800 transition" onclick="window.editMatch('${m.id}')"><div class="flex items-center gap-3"><span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${col}">${rC}</span><span class="text-xs font-bold text-slate-800 dark:text-slate-200">vs ${m.opponent} <span class="text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm ml-1 ${m.modality==='f11'?'bg-blue-500 text-white':'bg-green-500 text-white'}">F${m.modality==='f11'?11:7}</span></span></div><span class="font-black text-slate-900 dark:text-white text-base">${m.goalsUs} - ${m.goalsThem}</span></div>`;
+        });
+    }
+    
+    window.renderBirthdaysAvailability();
+
+    let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
+    let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
+    pL.forEach(p => { tG += window.getPlayerStat(p,'goals') + window.getPlayerArchivedStat(p, 'goals'); tA += window.getPlayerStat(p,'assists') + window.getPlayerArchivedStat(p, 'assists'); });
+    
+    const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
+    const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
+    
+    let tCS=0, maxGames=0, ironMan="--";
+    pL.forEach(p => { 
+        const g = window.getPlayerStat(p,'games') + window.getPlayerArchivedStat(p, 'games');
+        if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : (p.name || 'N/A').split(' ')[0]; }
+        tCS += window.getPlayerStat(p,'cleanSheets') + window.getPlayerArchivedStat(p, 'cleanSheets'); 
+    });
+    
+    const eTGm = document.getElementById('stat-total-games'); 
+    if(eTGm) { if(eTGm.previousElementSibling) eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; eTGm.innerHTML = `${maxGames} <span class="text-sm font-bold text-brand-500 ml-1 truncate">${ironMan}</span>`; }
+    const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
+    
+    const getCombinedStat = (p, stat) => window.getPlayerStat(p, stat) + window.getPlayerArchivedStat(p, stat);
+
+    const rL = (arr, k, el) => {
+        const d = document.getElementById(el); if(!d)return; d.innerHTML='';
+        arr.forEach((p,i) => { 
+            const v = getCombinedStat(p, k); if(v===0)return; 
+            const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+            const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${validName.charAt(0).toUpperCase()}</div>`; 
+            d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${validName}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
+        });
+        if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
+    };
+    
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'games')-getCombinedStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
+
+    let w=0, d=0, l=0, gf=0, ga=0;
+    list.forEach(m => {
+        if(['finished', 'forfait', 'archived'].includes(m.status)){
+            if(m.status==='forfait'){ w++; gf+=3; return; }
+            const us=parseInt(m.goalsUs)||0, them=parseInt(m.goalsThem)||0; gf+=us; ga+=them;
+            if(us>them)w++; else if(us<them)l++; else d++;
+        }
+    });
+    
+    const total=w+d+l;
+    const eW=document.getElementById('perf-wins'),eD=document.getElementById('perf-draws'),eL=document.getElementById('perf-losses');
+    if(eW)eW.textContent=w; if(eD)eD.textContent=d; if(eL)eL.textContent=l;
+    const eGF=document.getElementById('perf-gf'),eGA=document.getElementById('perf-ga'),ePP=document.getElementById('perf-played'),ePT=document.getElementById('perf-points');
+    if(eGF)eGF.textContent=gf; if(eGA)eGA.textContent=ga; if(ePP)ePP.textContent=total; if(ePT)ePT.textContent=(w*3+d);
+    
+    const donut=document.getElementById('perf-donut');
+    if(donut){
+        const wDeg=total>0?(w/total)*360:0, dDeg=total>0?(d/total)*360:0, lDeg=total>0?(l/total)*360:0;
+        donut.style.background=`conic-gradient(#10b981 0deg ${wDeg}deg, #64748b ${wDeg}deg ${wDeg+dDeg}deg, #ef4444 ${wDeg+dDeg}deg ${wDeg+dDeg+lDeg}deg, #e2e8f0 ${wDeg+dDeg+lDeg}deg 360deg)`;
+        const ePct=document.getElementById('perf-win-pct'); if(ePct)ePct.textContent=total>0?Math.round((w/total)*100)+'%':'0%';
+    }
+    
+    const formEl=document.getElementById('perf-form');
+    if(formEl){
+        const recent=list.filter(m=>['finished', 'forfait', 'archived'].includes(m.status)).slice(0,5); formEl.innerHTML='';
+        if(recent.length===0)formEl.innerHTML='<p class="text-xs text-slate-400 italic">Sin partidos jugados</p>';
+        else recent.forEach(m=>{
+            let r='E',col='bg-slate-400 text-white';
+            if(m.status==='forfait'||parseInt(m.goalsUs)>parseInt(m.goalsThem)){r='V';col='bg-green-500 text-white';}
+            else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){r='D';col='bg-red-500 text-white';}
+            formEl.innerHTML+=`<span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${col}">${r}</span>`;
+        });
+    }
+
+    const mvpEl=document.getElementById('mvp-card-content');
+    if(mvpEl){
+        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
+            const g = getCombinedStat(p,'goals'), a = getCombinedStat(p,'assists'), gp = getCombinedStat(p,'games'), m = getCombinedStat(p,'mvps'); 
+            return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
+        }).sort((x,y)=>y.score-x.score);
+        
+        if(mvpList.length>0&&mvpList[0].score>0){
+            const t=mvpList[0];
+            const validName = (typeof t.p.name === 'string' && t.p.name.trim() !== '') ? t.p.name.trim() : '?';
+            const img=t.p.image?`<img src="${t.p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg">`:`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">${validName.charAt(0).toUpperCase()}</div>`;
+            const name=t.p.alias&&t.p.showAlias?t.p.alias:validName;
+            mvpEl.innerHTML=`${img}<div><p class="text-white font-black text-xl leading-tight">${name}</p><p class="text-white/80 text-xs font-bold">${t.p.positions&&t.p.positions.length?t.p.positions[0]:'Jugador'}</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML=`<div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">PJ</p><p class="text-white font-black text-lg">${t.gp}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Goles</p><p class="text-white font-black text-lg">${t.g}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Asis.</p><p class="text-white font-black text-lg">${t.a}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">MVP</p><p class="text-white font-black text-lg">${t.m}</p></div>`;
+        } else {
+            mvpEl.innerHTML=`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30"><i class="fas fa-trophy"></i></div><div><p class="text-white font-black text-xl leading-tight">Sin datos</p><p class="text-white/80 text-xs font-bold">Registra partidos</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML='';
+        }
+    }
+
+    const rankEl=document.getElementById('attendance-ranking');
+    if(rankEl){
+        const totalTrainings=window.trainings?window.trainings.length:0;
+        if(totalTrainings===0){ rankEl.innerHTML='<p class="text-sm text-slate-500 italic text-center py-6">No hay sesiones registradas</p>'; }
+        else {
+            const ranked=[...pL].filter(p=>!p.isStaff).map(p=>{ const attended=window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length; return {p,attended,pct:Math.round((attended/totalTrainings)*100)}; }).sort((a,b)=>b.pct-a.pct||b.attended-a.attended).slice(0,5);
+            rankEl.innerHTML=ranked.map((r,i)=>{
+                const validName = (typeof r.p.name === 'string' && r.p.name.trim() !== '') ? r.p.name.trim() : '?';
+                const img=r.p.image?`<img src="${r.p.image}" class="w-9 h-9 rounded-full object-cover">`:`<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${validName.charAt(0).toUpperCase()}</div>`;
+                const barColor=r.pct>=75?'bg-green-500':r.pct>=50?'bg-yellow-500':'bg-red-500';
+                const medal=i===0?'text-yellow-500':i===1?'text-slate-400':i===2?'text-orange-400':'text-slate-300';
+                return `<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><span class="w-5 text-center font-black ${medal}"><i class="fas ${i<3?'fa-medal':'fa-hashtag'} text-sm"></i></span>${img}<div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</span><span class="text-[10px] font-black text-slate-500 ml-2">${r.attended}/${totalTrainings}</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${r.pct}%"></div></div></div><span class="font-black text-sm ${r.pct>=75?'text-green-600':r.pct>=50?'text-yellow-600':'text-red-600'}">${r.pct}%</span></div>`;
+            }).join('');
+        }
+    }
+    
+    setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
+};
+
+window.cashflowCharts = [];
+window.renderCashflowChart = function() {
+    if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
+    window.cashflowCharts = [];
+    if (typeof Chart === 'undefined') return;
+
+    const now = new Date(); const labels = [], incomeData = [], expenseData = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const ym = d.toISOString().slice(0, 7);
+        const monthLabel = d.toLocaleDateString('es-ES', { month: 'short' });
+        labels.push(monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1));
+        let inc = 0, exp = 0;
+        window.finances.forEach(t => {
+            const tMonth = (t.date || '').slice(0, 7);
+            if (tMonth === ym) { if (t.type === 'income') inc += window.getValidCashAmount(t); else if (t.type === 'expense') exp += window.getValidCashAmount(t); }
+        });
+        incomeData.push(inc); expenseData.push(exp);
+    }
+    
+    const isDark = document.documentElement.classList.contains('dark'); 
+    const textColor = isDark ? '#94a3b8' : '#64748b', gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+    const chartConfig = {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } }
+    };
+
+    ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig));
+    });
+};
+
+window.donutCharts = [];
+window.renderExpensesDonutChart = function() {
+    if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
+    window.donutCharts = [];
+    if (typeof Chart === 'undefined') return;
+    
+    const expenseCategories = {};
+    window.finances.forEach(t => {
+        if (t.type === 'expense') {
+            const amt = window.getValidCashAmount(t);
+            if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
+        }
+    });
+
+    const labels = Object.keys(expenseCategories), data = Object.values(expenseCategories);
+    const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+    const isDark = document.documentElement.classList.contains('dark'), textColor = isDark ? '#94a3b8' : '#64748b';
+    
+    const chartConfig = {
+        type: 'doughnut',
+        data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } }
+    };
+
+    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
+    });
+};
 window.checkAutoActivations = async function() {
     if (!window.isAdmin) return; const t = new Date().toISOString().split('T')[0]; const u = [];
     window.players.forEach(p => { if ((p.status === 'injured' || p.status === 'absent' || p.status === 'inactive') && p.returnDate && t >= p.returnDate) u.push(db.collection(window.playersPath).doc(p.id).set({ status: 'active', returnDate: null }, { merge: true })); });
