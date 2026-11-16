@@ -1744,6 +1744,23 @@ window.markDuesPaid = async function(txId, playerId) {
 // ==========================================
 // ARRANQUE FINAL DE LA APLICACIÓN
 // ==========================================
+window.initApp = async function() { 
+    if(window.appInitialized) return; window.appInitialized = true;
+    
+    if (typeof loadInitialData === 'function') await loadInitialData(); 
+    if (typeof setupRealtimeListeners === 'function') setupRealtimeListeners(); 
+    if (typeof window.setupPWA === 'function') window.setupPWA(); 
+    if (typeof window.updateAdminUI === 'function') window.updateAdminUI(); 
+    
+    document.addEventListener('mousemove', window.dragMove); 
+    document.addEventListener('mouseup', window.dragEnd); 
+    const p = document.getElementById('tactical-pitch'); 
+    if(p) { 
+        p.addEventListener('touchmove', window.dragMove, {passive: false}); 
+        p.addEventListener('touchend', window.dragEnd); 
+    } 
+};
+
 if (document.readyState === 'loading') { 
     document.addEventListener('DOMContentLoaded', window.initApp); 
 } else { 
