@@ -1199,7 +1199,35 @@ window.handleAttChange = (id,chk) => { if(!window.isAdmin) return window.showToa
 window.saveAttendance = async function(e) { e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo edición', true); const docId = document.getElementById('a-id').value||window.generateId(); try { await db.collection(window.trainingsPath).doc(docId).set({ id:docId, date:document.getElementById('a-date').value, location:document.getElementById('a-location').value, notes:document.getElementById('a-notes').value, attendees:window.currentAttendees }); window.showToast('Guardado'); window.showSection('attendance'); } catch(er){window.showToast('Error',true);} };
 window.editAttendance = function(id) { const t = window.trainings.find(x=>x.id===id); if(!t)return; document.getElementById('a-id').value=t.id; document.getElementById('a-date').value=t.date; document.getElementById('a-location').value=t.location||''; document.getElementById('a-notes').value=t.notes||''; window.currentAttendees=[...(t.attendees||[])]; window.renderAttendanceChecklist(); window.updateAdminUI(); window.showSection('attendanceForm'); };
 window.deleteAttendance = function(id) { window.showConfirm('¿Borrar entreno permanentemente?', async()=>{ try{ await db.collection(window.trainingsPath).doc(id).delete(); window.showToast('Eliminado'); }catch(e){window.showToast('Error',true);} }); };
-
+window.copyAttendanceList = function(id) {
+    const t = window.trainings.find(x => x.id === id);
+    if (!t) return;
+    
+    const dateStr = new Date(t.date + 'T12:00:00').toLocaleDateString('es-ES', {weekday: 'long', day: 'numeric', month: 'long'}).toUpperCase();
+    let msg = `*⚽ ASISTENCIA ENTRENAMIENTO*\n📅 ${dateStr}\n📍 ${t.location || 'Sin ubicación'}\n\n`;
+    
+    const presentes = [];
+    const ausentes = [];
+    
+    // Filtramos solo a los jugadores reales y los ordenamos alfabéticamente
+    window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+        if (t.attendees && t.attendees.includes(p.id)) {
+            presentes.push(`✅ ${p.name}`);
+        } else {
+            ausentes.push(`❌ ${p.name}`);
+        }
+    });
+    
+    msg += `*PRESENTES (${presentes.length}):*\n`;
+    if (presentes.length > 0) msg += presentes.join('\n') + '\n\n';
+    else msg += 'Ninguno\n\n';
+    
+    msg += `*AUSENTES (${ausentes.length}):*\n`;
+    if (ausentes.length > 0) msg += ausentes.join('\n');
+    else msg += 'Ninguno';
+    
+    navigator.clipboard.writeText(msg).then(() => window.showToast('Lista copiada para WhatsApp')).catch(() => window.showToast('Error al copiar', true));
+};
 window.renderTrainings = function() {
     const u = document.getElementById('attendance-grid-upcoming'), p = document.getElementById('attendance-grid-past'); if(!u || !p) return;
     u.innerHTML = ''; p.innerHTML = ''; const td = new Date().toISOString().split('T')[0]; let upcoming = [], past = [];
@@ -1210,14 +1238,35 @@ window.renderTrainings = function() {
     upcoming.forEach(t => {
         let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
         const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
-        u.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800"><div class="flex justify-between items-center mb-3"><span class="font-black text-brand-600 dark:text-brand-400"><i class="far fa-calendar text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<div class="flex gap-2"><button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Editar</button><button onclick="window.deleteAttendance('${t.id}')" class="admin-only w-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition"><i class="fas fa-trash"></i></button></div></div>`;
+        
+        u.innerHTML += `
+        <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+            <div class="flex justify-between items-center mb-3"><span class="font-black text-brand-600 dark:text-brand-400"><i class="far fa-calendar text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div>
+            <div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>
+            ${loc}
+            <div class="flex gap-2">
+                <button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Editar</button>
+                <button onclick="window.copyAttendanceList('${t.id}')" class="w-10 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg flex items-center justify-center transition" title="Copiar a WhatsApp"><i class="fab fa-whatsapp"></i></button>
+                <button onclick="window.deleteAttendance('${t.id}')" class="admin-only w-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`;
     });
     
     if(past.length === 0) p.innerHTML = '<div class="col-span-full text-slate-500 text-sm p-4 bg-white dark:bg-darkcard rounded-xl border border-slate-200 dark:border-slate-800">No hay historial</div>';
     past.forEach(t => {
         let loc = ''; if(t.location) loc = t.location.startsWith('http') ? `<a href="${t.location}" target="_blank" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-bold hover:underline text-xs mb-4 truncate block"><i class="fas fa-map-marker-alt mr-1"></i> Abrir en Mapa</a>` : `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> ${t.location}</p>`; else loc = `<p class="text-xs text-slate-500 mb-4 truncate"><i class="fas fa-map-marker-alt mr-1"></i> Sin ubicación</p>`;
         const totalPlayers = window.players.filter(pl=>!pl.isStaff).length, attCount = t.attendees?t.attendees.length:0; const attPct = totalPlayers>0?Math.round((attCount/totalPlayers)*100):0; const barColor = attPct>=75?'bg-green-500':attPct>=50?'bg-yellow-500':'bg-red-500';
-        p.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 opacity-80 hover:opacity-100 transition"><div class="flex justify-between items-center mb-3"><span class="font-black text-slate-600 dark:text-slate-400"><i class="far fa-check-circle text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div><div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>${loc}<button onclick="window.editAttendance('${t.id}')" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Ver Lista</button></div>`;
+        
+        p.innerHTML += `
+        <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 opacity-80 hover:opacity-100 transition">
+            <div class="flex justify-between items-center mb-3"><span class="font-black text-slate-600 dark:text-slate-400"><i class="far fa-check-circle text-sm mr-1"></i> ${new Date(t.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})}</span><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-1 rounded"><i class="fas fa-users mr-1"></i>${attCount}/${totalPlayers}</span></div>
+            <div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asistencia</span><span class="text-[10px] font-black ${attPct>=75?'text-green-600':attPct>=50?'text-yellow-600':'text-red-600'}">${attPct}%</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${attPct}%"></div></div></div>
+            ${loc}
+            <div class="flex gap-2">
+                <button onclick="window.editAttendance('${t.id}')" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">Ver Lista</button>
+                <button onclick="window.copyAttendanceList('${t.id}')" class="w-10 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg flex items-center justify-center transition" title="Copiar a WhatsApp"><i class="fab fa-whatsapp"></i></button>
+            </div>
+        </div>`;
     });
 };
 
