@@ -272,13 +272,17 @@ window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador perm
 
 window.renderPlayers = function() {
     const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
-    let list = window.players || []; 
+    let list = (window.players || []).filter(p => p.status !== 'inactive' || document.getElementById('player-position-filter')?.value === 'inactive'); 
     if(window.currentFilter==='f11') list = list.filter(p => p?.availableF11); else if(window.currentFilter==='f7') list = list.filter(p => p?.availableF7);
     
     const q = (document.getElementById('player-search')?.value || '').trim().toLowerCase();
     const posF = document.getElementById('player-position-filter')?.value || '';
     if(q) list = list.filter(p => { const n = (p?.name || '').toLowerCase(); const al = (p?.alias || '').toLowerCase(); const num = String(p?.number || ''); return n.includes(q) || al.includes(q) || num === q; });
-    if(posF) { if(posF === 'Staff') list = list.filter(p => p?.isStaff); else list = list.filter(p => { const posRaw = p?.positions || p?.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); return pos.includes(posF); }); }
+    if(posF) { 
+             if(posF === 'Staff') list = list.filter(p => p?.isStaff); 
+             else if(posF === 'inactive') list = (window.players || []).filter(p => p?.status === 'inactive');
+             else list = list.filter(p => { const posRaw = p?.positions || p?.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); return pos.includes(posF); }); 
+         }
     
     list.sort((a,b) => { if (a?.isStaff && !b?.isStaff) return 1; if (!a?.isStaff && b?.isStaff) return -1; const nA = parseInt(a?.number) || 9999; const nB = parseInt(b?.number) || 9999; if(nA !== nB) return nA - nB; return (a?.name || '').localeCompare(b?.name || ''); });
     if(list.length === 0){ grid.innerHTML = `<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay registros</div>`; return; }
@@ -735,7 +739,7 @@ window.copyAttendanceList = function(id) {
     let msg = `*⚽ ASISTENCIA ENTRENAMIENTO*\n📅 ${dateStr}\n📍 ${t.location || 'Sin ubicación'}\n\n`;
     const presentes = [], ausentes = [];
     
-    window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+    window.players.filter(p => !p.isStaff && (p.status === 'active' || !p.status)).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
         if (t.attendees && t.attendees.includes(p.id)) presentes.push(`✅ ${p.name}`); else ausentes.push(`❌ ${p.name}`);
     });
     
@@ -935,7 +939,7 @@ window.copyGroupMessage = function() {
     if (debtFilter === 'multa') filterName = "Multas Disciplinarias";
 
     const enMora = [], enPlazo = [];
-    window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+    window.players.filter(p => !p.isStaff && (p.status === 'active' || !p.status)).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
         const d = window.getPlayerDebts(p.id); let totalFiltered = 0;
         if (debtFilter === 'all') { totalFiltered = d.total; } 
         else {
@@ -1060,7 +1064,7 @@ window.renderFinances = function() {
         debtorsList.innerHTML = ''; let hasDebtors = false;
         const debtFilter = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'all';
 
-        (window.players || []).filter(p => p && !p.isStaff).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
+        (window.players || []).filter(p => p && !p.isStaff && (p.status === 'active' || !p.status)).sort((a,b) => (a?.name||'').localeCompare(b?.name||'')).forEach(p => {
             const debtData = window.getPlayerDebts(p.id); let totalDebt = 0;
             if (debtFilter === 'all') { totalDebt = debtData.total; } 
             else {
@@ -1130,8 +1134,8 @@ window.openPaySpecific = function(playerId) {
     if (debts.debts.length === 0) { list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; } 
     else {
         debts.debts.forEach(d => {
-            const dStr = d.date ? new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) : 'Sin fecha';
-            list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700"><div class="flex-1 min-w-0 pr-2"><p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${d.desc}">${d.desc}</p><p class="text-[10px] text-slate-400">${dStr}</p></div><div class="flex items-center gap-2 shrink-0"><span class="text-slate-400 font-bold text-xs">$</span><input type="number" id="pay-amt-${d.id}" value="${d.amount.toFixed(2)}" max="${d.amount.toFixed(2)}" step="0.01" class="w-16 sm:w-20 py-1.5 px-2 text-right text-sm font-black text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 shadow-sm"><button onclick="window.processSpecificPayment('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Abonar</button><button onclick="window.forgiveSpecificDebt('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-red-50 hover:bg-red-100 text-red-500 px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-sm border border-red-100 dark:border-red-800/30" title="Condonar/Borrar Deuda"><i class="fas fa-trash-alt"></i></button></div></div>`;
+            const dStr = new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+            list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700"><div class="flex-1 min-w-0 pr-2"><p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${d.desc}">${d.desc}</p><p class="text-[10px] text-slate-400">${dStr}</p></div><div class="flex items-center gap-2 shrink-0"><span class="text-slate-400 font-bold text-xs">$</span><input type="number" id="pay-amt-${d.id}" value="${d.amount.toFixed(2)}" max="${d.amount.toFixed(2)}" step="0.01" class="w-16 sm:w-20 py-1.5 px-2 text-right text-sm font-black text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 shadow-sm"><button onclick="window.processSpecificPayment('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Abonar</button></div></div>`;
         });
     }
     document.getElementById('pay-spec-total').textContent = `${debts.total.toFixed(2)}`; document.getElementById('modalPaySpecific').classList.remove('hidden'); window.updateAdminUI();
@@ -1165,30 +1169,7 @@ window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
         window.openPaySpecific(playerId); window.renderFinances();
     } catch(e) { window.showToast('Error al registrar abono', true); }
 };
-window.forgiveSpecificDebt = function(playerId, debtId, amount) {
-    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
-    window.showConfirm('¿Anular esta deuda permanentemente?', async () => {
-        const batch = db.batch();
-        try {
-            if (debtId.startsWith('arb_')) {
-                const parentId = debtId.split('_')[1]; const arbTx = (window.finances||[]).find(x => x.id === parentId);
-                if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true });
-            } else if (debtId.startsWith('generic_')) {
-                const p = (window.players||[]).find(x => x.id === playerId);
-                if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
-            } else {
-                const tx = (window.finances||[]).find(x => x.id === debtId);
-                if (tx) {
-                    batch.delete(db.collection(window.financesPath).doc(debtId));
-                    const p = (window.players||[]).find(x => x.id === playerId);
-                    if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - tx.amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
-                }
-            }
-            await batch.commit(); window.showToast('Deuda anulada');
-            window.openPaySpecific(playerId); window.renderFinances();
-        } catch(e) { window.showToast('Error al anular', true); }
-    });
-};
+
 window.downloadReceiptFromTx = function(txId) {
     const tx = window.finances.find(t => t.id === txId) || window._lastPaidTx;
     if (!tx || !tx.playerId) return window.showToast('Solo aplica para cobros a jugadores', true);
@@ -1216,7 +1197,7 @@ window.renderMonthlyDues = function() {
     const monthInput = document.getElementById('dues-month'); if (monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
     const month = monthInput ? monthInput.value : new Date().toISOString().slice(0, 7);
     const amountInput = document.getElementById('dues-amount'), amount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
-    const activePlayers = window.players.filter(p => !p.isStaff).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    const activePlayers = window.players.filter(p => !p.isStaff && (p.status === 'active' || !p.status)).sort((a,b) => (a.name||'').localeCompare(b.name||''));
     grid.innerHTML = ''; if (activePlayers.length === 0) { grid.innerHTML = '<p class="col-span-full text-center text-sm text-slate-500 py-6">No hay jugadores en el plantel</p>'; return; }
 
     activePlayers.forEach(p => {
@@ -1437,7 +1418,7 @@ window.updateDashboard = function() {
         window.renderBirthdaysAvailability();
     }
 
-    let tG=0, tA=0, pL = (window.players || []).filter(p => p && !p.isStaff); 
+    let tG=0, tA=0, pL = (window.players || []).filter(p => p && !p.isStaff && (p.status === 'active' || !p.status)); 
     if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); 
     if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
     let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
