@@ -1288,7 +1288,185 @@ window.renderExpensesDonutChart = function() {
         if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
     });
 };
+// ==========================================
+// REPARACIÓN: PARTIDOS Y DASHBOARD
+// ==========================================
+window.renderMatches = function() {
+    const grid = document.getElementById('matches-grid'); if(!grid) return; grid.innerHTML = '';
+    let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
+    if(list.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-slate-500 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay partidos registrados</div>'; return; }
+    
+    list.forEach(m => {
+        const dStr = new Date(m.date+'T12:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' }); const isF11 = m.modality === 'f11';
+        const tBadge = `<span class="text-[9px] font-black px-2 py-1 rounded-lg shadow-sm ${isF11?'bg-blue-500 text-white':'bg-green-500 text-white'}">F${isF11?11:7}</span> <span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ml-1"><i class="fas fa-trophy mr-1 text-slate-400"></i>${m.tournament||'Amistoso'}</span>`;
+        const sBadge = m.season ? `<span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 ml-1">T.${m.season}</span>` : '';
+        const kBadge = m.kit==='white_blue' ? `<span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm ml-1"><i class="fas fa-tshirt text-blue-500"></i> B/A</span>` : `<span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-slate-900 text-white shadow-sm ml-1"><i class="fas fa-tshirt text-slate-400"></i> Negra</span>`;
 
+        let stat='', scor='', btn='', resBorder='';
+        if(m.status==='pending') { stat=`<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500 text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-lg"><i class="far fa-clock mr-1"></i>Por Jugar</span>`; scor=`<div class="text-3xl font-black text-slate-200 dark:text-slate-800 italic">VS</div>`; } 
+        else if (m.status==='forfait') { stat=`<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-lg"><i class="fas fa-gavel mr-1"></i>Forfait</span>`; scor=`<div class="flex items-center gap-4"><span class="text-4xl font-black text-green-500">3</span><span class="text-slate-300 dark:text-slate-700 font-bold">-</span><span class="text-4xl font-black text-slate-800 dark:text-slate-400">0</span></div>`; resBorder='border-green-300 dark:border-green-700/50 bg-green-50/50 dark:bg-green-900/10'; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`; }
+        else { stat=`<span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-lg"><i class="fas fa-check mr-1"></i>Final</span>`; let col = 'text-slate-500'; const usI=parseInt(m.goalsUs), thI=parseInt(m.goalsThem); if(usI>thI){ col='text-green-500'; resBorder='border-green-300 dark:border-green-700/50 bg-green-50/50 dark:bg-green-900/10'; } else if(usI<thI){ col='text-red-500'; resBorder='border-red-300 dark:border-red-700/50 bg-red-50/50 dark:bg-red-900/10'; } else { col='text-amber-500'; resBorder='border-amber-300 dark:border-amber-700/50 bg-amber-50/50 dark:bg-amber-900/10'; } scor=`<div class="flex items-center gap-4"><span class="text-4xl font-black ${col}">${m.goalsUs}</span><span class="text-slate-300 dark:text-slate-700 font-bold">-</span><span class="text-4xl font-black text-slate-800 dark:text-slate-200">${m.goalsThem}</span></div>`; btn=`<button onclick="window.exportMatchResult('${m.id}')" class="mt-2 w-full py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2"><i class="fas fa-share-alt"></i> Compartir Resultado</button>`; }
+        
+        let evs='';
+        if(m.events && m.events.length>0 && m.status !== 'forfait') {
+            const g = m.events.filter(e=>['goals','penalty','freekick'].includes(e.type));
+            if(g.length>0) evs += `<p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-3 text-center"><i class="fas fa-futbol text-green-500 mr-1"></i> ` + g.map(x=>{ const p = window.players.find(y=>y.id===x.playerId); return (p?(p.name||'').split(' ')[0]:'?') + (x.type==='penalty'?' 🎯':x.type==='freekick'?' 👟':''); }).join(', ') + `</p>`;
+        }
+        if(m.status==='finished'&&m.mvp) { const p=window.players.find(x=>x.id===m.mvp); if(p) evs+=`<p class="text-[10px] font-black tracking-widest uppercase text-yellow-600 dark:text-yellow-500 mt-2 text-center bg-yellow-50 dark:bg-yellow-900/10 inline-block px-3 py-1 rounded-full"><i class="fas fa-star mr-1"></i>MVP: ${(p.name||'').split(' ')[0]}</p>`; }
+        let loc=''; if(m.location) loc=m.location.startsWith('http')?`<a href="${m.location}" target="_blank" class="text-brand-500 hover:underline flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest mt-1"><i class="fas fa-map-marker-alt"></i> Ver Mapa</a>`:`<p class="text-slate-400 flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest mt-1"><i class="fas fa-map-marker-alt"></i> ${m.location.substring(0,25)}</p>`;
+        let nS='#ffffff', nA='#0284c7', nSh='#111827', nSo='#111827', nAc2='#111827'; if (m.kit === 'black') { nS='#050505'; nA='#050505'; nAc2=null; nSh='#050505'; nSo='#050505'; }
+        
+        grid.innerHTML += `
+            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-6 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
+                <div class="flex justify-between items-start mb-5"><div class="flex flex-wrap items-center gap-1">${stat} ${tBadge} ${sBadge} ${kBadge}</div><div class="admin-only flex gap-2"><button onclick="window.editMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deleteMatch('${m.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div></div>
+                <div class="flex flex-col items-center justify-center py-4 mb-4 border-y border-slate-100 dark:border-slate-800 ${resBorder}">
+                    <div class="text-center mb-5"><p class="text-[11px] text-slate-500 font-black tracking-widest uppercase">${dStr}</p>${loc}</div>
+                    <div class="flex items-center justify-between w-full">
+                        <div class="text-center w-1/3 flex flex-col items-center"><div class="w-12 h-16 mb-2">${window.generateKitSVG(nS,nA,nSh,nSo,nAc2)}</div><p class="font-black text-slate-900 dark:text-white text-[10px] uppercase tracking-widest">NISUS</p></div>
+                        <div class="w-1/3 flex justify-center">${scor}</div>
+                        <div class="text-center w-1/3 flex flex-col items-center"><div class="w-12 h-16 mb-2">${window.generateKitSVG(m.oppColor||'#ff0000', m.oppColor||'#ff0000', m.oppShorts||m.oppColor||'#ff0000', m.oppSocks||m.oppColor||'#ff0000')}</div><p class="font-black text-slate-900 dark:text-white text-[10px] uppercase tracking-widest truncate w-full" title="${m.opponent}">${m.opponent}</p></div>
+                    </div>
+                    <div class="text-center mt-2">${evs}</div>
+                </div>
+                ${btn}<button onclick="window.editMatch('${m.id}')" class="mt-2 w-full py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 border border-slate-200 dark:border-slate-700"><i class="fas fa-list-ul"></i> Detalles</button>
+            </div>`;
+    });
+};
+
+window.updateDashboard = function() {
+    let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
+    const nx = list.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date))[0];
+    const btn = document.getElementById('btn-tactics-next');
+    if (nx) {
+        document.getElementById('next-match-vs').textContent = nx.opponent;
+        let loc=''; if(nx.location) loc=nx.location.startsWith('http')?`<a href="${nx.location}" target="_blank" class="text-white hover:text-brand-100 flex items-center justify-center gap-1 mt-2 text-xs bg-white/10 px-3 py-1 rounded-full w-fit mx-auto"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-brand-100/70 flex items-center justify-center gap-1 mt-2 text-[10px] uppercase tracking-widest"><i class="fas fa-map-marker-alt"></i> ${nx.location}</p>`;
+        document.getElementById('next-match-date').innerHTML = new Date(nx.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
+        document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament}`;
+        btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
+    } else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
+    
+    const fin = list.filter(m => ['finished', 'forfait', 'archived'].includes(m.status)).slice(0, 3); const rD = document.getElementById('latest-results');
+    if(rD) {
+        rD.innerHTML = '';
+        if(fin.length===0) rD.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium">No hay resultados.</p>';
+        else fin.forEach(m => {
+            let rC='E', col='bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'; if(parseInt(m.goalsUs)>parseInt(m.goalsThem)){rC='V'; col='bg-green-500 text-white shadow-sm shadow-green-500/30';} else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){rC='D'; col='bg-red-500 text-white shadow-sm shadow-red-500/30';}
+            rD.innerHTML += `<div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer border border-slate-100 dark:border-slate-800 transition" onclick="window.editMatch('${m.id}')"><div class="flex items-center gap-3"><span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${col}">${rC}</span><span class="text-xs font-bold text-slate-800 dark:text-slate-200">vs ${m.opponent} <span class="text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm ml-1 ${m.modality==='f11'?'bg-blue-500 text-white':'bg-green-500 text-white'}">F${m.modality==='f11'?11:7}</span></span></div><span class="font-black text-slate-900 dark:text-white text-base">${m.goalsUs} - ${m.goalsThem}</span></div>`;
+        });
+    }
+    
+    window.renderBirthdaysAvailability();
+
+    let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
+    let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
+    pL.forEach(p => { tG += window.getPlayerStat(p,'goals') + window.getPlayerArchivedStat(p, 'goals'); tA += window.getPlayerStat(p,'assists') + window.getPlayerArchivedStat(p, 'assists'); });
+    
+    const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
+    const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
+    
+    let tCS=0, maxGames=0, ironMan="--";
+    pL.forEach(p => { 
+        const g = window.getPlayerStat(p,'games') + window.getPlayerArchivedStat(p, 'games');
+        if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : (p.name || 'N/A').split(' ')[0]; }
+        tCS += window.getPlayerStat(p,'cleanSheets') + window.getPlayerArchivedStat(p, 'cleanSheets'); 
+    });
+    
+    const eTGm = document.getElementById('stat-total-games'); 
+    if(eTGm) { if(eTGm.previousElementSibling) eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; eTGm.innerHTML = `${maxGames} <span class="text-sm font-bold text-brand-500 ml-1 truncate">${ironMan}</span>`; }
+    const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
+    
+    const getCombinedStat = (p, stat) => window.getPlayerStat(p, stat) + window.getPlayerArchivedStat(p, stat);
+
+    const rL = (arr, k, el) => {
+        const d = document.getElementById(el); if(!d)return; d.innerHTML='';
+        arr.forEach((p,i) => { 
+            const v = getCombinedStat(p, k); if(v===0)return; 
+            const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+            const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${validName.charAt(0).toUpperCase()}</div>`; 
+            d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${validName}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
+        });
+        if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
+    };
+    
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
+    rL([...pL].sort((a,b)=>getCombinedStat(b,'games')-getCombinedStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
+
+    let w=0, d=0, l=0, gf=0, ga=0;
+    list.forEach(m => {
+        if(['finished', 'forfait', 'archived'].includes(m.status)){
+            if(m.status==='forfait'){ w++; gf+=3; return; }
+            const us=parseInt(m.goalsUs)||0, them=parseInt(m.goalsThem)||0; gf+=us; ga+=them;
+            if(us>them)w++; else if(us<them)l++; else d++;
+        }
+    });
+    
+    const total=w+d+l;
+    const eW=document.getElementById('perf-wins'),eD=document.getElementById('perf-draws'),eL=document.getElementById('perf-losses');
+    if(eW)eW.textContent=w; if(eD)eD.textContent=d; if(eL)eL.textContent=l;
+    const eGF=document.getElementById('perf-gf'),eGA=document.getElementById('perf-ga'),ePP=document.getElementById('perf-played'),ePT=document.getElementById('perf-points');
+    if(eGF)eGF.textContent=gf; if(eGA)eGA.textContent=ga; if(ePP)ePP.textContent=total; if(ePT)ePT.textContent=(w*3+d);
+    
+    const donut=document.getElementById('perf-donut');
+    if(donut){
+        const wDeg=total>0?(w/total)*360:0, dDeg=total>0?(d/total)*360:0, lDeg=total>0?(l/total)*360:0;
+        donut.style.background=`conic-gradient(#10b981 0deg ${wDeg}deg, #64748b ${wDeg}deg ${wDeg+dDeg}deg, #ef4444 ${wDeg+dDeg}deg ${wDeg+dDeg+lDeg}deg, #e2e8f0 ${wDeg+dDeg+lDeg}deg 360deg)`;
+        const ePct=document.getElementById('perf-win-pct'); if(ePct)ePct.textContent=total>0?Math.round((w/total)*100)+'%':'0%';
+    }
+    
+    const formEl=document.getElementById('perf-form');
+    if(formEl){
+        const recent=list.filter(m=>['finished', 'forfait', 'archived'].includes(m.status)).slice(0,5); formEl.innerHTML='';
+        if(recent.length===0)formEl.innerHTML='<p class="text-xs text-slate-400 italic">Sin partidos jugados</p>';
+        else recent.forEach(m=>{
+            let r='E',col='bg-slate-400 text-white';
+            if(m.status==='forfait'||parseInt(m.goalsUs)>parseInt(m.goalsThem)){r='V';col='bg-green-500 text-white';}
+            else if(parseInt(m.goalsUs)<parseInt(m.goalsThem)){r='D';col='bg-red-500 text-white';}
+            formEl.innerHTML+=`<span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${col}">${r}</span>`;
+        });
+    }
+
+    const mvpEl=document.getElementById('mvp-card-content');
+    if(mvpEl){
+        const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
+            const g = getCombinedStat(p,'goals'), a = getCombinedStat(p,'assists'), gp = getCombinedStat(p,'games'), m = getCombinedStat(p,'mvps'); 
+            return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
+        }).sort((x,y)=>y.score-x.score);
+        
+        if(mvpList.length>0&&mvpList[0].score>0){
+            const t=mvpList[0];
+            const validName = (typeof t.p.name === 'string' && t.p.name.trim() !== '') ? t.p.name.trim() : '?';
+            const img=t.p.image?`<img src="${t.p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-white/30 shadow-lg">`:`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">${validName.charAt(0).toUpperCase()}</div>`;
+            const name=t.p.alias&&t.p.showAlias?t.p.alias:validName;
+            mvpEl.innerHTML=`${img}<div><p class="text-white font-black text-xl leading-tight">${name}</p><p class="text-white/80 text-xs font-bold">${t.p.positions&&t.p.positions.length?t.p.positions[0]:'Jugador'}</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML=`<div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">PJ</p><p class="text-white font-black text-lg">${t.gp}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Goles</p><p class="text-white font-black text-lg">${t.g}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">Asis.</p><p class="text-white font-black text-lg">${t.a}</p></div><div class="bg-white/15 rounded-lg p-2 text-center"><p class="text-white/70 text-[9px] font-bold uppercase">MVP</p><p class="text-white font-black text-lg">${t.m}</p></div>`;
+        } else {
+            mvpEl.innerHTML=`<div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black text-white border-2 border-white/30"><i class="fas fa-trophy"></i></div><div><p class="text-white font-black text-xl leading-tight">Sin datos</p><p class="text-white/80 text-xs font-bold">Registra partidos</p></div>`;
+            const sEl=document.getElementById('mvp-stats'); if(sEl)sEl.innerHTML='';
+        }
+    }
+
+    const rankEl=document.getElementById('attendance-ranking');
+    if(rankEl){
+        const totalTrainings=window.trainings?window.trainings.length:0;
+        if(totalTrainings===0){ rankEl.innerHTML='<p class="text-sm text-slate-500 italic text-center py-6">No hay sesiones registradas</p>'; }
+        else {
+            const ranked=[...pL].filter(p=>!p.isStaff).map(p=>{ const attended=window.trainings.filter(t=>t.attendees&&t.attendees.includes(p.id)).length; return {p,attended,pct:Math.round((attended/totalTrainings)*100)}; }).sort((a,b)=>b.pct-a.pct||b.attended-a.attended).slice(0,5);
+            rankEl.innerHTML=ranked.map((r,i)=>{
+                const validName = (typeof r.p.name === 'string' && r.p.name.trim() !== '') ? r.p.name.trim() : '?';
+                const img=r.p.image?`<img src="${r.p.image}" class="w-9 h-9 rounded-full object-cover">`:`<div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs">${validName.charAt(0).toUpperCase()}</div>`;
+                const barColor=r.pct>=75?'bg-green-500':r.pct>=50?'bg-yellow-500':'bg-red-500';
+                const medal=i===0?'text-yellow-500':i===1?'text-slate-400':i===2?'text-orange-400':'text-slate-300';
+                return `<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><span class="w-5 text-center font-black ${medal}"><i class="fas ${i<3?'fa-medal':'fa-hashtag'} text-sm"></i></span>${img}<div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</span><span class="text-[10px] font-black text-slate-500 ml-2">${r.attended}/${totalTrainings}</span></div><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full transition-all" style="width:${r.pct}%"></div></div></div><span class="font-black text-sm ${r.pct>=75?'text-green-600':r.pct>=50?'text-yellow-600':'text-red-600'}">${r.pct}%</span></div>`;
+            }).join('');
+        }
+    }
+    setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
+};
 /* -----------------------------------------------------
    INICIALIZACIÓN Y OPTIMIZACIÓN DE RENDIMIENTO
 ------------------------------------------------------ */
