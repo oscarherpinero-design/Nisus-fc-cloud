@@ -32,11 +32,17 @@ window.showSection = function(sectionId) {
     const aS = document.getElementById('nav-side-' + sectionId); if(aS) { aS.classList.add('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); aS.classList.remove('text-slate-600', 'dark:text-slate-300'); }
     const m = document.getElementById('side-menu'); if(m && !m.classList.contains('-translate-x-full')) window.toggleMenu();
     
-    if(sectionId === 'players') { window.renderPlayers(); window.renderBirthdaysAvailability(); } 
-    if(sectionId === 'matches') window.renderMatches(); 
-    if(sectionId === 'attendance') window.renderTrainings(); 
-    if(sectionId === 'dashboard' || sectionId === 'stats') window.updateDashboard(); 
-    if(sectionId === 'finances') { if(!window.currentFinTab) window.switchFinancesTab('resumen'); window.renderFinances(); }
+    if(sectionId === 'players') { 
+        if(typeof window.renderPlayers === 'function') window.renderPlayers(); 
+        if(typeof window.renderBirthdaysAvailability === 'function') window.renderBirthdaysAvailability(); 
+    } 
+    if(sectionId === 'matches' && typeof window.renderMatches === 'function') window.renderMatches(); 
+    if(sectionId === 'attendance' && typeof window.renderTrainings === 'function') window.renderTrainings(); 
+    if((sectionId === 'dashboard' || sectionId === 'stats') && typeof window.updateDashboard === 'function') window.updateDashboard(); 
+    if(sectionId === 'finances') { 
+        if(!window.currentFinTab && typeof window.switchFinancesTab === 'function') window.switchFinancesTab('resumen'); 
+        if(typeof window.renderFinances === 'function') window.renderFinances(); 
+    }
     window.scrollTo(0,0);
 };
 
@@ -1268,16 +1274,7 @@ window.renderCashflowChart = function() {
 
     const chartConfig = { type: 'bar', data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } } };
     ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig)); });
-};
-
-window.donutCharts = [];
-window.renderExpensesDonutChart = function() {
-    // NUEVO: Tiempo de espera para la dona
-    if (typeof Chart === 'undefined') { setTimeout(window.renderExpensesDonutChart, 300); return; }
-    
-    if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
-    window.donutCharts = [];
-    
+};  
     const expenseCategories = {};
     window.finances.forEach(t => { if (t.type === 'expense') { const amt = window.getValidCashAmount(t); if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt; } });
 
@@ -1398,7 +1395,6 @@ window.renderBirthdaysAvailability = function() {
         }
     }
 };
-
 window.updateDashboard = function() {
     let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
     list.sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -1422,10 +1418,13 @@ window.updateDashboard = function() {
         });
     }
     
-    window.renderBirthdaysAvailability();
+    if (typeof window.renderBirthdaysAvailability === 'function') {
+        window.renderBirthdaysAvailability();
+    }
 
-    let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
-    let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
+    let tG=0, tA=0, pL = (window.players || []).filter(p => p && !p.isStaff); 
+    if(window.currentFilter==='f11') pL = pL.filter(p => p.availableF11); 
+    if(window.currentFilter==='f7') pL = pL.filter(p => p.availableF7);
     
     // USAMOS EL PARÁMETRO 'true' PARA LEER ARCHIVADOS TAMBIÉN
     pL.forEach(p => { tG += window.getPlayerStat(p,'goals', true); tA += window.getPlayerStat(p,'assists', true); });
