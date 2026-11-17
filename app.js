@@ -160,14 +160,14 @@ window.getPlayerArchivedStat = function(player, statKey) {
     }); return count;
 };
 
-// NUEVO: Ahora recolecta datos de TODAS las modalidades (Archivados y Activos) para que nunca queden vacíos
-window.getPlayerStat = function(player, statKey, includeArchived = false) {
+window.getPlayerStat = function(player, statKey, onlyActive = false) {
     if(!player) return 0; 
     if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
     
     let count = 0;
     (window.matches || []).forEach(m => {
-        const validStatuses = includeArchived ? ['finished', 'forfait', 'archived'] : ['finished', 'forfait'];
+        // MAGIA: Leer todos los partidos (activos y archivados) por defecto
+        const validStatuses = onlyActive ? ['finished', 'forfait'] : ['finished', 'forfait', 'archived'];
         if (!m || !validStatuses.includes(m.status)) return; 
         
         if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return; 
@@ -377,12 +377,22 @@ window.closePlayerProfile = function() { document.getElementById('playerProfile'
    RENDIMIENTO DEL PERFIL
 ------------------------------------------------------ */
 window.renderProfileRendimiento = function(p) {
-    // Torneo Actual (Pasa "true" para filtrar solo los activos/forfait)
-    const games = window.getPlayerStat(p, 'games', true); const goals = window.getPlayerStat(p, 'goals', true); const assists = window.getPlayerStat(p, 'assists', true); const mvps = window.getPlayerStat(p, 'mvps', true); const yellows = window.getPlayerStat(p, 'yellows', true); const reds = window.getPlayerStat(p, 'reds', true);
-    // Historial Cerrado
-    const aGames = window.getPlayerArchivedStat(p, 'games'); const aGoals = window.getPlayerArchivedStat(p, 'goals'); const aAssists = window.getPlayerArchivedStat(p, 'assists'); const aMvps = window.getPlayerArchivedStat(p, 'mvps');
+    // Al pasar "true" le decimos que SÓLO lea el torneo activo para este apartado
+    const games = window.getPlayerStat(p, 'games', true); 
+    const goals = window.getPlayerStat(p, 'goals', true); 
+    const assists = window.getPlayerStat(p, 'assists', true); 
+    const mvps = window.getPlayerStat(p, 'mvps', true); 
+    const yellows = window.getPlayerStat(p, 'yellows', true); 
+    const reds = window.getPlayerStat(p, 'reds', true);
+    
+    // Historial (Torneos Pasados)
+    const aGames = window.getPlayerArchivedStat(p, 'games'); 
+    const aGoals = window.getPlayerArchivedStat(p, 'goals'); 
+    const aAssists = window.getPlayerArchivedStat(p, 'assists'); 
+    const aMvps = window.getPlayerArchivedStat(p, 'mvps');
     
     const totalTrainings = window.trainings ? window.trainings.length : 0;
+    // ... DEJA EL RESTO DE LA FUNCIÓN EXACTAMENTE IGUAL ...
     const attendance = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
     const attPct = totalTrainings > 0 ? Math.round((attendance/totalTrainings)*100) : 0;
     let defCleanSheets = 0;
