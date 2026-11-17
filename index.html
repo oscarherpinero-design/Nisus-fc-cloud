@@ -116,6 +116,7 @@
             <button onclick="window.showSection('matches')" id="nav-side-matches" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-calendar-alt w-5 text-lg"></i> Partidos</button>
             <button onclick="window.showSection('stats')" id="nav-side-stats" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-trophy w-5 text-lg"></i> Estadísticas</button>
             <button onclick="window.showSection('finances')" id="nav-side-finances" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-wallet w-5 text-lg"></i> Finanzas</button>
+            <button onclick="window.showSection('inventory')" id="nav-side-inventory" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-left transition-colors"><i class="fas fa-box-open w-5 text-lg"></i> Utilería</button>
         </nav>
         
         <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col gap-3">
@@ -517,6 +518,30 @@
         </section>
 
         <!-- Formularios y Modales -->
+        <section id="inventory" class="hidden space-y-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Utilería</h2><p class="text-slate-500 text-sm mt-1 font-medium">Control de materiales e inventario</p></div>
+                <button onclick="window.newInventoryItem()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-sm"><i class="fas fa-plus"></i> Nuevo Material</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6" id="inventory-grid"></div>
+        </section>
+
+        <section id="inventoryForm" class="hidden modal-animate">
+            <div class="max-w-md mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-8 transition-colors">
+                <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white"><i class="fas fa-box-open text-brand-500 mr-2"></i>Material</h2><button onclick="window.showSection('inventory')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
+                <form id="inventory-form" onsubmit="window.saveInventoryItem(event)" class="space-y-5">
+                    <input type="hidden" id="inv-id">
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nombre / Modelo *</label><input type="text" id="inv-name" required class="input-premium" placeholder="Ej. Balón Nike Strike"></div>
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría *</label><select id="inv-category" class="input-premium"><option value="Balones">Balones</option><option value="Petos">Petos / Uniformes</option><option value="Conos">Conos / Entrenamiento</option><option value="Médico">Botiquín Médico</option><option value="Otro">Otro Material</option></select></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Comprados</label><input type="number" id="inv-total" min="0" class="input-premium font-black"></div>
+                        <div><label class="block text-xs font-bold text-red-500 uppercase tracking-widest mb-2">Perdidos / Rotos</label><input type="number" id="inv-lost" min="0" class="input-premium font-black text-red-500"></div>
+                    </div>
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Notas / Estado</label><input type="text" id="inv-notes" placeholder="Ej. Faltan 2 petos azules..." class="input-premium"></div>
+                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-2"><button type="button" onclick="window.showSection('inventory')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Cerrar</button><button type="submit" id="btn-save-inv" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar</button></div>
+                </form>
+            </div>
+        </section>
         <section id="financesForm" class="hidden modal-animate">
             <div class="max-w-md mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-8 transition-colors">
                 <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black text-slate-900 dark:text-white" id="fin-form-title">Movimiento</h2><button onclick="window.showSection('finances')" class="text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button></div>
