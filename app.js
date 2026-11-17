@@ -154,18 +154,30 @@ window.getPlayerArchivedStat = function(player, statKey) {
         const lArr = Array.isArray(m.lineup) ? m.lineup : []; const eArr = Array.isArray(m.events) ? m.events : [];
         const played = lArr.some(l => l && l.playerId === player.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === player.id);
         if (statKey === 'games' && played && !player.isStaff) count++;
-        if (statKey === 'cleanSheets' && played && (parseInt(m.goalsThem || 0) === 0)) { 
-            const posRaw = player.positions || player.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
-            if (pos.includes('Portero') && !player.isStaff) count++; 
-        }
+        if (statKey === 'cleanSheets' && played && (parseInt(m.goalsThem || 0) === 0)) { const posRaw = player.positions || player.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); if (pos.includes('Portero') && !player.isStaff) count++; }
         if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
-        eArr.forEach(ev => { 
-            if (ev && ev.playerId === player.id) { 
-                if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++; 
-                else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++; 
-                else if (statKey === ev.type) count++; 
-            } 
-        });
+        eArr.forEach(ev => { if (ev && ev.playerId === player.id) { if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++; else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++; else if (statKey === ev.type) count++; } });
+    }); return count;
+};
+
+// NUEVO: getPlayerStat ahora lee TODOS los estados (Activos, Forfait y Archivados) por defecto
+window.getPlayerStat = function(player, statKey, onlyActive = false) {
+    if(!player) return 0; if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
+    let count = 0;
+    (window.matches || []).forEach(m => {
+        const isValid = onlyActive ? ['finished', 'forfait'].includes(m.status) : ['finished', 'forfait', 'archived'].includes(m.status);
+        if (!isValid) return; 
+        
+        if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return; 
+        if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
+        
+        const lArr = Array.isArray(m.lineup) ? m.lineup : []; const eArr = Array.isArray(m.events) ? m.events : [];
+        const played = lArr.some(l => l && l.playerId === player.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === player.id);
+        
+        if (statKey === 'games' && played && !player.isStaff) count++;
+        if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) { const posRaw = player.positions || player.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); if (pos.includes('Portero') && !player.isStaff) count++; }
+        if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
+        eArr.forEach(ev => { if (ev && ev.playerId === player.id) { if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++; else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++; else if (statKey === ev.type) count++; } });
     }); return count;
 };
 
@@ -376,8 +388,11 @@ window.closePlayerProfile = function() { document.getElementById('playerProfile'
    RENDIMIENTO DEL PERFIL
 ------------------------------------------------------ */
 window.renderProfileRendimiento = function(p) {
-    const games = window.getPlayerStat(p, 'games'); const goals = window.getPlayerStat(p, 'goals'); const assists = window.getPlayerStat(p, 'assists'); const mvps = window.getPlayerStat(p, 'mvps'); const yellows = window.getPlayerStat(p, 'yellows'); const reds = window.getPlayerStat(p, 'reds');
+    // Torneo Actual (Pasa "true" para filtrar solo los activos/forfait)
+    const games = window.getPlayerStat(p, 'games', true); const goals = window.getPlayerStat(p, 'goals', true); const assists = window.getPlayerStat(p, 'assists', true); const mvps = window.getPlayerStat(p, 'mvps', true); const yellows = window.getPlayerStat(p, 'yellows', true); const reds = window.getPlayerStat(p, 'reds', true);
+    // Historial Cerrado
     const aGames = window.getPlayerArchivedStat(p, 'games'); const aGoals = window.getPlayerArchivedStat(p, 'goals'); const aAssists = window.getPlayerArchivedStat(p, 'assists'); const aMvps = window.getPlayerArchivedStat(p, 'mvps');
+    
     const totalTrainings = window.trainings ? window.trainings.length : 0;
     const attendance = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
     const attPct = totalTrainings > 0 ? Math.round((attendance/totalTrainings)*100) : 0;
@@ -1345,28 +1360,26 @@ window.updateDashboard = function() {
 
     let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
     let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
-    pL.forEach(p => { tG += window.getPlayerStat(p,'goals') + window.getPlayerArchivedStat(p, 'goals'); tA += window.getPlayerStat(p,'assists') + window.getPlayerArchivedStat(p, 'assists'); });
+    pL.forEach(p => { tG += window.getPlayerStat(p,'goals'); tA += window.getPlayerStat(p,'assists'); });
     
     const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
     const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
     
     let tCS=0, maxGames=0, ironMan="--";
     pL.forEach(p => { 
-        const g = window.getPlayerStat(p,'games') + window.getPlayerArchivedStat(p, 'games');
+        const g = window.getPlayerStat(p,'games');
         if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : (p.name || 'N/A').split(' ')[0]; }
-        tCS += window.getPlayerStat(p,'cleanSheets') + window.getPlayerArchivedStat(p, 'cleanSheets'); 
+        tCS += window.getPlayerStat(p,'cleanSheets'); 
     });
     
     const eTGm = document.getElementById('stat-total-games'); 
     if(eTGm) { if(eTGm.previousElementSibling) eTGm.previousElementSibling.textContent = "MÁS PARTIDOS (JUGADOR)"; eTGm.innerHTML = `${maxGames} <span class="text-sm font-bold text-brand-500 ml-1 truncate">${ironMan}</span>`; }
     const eTCS = document.getElementById('stat-total-cleansheets'); if(eTCS) eTCS.textContent = tCS;
     
-    const getCombinedStat = (p, stat) => window.getPlayerStat(p, stat) + window.getPlayerArchivedStat(p, stat);
-
     const rL = (arr, k, el) => {
         const d = document.getElementById(el); if(!d)return; d.innerHTML='';
         arr.forEach((p,i) => { 
-            const v = getCombinedStat(p, k); if(v===0)return; 
+            const v = window.getPlayerStat(p, k); if(v===0)return; 
             const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
             const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${validName.charAt(0).toUpperCase()}</div>`; 
             d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${validName}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
@@ -1374,11 +1387,11 @@ window.updateDashboard = function() {
         if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
     };
     
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'goals')-getCombinedStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'assists')-getCombinedStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
-    rL([...pL].sort((a,b)=>getCombinedStat(b,'games')-getCombinedStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'games')-window.getPlayerStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
 
     let w=0, d=0, l=0, gf=0, ga=0;
     list.forEach(m => {
@@ -1417,7 +1430,7 @@ window.updateDashboard = function() {
     const mvpEl=document.getElementById('mvp-card-content');
     if(mvpEl){
         const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
-            const g = getCombinedStat(p,'goals'), a = getCombinedStat(p,'assists'), gp = getCombinedStat(p,'games'), m = getCombinedStat(p,'mvps'); 
+            const g = window.getPlayerStat(p,'goals'), a = window.getPlayerStat(p,'assists'), gp = window.getPlayerStat(p,'games'), m = window.getPlayerStat(p,'mvps'); 
             return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
         }).sort((x,y)=>y.score-x.score);
         
