@@ -160,39 +160,27 @@ window.getPlayerArchivedStat = function(player, statKey) {
     }); return count;
 };
 
-// NUEVO: getPlayerStat ahora lee TODOS los estados (Activos, Forfait y Archivados) por defecto
-window.getPlayerStat = function(player, statKey, onlyActive = false) {
-    if(!player) return 0; if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
+// NUEVO: Ahora recolecta datos de TODAS las modalidades (Archivados y Activos) para que nunca queden vacíos
+window.getPlayerStat = function(player, statKey, includeArchived = false) {
+    if(!player) return 0; 
+    if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
+    
     let count = 0;
     (window.matches || []).forEach(m => {
-        const isValid = onlyActive ? ['finished', 'forfait'].includes(m.status) : ['finished', 'forfait', 'archived'].includes(m.status);
-        if (!isValid) return; 
+        const validStatuses = includeArchived ? ['finished', 'forfait', 'archived'] : ['finished', 'forfait'];
+        if (!m || !validStatuses.includes(m.status)) return; 
         
         if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return; 
         if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
         
-        const lArr = Array.isArray(m.lineup) ? m.lineup : []; const eArr = Array.isArray(m.events) ? m.events : [];
+        const lArr = Array.isArray(m.lineup) ? m.lineup : []; 
+        const eArr = Array.isArray(m.events) ? m.events : [];
         const played = lArr.some(l => l && l.playerId === player.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === player.id);
         
-        if (statKey === 'games' && played && !player.isStaff) count++;
-        if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) { const posRaw = player.positions || player.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); if (pos.includes('Portero') && !player.isStaff) count++; }
-        if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
-        eArr.forEach(ev => { if (ev && ev.playerId === player.id) { if (statKey === 'goals' && (ev.type === 'goals' || ev.type === 'penalty' || ev.type === 'freekick')) count++; else if (statKey === 'reds' && (ev.type === 'reds' || ev.type === 'double_yellow')) count++; else if (statKey === ev.type) count++; } });
-    }); return count;
-};
-
-window.getPlayerStat = function(player, statKey) {
-    if(!player) return 0; if(player.isStaff && ['games', 'goals', 'assists', 'cleanSheets', 'mvps', 'penalty', 'freekick'].includes(statKey)) return 0;
-    let count = 0;
-    (window.matches || []).forEach(m => {
-        if (!m || m.status !== 'finished') return; 
-        if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return; 
-        if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
-        const lArr = Array.isArray(m.lineup) ? m.lineup : []; const eArr = Array.isArray(m.events) ? m.events : [];
-        const played = lArr.some(l => l && l.playerId === player.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === player.id);
         if (statKey === 'games' && played && !player.isStaff) count++;
         if (statKey === 'cleanSheets' && played && (m.goalsThem == 0 || m.goalsThem === "0")) { 
-            const posRaw = player.positions || player.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
+            const posRaw = player.positions || player.position || []; 
+            const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); 
             if (pos.includes('Portero') && !player.isStaff) count++; 
         }
         if (statKey === 'mvps' && m.mvp === player.id && !player.isStaff) count++;
@@ -203,7 +191,8 @@ window.getPlayerStat = function(player, statKey) {
                 else if (statKey === ev.type) count++; 
             } 
         });
-    }); return count;
+    }); 
+    return count;
 };
 
 /* -----------------------------------------------------
@@ -1239,11 +1228,13 @@ window.markDuesPaid = async function(txId, playerId) {
     try { await batch.commit(); window.showToast('Cuota marcada como pagada'); } catch(e) { window.showToast('Error', true); }
 };
 
-window.cashflowCharts = [];
+// ==========================================
+// MOTOR DE GRÁFICOS (CON ESPERA INTELIGENTE)
+// ==========================================
 window.cashflowCharts = [];
 window.renderCashflowChart = function() {
-    // NUEVO: Si la librería de gráficos aún no carga, espera medio segundo e intenta de nuevo
-    if (typeof Chart === 'undefined') { setTimeout(window.renderCashflowChart, 500); return; }
+    // NUEVO: Si la librería aún no descarga, espera 300 milisegundos e intenta de nuevo
+    if (typeof Chart === 'undefined') { setTimeout(window.renderCashflowChart, 300); return; }
     
     if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
     window.cashflowCharts = [];
@@ -1267,6 +1258,25 @@ window.renderCashflowChart = function() {
 
     const chartConfig = { type: 'bar', data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } } };
     ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig)); });
+};
+
+window.donutCharts = [];
+window.renderExpensesDonutChart = function() {
+    // NUEVO: Tiempo de espera para la dona
+    if (typeof Chart === 'undefined') { setTimeout(window.renderExpensesDonutChart, 300); return; }
+    
+    if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
+    window.donutCharts = [];
+    
+    const expenseCategories = {};
+    window.finances.forEach(t => { if (t.type === 'expense') { const amt = window.getValidCashAmount(t); if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt; } });
+
+    const labels = Object.keys(expenseCategories), data = Object.values(expenseCategories);
+    const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+    const isDark = document.documentElement.classList.contains('dark'), textColor = isDark ? '#94a3b8' : '#64748b';
+    
+    const chartConfig = { type: 'doughnut', data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } } };
+    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig)); });
 };
 
 window.donutCharts = [];
@@ -1360,16 +1370,18 @@ window.updateDashboard = function() {
 
     let tG=0, tA=0, pL = window.players.filter(p=>!p.isStaff); if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
     let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
-    pL.forEach(p => { tG += window.getPlayerStat(p,'goals'); tA += window.getPlayerStat(p,'assists'); });
+    
+    // USAMOS EL PARÁMETRO 'true' PARA LEER ARCHIVADOS TAMBIÉN
+    pL.forEach(p => { tG += window.getPlayerStat(p,'goals', true); tA += window.getPlayerStat(p,'assists', true); });
     
     const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
     const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
     
     let tCS=0, maxGames=0, ironMan="--";
     pL.forEach(p => { 
-        const g = window.getPlayerStat(p,'games');
+        const g = window.getPlayerStat(p,'games', true);
         if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : (p.name || 'N/A').split(' ')[0]; }
-        tCS += window.getPlayerStat(p,'cleanSheets'); 
+        tCS += window.getPlayerStat(p,'cleanSheets', true); 
     });
     
     const eTGm = document.getElementById('stat-total-games'); 
@@ -1379,7 +1391,7 @@ window.updateDashboard = function() {
     const rL = (arr, k, el) => {
         const d = document.getElementById(el); if(!d)return; d.innerHTML='';
         arr.forEach((p,i) => { 
-            const v = window.getPlayerStat(p, k); if(v===0)return; 
+            const v = window.getPlayerStat(p, k, true); if(v===0)return; 
             const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
             const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${validName.charAt(0).toUpperCase()}</div>`; 
             d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${validName}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
@@ -1387,11 +1399,11 @@ window.updateDashboard = function() {
         if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
     };
     
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,4), 'goals', 'top-scorers-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,4), 'assists', 'top-assists-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals')-window.getPlayerStat(a,'goals')).slice(0,5), 'goals', 'stats-scorers-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists')-window.getPlayerStat(a,'assists')).slice(0,5), 'assists', 'stats-assists-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'games')-window.getPlayerStat(a,'games')).slice(0,5), 'games', 'stats-games-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals', true)-window.getPlayerStat(a,'goals', true)).slice(0,4), 'goals', 'top-scorers-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists', true)-window.getPlayerStat(a,'assists', true)).slice(0,4), 'assists', 'top-assists-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals', true)-window.getPlayerStat(a,'goals', true)).slice(0,5), 'goals', 'stats-scorers-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists', true)-window.getPlayerStat(a,'assists', true)).slice(0,5), 'assists', 'stats-assists-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'games', true)-window.getPlayerStat(a,'games', true)).slice(0,5), 'games', 'stats-games-list');
 
     let w=0, d=0, l=0, gf=0, ga=0;
     list.forEach(m => {
@@ -1430,7 +1442,7 @@ window.updateDashboard = function() {
     const mvpEl=document.getElementById('mvp-card-content');
     if(mvpEl){
         const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
-            const g = window.getPlayerStat(p,'goals'), a = window.getPlayerStat(p,'assists'), gp = window.getPlayerStat(p,'games'), m = window.getPlayerStat(p,'mvps'); 
+            const g = window.getPlayerStat(p,'goals', true), a = window.getPlayerStat(p,'assists', true), gp = window.getPlayerStat(p,'games', true), m = window.getPlayerStat(p,'mvps', true); 
             return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
         }).sort((x,y)=>y.score-x.score);
         
@@ -1462,7 +1474,12 @@ window.updateDashboard = function() {
             }).join('');
         }
     }
-    setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
+    
+    // RETRASO SEGURO PARA GRÁFICOS
+    setTimeout(() => { 
+        if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); 
+        if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); 
+    }, 400);
 };
 /* -----------------------------------------------------
    INICIALIZACIÓN Y OPTIMIZACIÓN DE RENDIMIENTO
