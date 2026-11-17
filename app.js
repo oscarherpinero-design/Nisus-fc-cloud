@@ -1225,10 +1225,13 @@ window.markDuesPaid = async function(txId, playerId) {
 };
 
 window.cashflowCharts = [];
+window.cashflowCharts = [];
 window.renderCashflowChart = function() {
+    // NUEVO: Si la librería de gráficos aún no carga, espera medio segundo e intenta de nuevo
+    if (typeof Chart === 'undefined') { setTimeout(window.renderCashflowChart, 500); return; }
+    
     if (window.cashflowCharts.length > 0) { window.cashflowCharts.forEach(c => c.destroy()); }
     window.cashflowCharts = [];
-    if (typeof Chart === 'undefined') return;
 
     const now = new Date(); const labels = [], incomeData = [], expenseData = [];
     for (let i = 5; i >= 0; i--) {
@@ -1247,46 +1250,27 @@ window.renderCashflowChart = function() {
     const isDark = document.documentElement.classList.contains('dark'); 
     const textColor = isDark ? '#94a3b8' : '#64748b', gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
-    const chartConfig = {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } }
-    };
-
-    ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig));
-    });
+    const chartConfig = { type: 'bar', data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } } };
+    ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig)); });
 };
 
 window.donutCharts = [];
 window.renderExpensesDonutChart = function() {
+    // NUEVO: Tiempo de espera para la Dona
+    if (typeof Chart === 'undefined') { setTimeout(window.renderExpensesDonutChart, 500); return; }
+    
     if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
     window.donutCharts = [];
-    if (typeof Chart === 'undefined') return;
     
     const expenseCategories = {};
-    window.finances.forEach(t => {
-        if (t.type === 'expense') {
-            const amt = window.getValidCashAmount(t);
-            if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt;
-        }
-    });
+    window.finances.forEach(t => { if (t.type === 'expense') { const amt = window.getValidCashAmount(t); if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt; } });
 
     const labels = Object.keys(expenseCategories), data = Object.values(expenseCategories);
     const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
     const isDark = document.documentElement.classList.contains('dark'), textColor = isDark ? '#94a3b8' : '#64748b';
     
-    const chartConfig = {
-        type: 'doughnut',
-        data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } }
-    };
-
-    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig));
-    });
+    const chartConfig = { type: 'doughnut', data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } } };
+    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig)); });
 };
 // ==========================================
 // REPARACIÓN: PARTIDOS Y DASHBOARD
