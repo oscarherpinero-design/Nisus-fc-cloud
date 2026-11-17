@@ -1274,21 +1274,12 @@ window.renderCashflowChart = function() {
 
     const chartConfig = { type: 'bar', data: { labels, datasets: [{ label: 'Ingresos reales', data: incomeData, backgroundColor: '#22c55e', borderRadius: 6 }, { label: 'Egresos', data: expenseData, backgroundColor: '#ef4444', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'} } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: {color: textColor} }, x: { grid: { display: false }, ticks: {color: textColor} } } } };
     ['cashflow-chart-dash', 'cashflow-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.cashflowCharts.push(new Chart(canvas, chartConfig)); });
-};  
-    const expenseCategories = {};
-    window.finances.forEach(t => { if (t.type === 'expense') { const amt = window.getValidCashAmount(t); if (amt > 0) expenseCategories[t.category] = (expenseCategories[t.category] || 0) + amt; } });
-
-    const labels = Object.keys(expenseCategories), data = Object.values(expenseCategories);
-    const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
-    const isDark = document.documentElement.classList.contains('dark'), textColor = isDark ? '#94a3b8' : '#64748b';
-    
-    const chartConfig = { type: 'doughnut', data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } } };
-    ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig)); });
 };
 
 window.donutCharts = [];
 window.renderExpensesDonutChart = function() {
-    if (typeof Chart === 'undefined') { setTimeout(window.renderExpensesDonutChart, 500); return; }
+    // NUEVO: Tiempo de espera para la dona
+    if (typeof Chart === 'undefined') { setTimeout(window.renderExpensesDonutChart, 300); return; }
     
     if (window.donutCharts.length > 0) { window.donutCharts.forEach(c => c.destroy()); }
     window.donutCharts = [];
@@ -1303,6 +1294,7 @@ window.renderExpensesDonutChart = function() {
     const chartConfig = { type: 'doughnut', data: { labels: labels.length ? labels : ['Sin egresos registrados'], datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0, hoverOffset: 6 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 10, weight: 'bold'}, boxWidth: 12 } } } } };
     ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig)); });
 };
+
 // ==========================================
 // REPARACIÓN: PARTIDOS Y DASHBOARD
 // ==========================================
@@ -1394,6 +1386,7 @@ window.renderBirthdaysAvailability = function() {
         }
     }
 };
+
 window.updateDashboard = function() {
     let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
     list.sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -1422,8 +1415,9 @@ window.updateDashboard = function() {
     }
 
     let tG=0, tA=0, pL = (window.players || []).filter(p => p && !p.isStaff); 
-    if(window.currentFilter==='f11') pL = pL.filter(p => p.availableF11); 
-    if(window.currentFilter==='f7') pL = pL.filter(p => p.availableF7);
+    if(window.currentFilter==='f11') pL = pL.filter(p=>p.availableF11); 
+    if(window.currentFilter==='f7') pL = pL.filter(p=>p.availableF7);
+    let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
     
     // USAMOS EL PARÁMETRO 'true' PARA LEER ARCHIVADOS TAMBIÉN
     pL.forEach(p => { tG += window.getPlayerStat(p,'goals', true); tA += window.getPlayerStat(p,'assists', true); });
@@ -1613,25 +1607,11 @@ function setupRealtimeListeners() {
 // ==========================================
 // ARRANQUE FINAL DE LA APLICACIÓN
 // ==========================================
-window.initApp = async function() { 
-    if(window.appInitialized) return; window.appInitialized = true;
-    
-    if (typeof loadInitialData === 'function') await loadInitialData(); 
-    if (typeof setupRealtimeListeners === 'function') setupRealtimeListeners(); 
-    if (typeof window.setupPWA === 'function') window.setupPWA(); 
-    if (typeof window.updateAdminUI === 'function') window.updateAdminUI(); 
-    
-    document.addEventListener('mousemove', window.dragMove); 
-    document.addEventListener('mouseup', window.dragEnd); 
-    const p = document.getElementById('tactical-pitch'); 
-    if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
-};
 
-if (document.readyState === 'loading') { 
-    document.addEventListener('DOMContentLoaded', window.initApp); 
-} else { 
-    window.initApp(); 
-   window.renderBirthdaysAvailability = function() {
+// ==========================================
+// CUMPLEAÑOS Y DISPONIBILIDAD (RESTAURADO)
+// ==========================================
+window.renderBirthdaysAvailability = function() {
     const allPlayers = (window.players || []).filter(p => p && !p.isStaff); 
     const bEl = document.getElementById('birthdays-strip');
     if(bEl) {
@@ -1674,4 +1654,23 @@ if (document.readyState === 'loading') {
         }
     }
 };
+
+window.initApp = async function() { 
+    if(window.appInitialized) return; window.appInitialized = true;
+    
+    if (typeof loadInitialData === 'function') await loadInitialData(); 
+    if (typeof setupRealtimeListeners === 'function') setupRealtimeListeners(); 
+    if (typeof window.setupPWA === 'function') window.setupPWA(); 
+    if (typeof window.updateAdminUI === 'function') window.updateAdminUI(); 
+    
+    document.addEventListener('mousemove', window.dragMove); 
+    document.addEventListener('mouseup', window.dragEnd); 
+    const p = document.getElementById('tactical-pitch'); 
+    if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); } 
+};
+
+if (document.readyState === 'loading') { 
+    document.addEventListener('DOMContentLoaded', window.initApp); 
+} else { 
+    window.initApp(); 
 }
