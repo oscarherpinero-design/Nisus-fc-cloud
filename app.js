@@ -1420,16 +1420,16 @@ window.updateDashboard = function() {
     let aG = 0; list.forEach(m => { if(m.status === 'forfait') aG += 3; });
     
     // USAMOS EL PARÁMETRO 'true' PARA LEER ARCHIVADOS TAMBIÉN
-    pL.forEach(p => { tG += window.getPlayerStat(p,'goals', true); tA += window.getPlayerStat(p,'assists', true); });
+    pL.forEach(p => { tG += window.getPlayerStat(p, 'goals'); tA += window.getPlayerStat(p, 'assists'); });
     
     const eTG = document.getElementById('stat-total-goals'); if(eTG) eTG.textContent = tG + aG;
     const eTA = document.getElementById('stat-total-assists'); if(eTA) eTA.textContent = tA;
     
     let tCS=0, maxGames=0, ironMan="--";
     pL.forEach(p => { 
-        const g = window.getPlayerStat(p,'games', true);
+        const g = window.getPlayerStat(p, 'games');
         if(g > maxGames) { maxGames = g; ironMan = (p.showAlias && p.alias) ? p.alias : (p.name || 'N/A').split(' ')[0]; }
-        tCS += window.getPlayerStat(p,'cleanSheets', true); 
+        tCS += window.getPlayerStat(p, 'cleanSheets'); 
     });
     
     const eTGm = document.getElementById('stat-total-games'); 
@@ -1439,7 +1439,7 @@ window.updateDashboard = function() {
     const rL = (arr, k, el) => {
         const d = document.getElementById(el); if(!d)return; d.innerHTML='';
         arr.forEach((p,i) => { 
-            const v = window.getPlayerStat(p, k, true); if(v===0)return; 
+            const v = window.getPlayerStat(p, k); if(v===0)return; 
             const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
             const img = p.image?`<img src="${p.image}" class="w-8 h-8 rounded-full object-cover shadow-sm">`:`<div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center text-xs shadow-sm">${validName.charAt(0).toUpperCase()}</div>`; 
             d.innerHTML+=`<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition"><td class="px-6 py-3 w-10 text-slate-400 font-black">${i+1}</td><td class="px-6 py-3 flex items-center gap-3">${img} <span class="font-bold text-xs text-slate-800 dark:text-slate-200">${validName}</span></td><td class="px-6 py-3 text-right font-black text-lg text-slate-900 dark:text-white">${v}</td></tr>`; 
@@ -1447,11 +1447,11 @@ window.updateDashboard = function() {
         if(d.innerHTML==='') d.innerHTML='<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin registros</td></tr>';
     };
     
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals', true)-window.getPlayerStat(a,'goals', true)).slice(0,4), 'goals', 'top-scorers-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists', true)-window.getPlayerStat(a,'assists', true)).slice(0,4), 'assists', 'top-assists-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'goals', true)-window.getPlayerStat(a,'goals', true)).slice(0,5), 'goals', 'stats-scorers-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'assists', true)-window.getPlayerStat(a,'assists', true)).slice(0,5), 'assists', 'stats-assists-list');
-    rL([...pL].sort((a,b)=>window.getPlayerStat(b,'games', true)-window.getPlayerStat(a,'games', true)).slice(0,5), 'games', 'stats-games-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b, 'goals')-window.getPlayerStat(a, 'goals')).slice(0,4), 'goals', 'top-scorers-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b, 'assists')-window.getPlayerStat(a, 'assists')).slice(0,4), 'assists', 'top-assists-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b, 'goals')-window.getPlayerStat(a, 'goals')).slice(0,5), 'goals', 'stats-scorers-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b, 'assists')-window.getPlayerStat(a, 'assists')).slice(0,5), 'assists', 'stats-assists-list');
+    rL([...pL].sort((a,b)=>window.getPlayerStat(b, 'games')-window.getPlayerStat(a, 'games')).slice(0,5), 'games', 'stats-games-list');
 
     let w=0, d=0, l=0, gf=0, ga=0;
     list.forEach(m => {
@@ -1490,7 +1490,7 @@ window.updateDashboard = function() {
     const mvpEl=document.getElementById('mvp-card-content');
     if(mvpEl){
         const mvpList=[...pL].filter(p=>!p.isStaff).map(p=>{ 
-            const g = window.getPlayerStat(p,'goals', true), a = window.getPlayerStat(p,'assists', true), gp = window.getPlayerStat(p,'games', true), m = window.getPlayerStat(p,'mvps', true); 
+            const g = window.getPlayerStat(p, 'goals'), a = window.getPlayerStat(p, 'assists'), gp = window.getPlayerStat(p, 'games'), m = window.getPlayerStat(p, 'mvps'); 
             return {p, score: g*2 + a + gp + m*3, g, a, gp, m}; 
         }).sort((x,y)=>y.score-x.score);
         
