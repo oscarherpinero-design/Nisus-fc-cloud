@@ -925,9 +925,31 @@ window.monthlyCloseReport = function() {
     navigator.clipboard.writeText(msg).then(() => window.showToast('Reporte copiado al portapapeles')).catch(() => window.showToast('Error al copiar', true));
 };
 
-window.sendDirectWhatsApp = function(playerName, debtAmount) {
+window.sendDirectWhatsApp = function(playerId) {
     if (!window.isAdmin) return window.showToast('Solo administradores', true);
-    const msg = `Hola ${playerName}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente en el equipo por $${parseFloat(debtAmount).toFixed(2)}. ¡Gracias por tu apoyo para mantener el club al día!`;
+    const p = window.players.find(x => x.id === playerId); if (!p) return;
+    
+    const debtData = window.getPlayerDebts(playerId);
+    const debtFilter = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'all';
+    
+    let filteredDebts = debtData.debts;
+    if (debtFilter !== 'all') {
+        filteredDebts = debtData.debts.filter(d => {
+            const desc = d.desc.toLowerCase();
+            if (debtFilter === 'mensualidad') return desc.includes('mensual');
+            if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
+            if (debtFilter === 'multa') return desc.includes('multa');
+            return false;
+        });
+    }
+    
+    const totalFiltered = filteredDebts.reduce((sum, d) => sum + d.amount, 0);
+    if (totalFiltered <= 0) return window.showToast('Sin deuda en esta categoría', true);
+    
+    let msg = `Hola ${p.name}, te escribo de NISUS FC ⚽. Tienes un saldo pendiente por un total de *$${totalFiltered.toFixed(2)}*.\n\n*Detalle de tu deuda:*\n`;
+    filteredDebts.forEach(d => { msg += `• ${d.desc}: $${d.amount.toFixed(2)}\n`; });
+    msg += `\n¡Gracias por tu apoyo para mantener el club al día!`;
+    
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`; window.open(url, '_blank');
 };
 
@@ -1086,7 +1108,7 @@ window.renderFinances = function() {
                 const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 font-black flex items-center justify-center shadow-sm">${ini}</div>`;
                 let bsEquivalent = window.currentExchangeRate ? `<span class="text-[9px] text-slate-400 block mt-0.5">≈ ${(totalDebt * window.currentExchangeRate).toFixed(2)} Bs</span>` : '';
                 const rowAction = window.isAdmin ? `onclick="window.openPlayerFinancialReport('${p.id}')" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"` : `class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 last:border-0"`;
-                const adminButtons = window.isAdmin ? `<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${validName.replace(/'/g, "\\'")}', ${totalDebt})" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase cursor-pointer px-2 py-1 bg-brand-50 rounded" onclick="event.stopPropagation(); window.openPaySpecific('${p.id}')">💰 Pagar</span></div>` : ``;
+                const adminButtons = window.isAdmin ? `<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.id}')"`
 
                 debtorsList.innerHTML += `<li ${rowAction}><div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${validName}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm"><i class="fas fa-exclamation-triangle"></i> EN MORA</span></div></div><div class="text-right shrink-0 flex flex-col items-end gap-1"><p class="font-black text-lg leading-none text-red-500">$${totalDebt.toFixed(2)}</p>${bsEquivalent}${adminButtons}</div></li>`;
             }
