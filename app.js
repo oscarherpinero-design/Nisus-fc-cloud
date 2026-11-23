@@ -880,10 +880,36 @@ window.deleteTransaction = function(id) {
     window.showConfirm('¿Eliminar este movimiento?', async () => {
         try {
             const t = window.finances.find(x => x.id === id);
-            if (t && t.playerId && (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && !t.isPaid) {
-                const p = window.players.find(x => x.id === t.playerId); if (p) await db.collection(window.playersPath).doc(t.playerId).set({ debtAmount: Math.max(0, (p.debtAmount || 0) - t.amount) }, { merge: true });
+            if (!t) return;
+            const batch = db.batch();
+            
+            if (t.playerId) {
+                // Si borras un cargo que el jugador NO ha pagado (se anula el cobro)
+                if ((t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && !t.isPaid) {
+                    const p = window.players.find(x => x.id === t.playerId); 
+                    if (p) batch.set(db.collection(window.playersPath).doc(t.playerId), { debtAmount: Math.max(0, (p.debtAmount || 0) - (t.amount||0)) }, { merge: true });
+                }
+                // Si borras un PAGO que hizo el jugador (se RESTAURA su deuda)
+                else if (t.category === 'Abono a Deuda (Jugador)') {
+                    const p = window.players.find(x => x.id === t.playerId);
+                    if (p) {
+                        const newDebt = (p.debtAmount || 0) + (t.amount||0);
+                        batch.set(db.collection(window.playersPath).doc(t.playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true });
+                    }
+                    // Desvinculamos el pago del arbitraje original
+                    if (t.specificDebtId && t.specificDebtId.startsWith('arb_')) {
+                        const parentId = t.specificDebtId.split('_')[1];
+                        const arbTx = window.finances.find(x => x.id === parentId);
+                        if (arbTx && arbTx.paidBy) {
+                            const newPaidBy = arbTx.paidBy.filter(pid => pid !== t.playerId);
+                            batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: newPaidBy }, { merge: true });
+                        }
+                    }
+                }
             }
-            await db.collection(window.financesPath).doc(id).delete(); window.showToast('Movimiento eliminado');
+            batch.delete(db.collection(window.financesPath).doc(id));
+            await batch.commit(); 
+            window.showToast('Movimiento eliminado y deudas reajustadas');
         } catch(e) { window.showToast('Error', true); }
     });
 };
