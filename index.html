@@ -330,10 +330,11 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-3">
-                    <button onclick="window.newTransaction('income')" class="admin-only flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-down"></i> Registrar Ingreso</button>
-                    <button onclick="window.newTransaction('expense')" class="admin-only flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-up"></i> Registrar Egreso</button>
-                </div>
+               <div class="flex flex-wrap gap-3">
+    <button onclick="window.newTransaction('income')" class="admin-only flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-down"></i> Registrar Ingreso</button>
+    <button onclick="window.newTransaction('expense')" class="admin-only flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-arrow-up"></i> Registrar Egreso</button>
+    <button onclick="window.newTransaction('income'); document.getElementById('f-category').value='Cobro Manual'; document.getElementById('f-desc').value='Arbitraje'; window.toggleMatchSelect();" class="admin-only flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-whistle"></i> Cobro Manual (Arbitraje)</button>
+</div>
 
                 <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden">
                     <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
