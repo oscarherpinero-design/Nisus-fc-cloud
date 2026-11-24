@@ -1637,7 +1637,7 @@ window.renderArchivedMatches = function() {
     const groups = {};
     archived.forEach(m => {
         const key = (m.tournament || 'Torneo Sin Nombre').trim();
-        if (!groups[key]) groups[key]. = [];
+        if (!groups[key]) groups[key] = [];
         groups[key].push(m);
     });
 
