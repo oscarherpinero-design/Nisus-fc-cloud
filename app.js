@@ -661,7 +661,7 @@ if (t?.playerId === playerId && t?.type === 'income' && t?.isPaid === false) {
 const abonos = (window.finances || []).filter(x => x?.category === 'Abono a Deuda (Jugador)' && x?.specificDebtId === t.id);
 const totalAbonado = abonos.reduce((sum, x) => sum + (parseFloat(x?.amount) || 0), 0);
 const amt = (parseFloat(t?.amount) || 0) - totalAbonado;
-if (amt > 0.01) debts.push({ id: t.id, desc: t.description || t.category || 'Deuda', amount: amt, date: t.date || '' });
+if (amt > 0.01) { const m = t.matchId ? (window.matches || []).find(x => x.id === t.matchId) : null; const mTxt = m ? ` (vs ${m.opponent})` : ''; debts.push({ id: t.id, desc: (t.description || t.category || 'Deuda') + mTxt, amount: amt, date: t.date || '' }); }
 }
 if (t?.category === 'Arbitraje' && t?.matchId) {
 const match = (window.matches || []).find(m => m.id === t.matchId);
@@ -703,7 +703,7 @@ window.toggleMatchSelect(); window.updateAdminUI(); window.showSection('finances
 };
 window.toggleMatchSelect = function() {
 const cat = document.getElementById('f-category').value, mc = document.getElementById('f-match-container'), pc = document.getElementById('f-player-container'), sdc = document.getElementById('f-specific-debt-container');
-if (cat === 'Arbitraje' || cat === 'Multa Tarjeta') mc.classList.remove('hidden'); else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
+if (cat === 'Arbitraje' || cat === 'Multa Tarjeta' || cat === 'Cobro Manual') mc.classList.remove('hidden'); else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
 if (cat === 'Cobro Manual' || cat === 'Multa Tarjeta' || cat === 'Abono a Deuda (Jugador)') { pc.classList.remove('hidden'); window.populateFinPlayerSelect(); } else { pc.classList.add('hidden'); document.getElementById('f-player').value = ''; }
 if (cat === 'Abono a Deuda (Jugador)') { sdc.classList.remove('hidden'); window.populateSpecificDebts(); } else { sdc.classList.add('hidden'); document.getElementById('f-specific-debt').value = ''; }
 window.calcArbitraje();
