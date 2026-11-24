@@ -58,6 +58,9 @@
         #p-image-overlay { display: none; } #p-image-overlay.flex-show { display: flex; } #p-image-spinner { display: none; } #p-image-spinner.flex-show { display: flex; }
         .player-card-export { width: 360px; height: 520px; background: radial-gradient(circle at top right, #1e293b, #0f172a); border-radius: 16px; padding: 20px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 0 4px #fbbf24, inset 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         .match-result-export { width: 400px; height: 400px; background: radial-gradient(circle at top left, #0ea5e9, #082f49); border-radius: 20px; padding: 24px; color: white; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.4); }
+    @keyframes tickerMarquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .ticker-track { display: flex; align-items: center; width: max-content; animation: tickerMarquee var(--ticker-speed, 24s) linear infinite; }
+        .ticker-track:hover, .ticker-track:active { animation-play-state: paused; }
     </style>
   <meta property="og:image" content="https://bolt.new/static/og_default.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -244,6 +247,13 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                 <div><h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Finanzas</h2><p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Control financiero y tesorería</p></div>
             </div>
+           <div class="bg-white dark:bg-darkcard rounded-2xl border border-red-200 dark:border-red-900/40 shadow-sm flex items-center overflow-hidden h-12">
+                <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 h-full flex items-center gap-2 shrink-0 z-10 shadow-md">
+                    <i class="fas fa-exclamation-circle text-xs"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Por Cobrar</span>
+                </div>
+                <div id="finances-ticker" class="flex-1 overflow-hidden relative h-full flex items-center"></div>
+            </div> 
 
             <!-- Botones Pestañas: El botón de Cobros solo se ve si eres Admin -->
             <div class="flex gap-2 bg-white dark:bg-darkcard p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full sm:w-auto sm:inline-flex">
@@ -385,14 +395,17 @@
                     <button onclick="window.newPlayer()" class="flex-1 sm:flex-none bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-sm"><i class="fas fa-user-plus"></i> Inscribir Miembro</button>
                 </div>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="bg-white dark:bg-darkcard rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><i class="fas fa-heartbeat text-green-500 mr-1"></i> Disponibilidad del Plantel</p>
-                    <div id="availability-strip" class="flex flex-wrap gap-2"></div>
+            <div class="space-y-3">
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-pink-200 dark:border-pink-900/40 shadow-sm flex items-center overflow-hidden h-12">
+                    <div class="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 h-full flex items-center gap-2 shrink-0 z-10 shadow-md">
+                        <i class="fas fa-birthday-cake text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Cumpleaños</span>
+                    </div>
+                    <div id="birthdays-strip" class="flex-1 overflow-hidden relative h-full flex items-center"></div>
                 </div>
-                <div class="bg-white dark:bg-darkcard rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><i class="fas fa-birthday-cake text-pink-500 mr-1"></i> Próximos Cumpleaños</p>
-                    <div id="birthdays-strip" class="flex gap-3 overflow-x-auto hide-scrollbar pb-1"></div>
+                <div class="bg-white dark:bg-darkcard rounded-2xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5"><i class="fas fa-heartbeat text-green-500 mr-1"></i> Disponibilidad del Plantel</p>
+                    <div id="availability-strip" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mb-2">
@@ -510,7 +523,13 @@
                     </button>
                 </div>
             </div>
-            
+            <div class="bg-gradient-to-r from-brand-700 to-brand-900 dark:from-slate-800 dark:to-slate-900 rounded-2xl border border-brand-500/40 dark:border-slate-700 shadow-sm flex items-center overflow-hidden h-12">
+                <div class="bg-amber-400 text-slate-950 px-4 h-full flex items-center gap-2 shrink-0 z-10 shadow-md">
+                    <i class="fas fa-bolt text-xs"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Próximo Partido</span>
+                </div>
+                <div id="matches-ticker" class="flex-1 overflow-hidden relative h-full flex items-center text-white"></div>
+            </div>
             <!-- NUEVO: Pestañas de Navegación de Partidos -->
             <div class="flex flex-wrap gap-2 mb-6 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-xl w-full sm:w-fit border border-slate-200 dark:border-slate-700">
                 <button id="btn-tab-active" onclick="window.switchMatchesTab('active')" class="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm"><i class="fas fa-calendar-check mr-2"></i> Torneo Actual</button>
