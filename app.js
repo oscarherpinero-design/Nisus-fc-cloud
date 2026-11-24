@@ -977,7 +977,7 @@ list.innerHTML = '';
 if (debts.debts.length === 0) { list.innerHTML = '<p class="text-center text-sm text-slate-500 py-6">Sin deudas pendientes</p>'; }
 else {
 debts.debts.forEach(d => {
-const dStr = new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+const dStr = (d.date && d.date.includes('-')) ? new Date(d.date+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) : 'Saldo acumulado';
 list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl mb-2 border border-slate-200 dark:border-slate-700"><div class="flex-1 min-w-0 pr-2"><p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${d.desc}">${d.desc}</p><p class="text-[10px] text-slate-400">${dStr}</p></div><div class="flex items-center gap-2 shrink-0"><span class="text-slate-400 font-bold text-xs">$</span><input type="number" id="pay-amt-${d.id}" value="${d.amount.toFixed(2)}" max="${d.amount.toFixed(2)}" step="0.01" class="w-16 sm:w-20 py-1.5 px-2 text-right text-sm font-black text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 shadow-sm"><button onclick="window.processSpecificPayment('${playerId}', '${d.id}', ${d.amount})" class="admin-only bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Abonar</button></div></div>`;
 });
 }
@@ -1136,7 +1136,7 @@ const chartConfig = { type: 'doughnut', data: { labels: labels.length ? labels :
 };
 window.renderMatches = function() {
 const grid = document.getElementById('matches-grid'); if(!grid) return; grid.innerHTML = '';
-let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
+let list = (window.matches || []).filter(m => m && m.status !== 'archived'); if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
 list.sort((a,b) => new Date(b.date) - new Date(a.date));
 if(list.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-slate-500 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay partidos registrados</div>'; return; }
 list.forEach(m => {
@@ -1341,104 +1341,81 @@ if (!window.isAdmin) return; const t = new Date().toISOString().split('T')[0]; c
 window.players.forEach(p => { if ((p.status === 'injured' || p.status === 'absent' || p.status === 'inactive') && p.returnDate && t >= p.returnDate) u.push(db.collection(window.playersPath).doc(p.id).set({ status: 'active', returnDate: null }, { merge: true })); });
 if (u.length > 0) { try { await Promise.all(u); window.showToast(`Se activaron automáticamente ${u.length} jugador(es)`); } catch (e) { console.error(e); } }
 };
-async function loadInitialData() {
-const el = document.getElementById('next-match-date'); if(el) el.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Descargando datos...';
-try {
-const [p, m, t, f, i] = await Promise.all([ db.collection(window.playersPath).get(), db.collection(window.matchesPath).get(), db.collection(window.trainingsPath).get(), db.collection(window.financesPath).get(), db.collection(window.inventoryPath).get() ]);
-window.players=[]; p.forEach(d=>window.players.push({...d.data(), id:d.id}));
-window.matches=[]; m.forEach(d=>window.matches.push({...d.data(), id:d.id}));
-window.trainings=[]; t.forEach(d=>window.trainings.push({...d.data(), id:d.id}));
-window.finances=[]; f.forEach(d=>window.finances.push({...d.data(), id:d.id}));
-window.inventory=[]; i.forEach(d=>window.inventory.push({...d.data(), id:d.id}));
-window.isReady = true; window.updateSeasonDropdown(); window.checkAutoActivations();
-window.showSection('dashboard');
-if(el) el.innerHTML = '<i class="fas fa-check-circle mr-2 text-green-400"></i> Datos listos';
-} catch(e) { if(el) el.innerHTML = '<i class="fas fa-exclamation-triangle mr-2 text-red-400"></i> Error de conexión'; console.error(e); }
-}
 function debounceRender(func, wait = 150) {
-let timeout;
-return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); };
+    let timeout;
+    return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); };
 }
 const safeUpdateDashboard = debounceRender(() => { if(!document.getElementById('dashboard').classList.contains('hidden') || !document.getElementById('stats').classList.contains('hidden')) window.updateDashboard(); });
 const safeRenderPlayers = debounceRender(() => { if(!document.getElementById('players').classList.contains('hidden')) { window.renderPlayers(); window.renderBirthdaysAvailability(); } });
-const safeRenderMatches = debounceRender(() => { if(!document.getElementById('matches').classList.contains('hidden')) window.renderMatches(); });
+const safeRenderMatches = debounceRender(() => { if(!document.getElementById('matches').classList.contains('hidden')) { window.renderMatches(); if(typeof window.renderArchivedMatches === 'function') window.renderArchivedMatches(); } });
 const safeRenderTrainings = debounceRender(() => { if(!document.getElementById('attendance').classList.contains('hidden')) window.renderTrainings(); });
 const safeRenderFinances = debounceRender(() => { if(!document.getElementById('finances').classList.contains('hidden')) window.renderFinances(); });
+const safeRenderInventory = debounceRender(() => { if(!document.getElementById('inventory').classList.contains('hidden')) window.renderInventory(); });
+
 function setupRealtimeListeners() {
-const sId = window.generateId(); const pRef = db.collection('sistema').doc('presencia_' + sId);
-setInterval(() => { if(document.visibilityState === 'visible') pRef.set({ lastSeen: Date.now() }).catch(()=>{}); }, 30000);
-pRef.set({ lastSeen: Date.now() });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pRef.delete().catch(()=>{}); else pRef.set({ lastSeen: Date.now() }).catch(()=>{}); });
-window.addEventListener('beforeunload', () => pRef.delete());
-db.collection('sistema').onSnapshot((s) => {
-let o = 0; const n = Date.now();
-s.forEach(d => { if(d.id.startsWith('presencia_')) { if (n - d.data().lastSeen < 120000) o++; else d.ref.delete(); } });
-const c = document.getElementById('online-count'); if(c) c.textContent = o;
-});
-db.collection(window.playersPath).onSnapshot((s) => {
-if(!window.isReady) return;
-window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id }));
-window.checkAutoActivations(); safeRenderPlayers(); safeUpdateDashboard(); safeRenderFinances();
-if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList();
-if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist();
-});
-db.collection(window.matchesPath).onSnapshot((s) => {
-if(!window.isReady) return;
-window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id }));
-window.updateSeasonDropdown(); safeRenderMatches(); safeUpdateDashboard(); safeRenderPlayers(); safeRenderFinances();
-});
-db.collection(window.trainingsPath).onSnapshot((s) => {
-if(!window.isReady) return;
-window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id }));
-safeRenderTrainings(); safeRenderPlayers(); safeUpdateDashboard();
-});
-db.collection(window.financesPath).onSnapshot((s) => {
-if(!window.isReady) return;
-window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id }));
-safeRenderFinances();
-});
+    const el = document.getElementById('next-match-date');
+    if (el) el.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Conectando datos...';
+
+    const sId = window.generateId();
+    const pRef = db.collection('sistema').doc('presencia_' + sId);
+    setInterval(() => { if(document.visibilityState === 'visible') pRef.set({ lastSeen: Date.now() }).catch(()=>{}); }, 30000);
+    pRef.set({ lastSeen: Date.now() }).catch(()=>{});
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pRef.delete().catch(()=>{}); else pRef.set({ lastSeen: Date.now() }).catch(()=>{}); });
+    window.addEventListener('beforeunload', () => pRef.delete().catch(()=>{}));
+
+    db.collection('sistema').onSnapshot((s) => {
+        let o = 0; const n = Date.now();
+        s.forEach(d => { if(d.id.startsWith('presencia_')) { if (n - d.data().lastSeen < 120000) o++; else d.ref.delete().catch(()=>{}); } });
+        const c = document.getElementById('online-count'); if(c) c.textContent = Math.max(1, o);
+    });
+
+    const loaded = { p: false, m: false, t: false, f: false, i: false };
+    const checkInitialReady = () => {
+        if (!window.isReady && loaded.p && loaded.m && loaded.t && loaded.f && loaded.i) {
+            window.isReady = true;
+            window.updateSeasonDropdown();
+            window.checkAutoActivations();
+            window.showSection('dashboard');
+        }
+    };
+
+    db.collection(window.playersPath).onSnapshot((s) => {
+        window.players = []; s.forEach(d => window.players.push({ ...d.data(), id: d.id }));
+        loaded.p = true;
+        if (!window.isReady) { checkInitialReady(); return; }
+        window.checkAutoActivations(); safeRenderPlayers(); safeUpdateDashboard(); safeRenderFinances();
+        if(!document.getElementById('matchForm').classList.contains('hidden')) window.renderCallupList();
+        if(!document.getElementById('attendanceForm').classList.contains('hidden')) window.renderAttendanceChecklist();
+    });
+
+    db.collection(window.matchesPath).onSnapshot((s) => {
+        window.matches = []; s.forEach(d => window.matches.push({ ...d.data(), id: d.id }));
+        loaded.m = true;
+        if (!window.isReady) { checkInitialReady(); return; }
+        window.updateSeasonDropdown(); safeRenderMatches(); safeUpdateDashboard(); safeRenderPlayers(); safeRenderFinances();
+    });
+
+    db.collection(window.trainingsPath).onSnapshot((s) => {
+        window.trainings = []; s.forEach(d => window.trainings.push({ ...d.data(), id: d.id }));
+        loaded.t = true;
+        if (!window.isReady) { checkInitialReady(); return; }
+        safeRenderTrainings(); safeRenderPlayers(); safeUpdateDashboard();
+    });
+
+    db.collection(window.financesPath).onSnapshot((s) => {
+        window.finances = []; s.forEach(d => window.finances.push({ ...d.data(), id: d.id }));
+        loaded.f = true;
+        if (!window.isReady) { checkInitialReady(); return; }
+        safeRenderFinances();
+    });
+
+    db.collection(window.inventoryPath).onSnapshot((s) => {
+        window.inventory = []; s.forEach(d => window.inventory.push({ ...d.data(), id: d.id }));
+        loaded.i = true;
+        if (!window.isReady) { checkInitialReady(); return; }
+        safeRenderInventory();
+    });
 }
-window.renderBirthdaysAvailability = function() {
-const allPlayers = (window.players || []).filter(p => p && !p.isStaff);
-const bEl = document.getElementById('birthdays-strip');
-if(bEl) {
-const today = new Date(); const ty = today.getFullYear();
-const upcoming = allPlayers.filter(p => p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')).map(p => {
-const parts = p.birthdate.split('-'); const bm = parseInt(parts[1])-1, bd = parseInt(parts[2]);
-let next = new Date(ty, bm, bd);
-const days = Math.ceil((next - today) / (1000*60*60*24));
-if (days < 0) { next = new Date(ty+1, bm, bd); }
-const dCalc = Math.ceil((next - today) / (1000*60*60*24));
-return { p, dCalc, next };
-}).sort((a,b)=>a.dCalc-b.dCalc).slice(0,6);
-bEl.innerHTML = '';
-if(upcoming.length===0) bEl.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium py-2 px-1">Sin fechas de nacimiento registradas</p>';
-else upcoming.forEach(item => {
-const p = item.p; const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?'; const ini = validName.charAt(0).toUpperCase();
-const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${ini}</div>`;
-const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'}); const isToday = item.dCalc === 0;
-const badge = isToday ? `<span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">¡Hoy!</span>` : `<span class="text-[10px] font-bold text-slate-400">${item.dCalc}d</span>`;
-bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
-});
-}
-const aEl = document.getElementById('availability-strip');
-if(aEl) {
-const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' }, inactive: { lbl:'Inactivo', icon:'fa-pause-circle', col:'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700' } };
-const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
-const activeCount = allPlayers.length - unavailable.length;
-aEl.innerHTML = '';
-aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
-if(unavailable.length === 0) { aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`; }
-else {
-unavailable.sort((a,b)=>((a.name||'').localeCompare(b.name||''))).forEach(p => {
-const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
-const s = statusMap[p.status] || statusMap.absent;
-const ret = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : '';
-aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${validName} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`;
-});
-}
-}
-};
 window.newInventoryItem = function() {
 document.getElementById('inventory-form').reset();
 document.getElementById('inv-id').value = '';
@@ -1502,6 +1479,314 @@ grid.innerHTML += `
 ${i.notes ? `<p class="mt-3 text-[11px] font-medium text-slate-500 italic bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">"${i.notes}"</p>` : ''}
 </div>`;
 });
+};
+window.exportMatchResult = function(id) {
+    const m = (window.matches || []).find(x => x.id === id);
+    if (!m) return;
+    const container = document.getElementById('result-render-container');
+    const modal = document.getElementById('modalMatchResult');
+    if (!container || !modal) return;
+
+    const us = m.status === 'forfait' ? 3 : (parseInt(m.goalsUs) || 0);
+    const them = m.status === 'forfait' ? 0 : (parseInt(m.goalsThem) || 0);
+    const dStr = m.date ? new Date(m.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase() : '';
+    const scorers = (m.events || []).filter(e => ['goals', 'penalty', 'freekick'].includes(e.type)).map(e => {
+        const p = (window.players || []).find(x => x.id === e.playerId);
+        return `⚽ ${p ? (p.showAlias && p.alias ? p.alias : p.name.split(' ')[0]) : 'Gol'}${e.minute ? ` (${e.minute}')` : ''}`;
+    }).join(' · ');
+
+    container.innerHTML = `
+        <div id="match-result-node" class="match-result-export">
+            <p class="text-[10px] font-black uppercase tracking-[0.25em] text-brand-200 mb-1">${m.tournament || 'PARTIDO OFICIAL'}</p>
+            <p class="text-[9px] font-bold text-white/60 uppercase tracking-widest mb-6">${dStr} · FÚTBOL ${m.modality === 'f7' ? '7' : '11'}</p>
+            <div class="flex items-center justify-between w-full px-2 mb-6">
+                <div class="flex flex-col items-center w-1/3">
+                    <div class="w-16 h-16 rounded-full bg-white p-1 shadow-lg mb-2 flex items-center justify-center overflow-hidden">
+                        <img src="escudo.png" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                    </div>
+                    <span class="font-black text-xs uppercase tracking-wider text-center">NISUS FC</span>
+                </div>
+                <div class="flex items-center gap-3 w-1/3 justify-center">
+                    <span class="text-5xl font-black">${us}</span>
+                    <span class="text-2xl font-bold text-white/40">-</span>
+                    <span class="text-5xl font-black">${them}</span>
+                </div>
+                <div class="flex flex-col items-center w-1/3">
+                    <div class="w-16 h-16 rounded-full bg-white/15 border-2 border-white/30 shadow-lg mb-2 flex items-center justify-center text-2xl font-black">
+                        ${(m.opponent || 'R').charAt(0).toUpperCase()}
+                    </div>
+                    <span class="font-black text-xs uppercase tracking-wider text-center truncate w-full">${m.opponent || 'Rival'}</span>
+                </div>
+            </div>
+            ${m.status === 'forfait' ? `<p class="text-[10px] font-black uppercase tracking-widest bg-white/15 px-3 py-1 rounded-full">Victoria por Forfait</p>` : ''}
+            ${scorers ? `<p class="text-[10px] font-bold text-brand-100 text-center leading-relaxed px-4">${scorers}</p>` : ''}
+            <p class="absolute bottom-4 text-[8px] font-black tracking-[0.3em] text-white/40 uppercase">RESULTADO FINAL · NISUS FC</p>
+        </div>`;
+
+    modal.classList.remove('hidden');
+    document.getElementById('btn-download-result').onclick = function() {
+        const node = document.getElementById('match-result-node');
+        const btn = this;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+        html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true }).then(cv => {
+            const a = document.createElement('a');
+            a.download = `Resultado_NISUS_vs_${(m.opponent || 'Rival').replace(/\s+/g, '_')}.png`;
+            a.href = cv.toDataURL('image/png');
+            a.click();
+            btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartir Resultado';
+        }).catch(() => {
+            window.showToast('Error al generar imagen', true);
+            btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartir Resultado';
+        });
+    };
+};
+
+window.openPlayerFinancialReport = function(playerId) {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    const p = (window.players || []).find(x => x.id === playerId);
+    if (!p) return;
+
+    const dData = window.getPlayerDebts(playerId);
+    const paidTxs = (window.finances || []).filter(t => t.playerId === playerId && t.type === 'income' && window.getValidCashAmount(t) > 0);
+    const totalPaid = paidTxs.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
+
+    document.getElementById('pf-player-name').textContent = p.name;
+    document.getElementById('pf-debt').textContent = `$${dData.total.toFixed(2)}`;
+    document.getElementById('pf-paid').textContent = `$${totalPaid.toFixed(2)}`;
+
+    const listEl = document.getElementById('pf-transactions-list');
+    listEl.innerHTML = '';
+
+    dData.debts.forEach(d => {
+        const dStr = (d.date && d.date.includes('-')) ? new Date(d.date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Pendiente';
+        listEl.innerHTML += `
+            <li class="px-5 py-3.5 flex justify-between items-center bg-red-50/40 dark:bg-red-900/10">
+                <div class="pr-3 min-w-0">
+                    <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${d.desc}</p>
+                    <p class="text-[10px] text-red-500 font-bold uppercase">${dStr} · Por Pagar</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="font-black text-sm text-red-600 dark:text-red-400">$${d.amount.toFixed(2)}</span>
+                    <button onclick="window.forgiveSpecificDebt('${p.id}', '${d.id}', ${d.amount}); document.getElementById('modal-player-finances').classList.add('hidden');" class="text-slate-400 hover:text-red-500 text-xs p-1" title="Anular deuda"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </li>`;
+    });
+
+    paidTxs.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).forEach(t => {
+        const dStr = (t.date && t.date.includes('-')) ? new Date(t.date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+        listEl.innerHTML += `
+            <li class="px-5 py-3.5 flex justify-between items-center">
+                <div class="pr-3 min-w-0">
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${t.description || t.category}</p>
+                    <p class="text-[10px] text-slate-400">${dStr} · Pagado</p>
+                </div>
+                <span class="font-black text-sm text-green-600 dark:text-green-400">+$${(t.amount || 0).toFixed(2)}</span>
+            </li>`;
+    });
+
+    if (listEl.innerHTML === '') {
+        listEl.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 italic">Sin movimientos registrados para este jugador</li>';
+    }
+
+    const btnWa = document.getElementById('pf-btn-wa');
+    const btnPay = document.getElementById('pf-btn-pay');
+    if (dData.total > 0.01) {
+        btnWa.classList.remove('hidden'); btnWa.classList.add('flex');
+        btnPay.classList.remove('hidden'); btnPay.classList.add('flex');
+        btnWa.onclick = () => window.sendDirectWhatsApp(p.id);
+        btnPay.onclick = () => {
+            document.getElementById('modal-player-finances').classList.add('hidden');
+            window.openPaySpecific(p.id);
+        };
+    } else {
+        btnWa.classList.add('hidden'); btnWa.classList.remove('flex');
+        btnPay.classList.add('hidden'); btnPay.classList.remove('flex');
+    }
+
+    document.getElementById('modal-player-finances').classList.remove('hidden');
+};
+
+window.switchMatchesTab = function(tab) {
+    const vActive = document.getElementById('view-active-matches');
+    const vArch = document.getElementById('view-archived-matches');
+    const bActive = document.getElementById('btn-tab-active');
+    const bArch = document.getElementById('btn-tab-archived');
+    const activeCls = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm";
+    const inactiveCls = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-black transition text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
+
+    if (tab === 'archived') {
+        vActive.classList.add('hidden'); vArch.classList.remove('hidden');
+        bActive.className = inactiveCls; bArch.className = activeCls;
+        window.renderArchivedMatches();
+    } else {
+        vArch.classList.add('hidden'); vActive.classList.remove('hidden');
+        bArch.className = inactiveCls; bActive.className = activeCls;
+        window.renderMatches();
+    }
+};
+
+window.renderArchivedMatches = function() {
+    const container = document.getElementById('archived-tournaments-list');
+    if (!container) return;
+    const archived = (window.matches || []).filter(m => m && m.status === 'archived');
+    if (archived.length === 0) {
+        container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-500 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay torneos cerrados todavía</div>';
+        return;
+    }
+
+    const groups = {};
+    archived.forEach(m => {
+        const key = (m.tournament || 'Torneo Sin Nombre').trim();
+        if (!groups[key]) groups[key]. = [];
+        groups[key].push(m);
+    });
+
+    container.innerHTML = '';
+    Object.keys(groups).forEach(tName => {
+        const ms = groups[tName];
+        let w = 0, d = 0, l = 0, gf = 0, ga = 0;
+        ms.forEach(m => {
+            const us = parseInt(m.goalsUs) || 0, them = parseInt(m.goalsThem) || 0;
+            gf += us; ga += them;
+            if (us > them) w++; else if (us < them) l++; else d++;
+        });
+        container.innerHTML += `
+            <div class="bg-white dark:bg-darkcard rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-soft">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-500 px-2.5 py-1 rounded-lg"><i class="fas fa-archive mr-1"></i>Archivado</span>
+                        <h3 class="text-lg font-black text-slate-900 dark:text-white mt-2">${tName}</h3>
+                    </div>
+                    <span class="text-xs font-black text-brand-600 dark:text-brand-400">${ms.length} PJ</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2 text-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div><p class="text-[9px] font-bold text-slate-400">V</p><p class="font-black text-green-500">${w}</p></div>
+                    <div><p class="text-[9px] font-bold text-slate-400">E</p><p class="font-black text-slate-500">${d}</p></div>
+                    <div><p class="text-[9px] font-bold text-slate-400">D</p><p class="font-black text-red-500">${l}</p></div>
+                    <div><p class="text-[9px] font-bold text-slate-400">GF/GC</p><p class="font-black text-slate-700 dark:text-slate-200">${gf}:${ga}</p></div>
+                </div>
+            </div>`;
+    });
+};
+
+window.openArchiveCompetition = function() {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const activeTourneys = [...new Set((window.matches || []).filter(m => m && m.status !== 'archived' && m.tournament).map(m => m.tournament.trim()))];
+    if (activeTourneys.length === 0) return window.showToast('No hay torneos activos para cerrar', true);
+
+    const sel = document.getElementById('comp-archive-select');
+    sel.innerHTML = activeTourneys.map(t => `<option value="${t}">${t}</option>`).join('');
+    document.getElementById('modal-archive-comp').classList.remove('hidden');
+};
+
+window.confirmArchiveCompetition = async function() {
+    if (!window.isAdmin) return;
+    const tName = document.getElementById('comp-archive-select').value;
+    if (!tName) return;
+    const toArchive = (window.matches || []).filter(m => m && m.status !== 'archived' && (m.tournament || '').trim() === tName);
+    if (toArchive.length === 0) return;
+
+    const btn = document.getElementById('btn-archive-comp');
+    btn.disabled = true;
+    try {
+        const batch = db.batch();
+        toArchive.forEach(m => {
+            const goalsUs = m.status === 'forfait' ? 3 : (m.goalsUs ?? 0);
+            const goalsThem = m.status === 'forfait' ? 0 : (m.goalsThem ?? 0);
+            batch.update(db.collection(window.matchesPath).doc(m.id), { status: 'archived', goalsUs, goalsThem });
+        });
+        await batch.commit();
+        document.getElementById('modal-archive-comp').classList.add('hidden');
+        window.showToast(`Torneo "${tName}" archivado (${toArchive.length} partidos)`);
+        window.switchMatchesTab('archived');
+    } catch (e) {
+        window.showToast('Error al archivar torneo', true);
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+window.openSeasonCloseModal = function() {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const activeMatches = (window.matches || []).filter(m => m && m.status !== 'archived');
+    if (activeMatches.length === 0) return window.showToast('No hay partidos activos para archivar', true);
+
+    const finished = activeMatches.filter(m => m.status === 'finished' || m.status === 'forfait').length;
+    document.getElementById('season-close-name').value = '';
+    document.getElementById('season-close-summary').innerHTML = `
+        <p class="font-bold text-purple-800 dark:text-purple-300"><i class="fas fa-futbol mr-1"></i> Partidos a archivar: ${activeMatches.length}</p>
+        <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">Finalizados: ${finished} · Pendientes: ${activeMatches.length - finished}</p>`;
+    document.getElementById('modalSeasonClose').classList.remove('hidden');
+};
+
+window.executeSeasonClose = async function() {
+    if (!window.isAdmin) return;
+    const seasonName = document.getElementById('season-close-name').value.trim();
+    if (!seasonName) return window.showToast('Ingresa el nombre oficial de la temporada', true);
+
+    const activeMatches = (window.matches || []).filter(m => m && m.status !== 'archived');
+    const btn = document.getElementById('btn-confirm-season');
+    btn.disabled = true;
+    try {
+        const batch = db.batch();
+        activeMatches.forEach(m => {
+            batch.update(db.collection(window.matchesPath).doc(m.id), {
+                status: 'archived',
+                season: m.season || seasonName
+            });
+        });
+        await batch.commit();
+        document.getElementById('modalSeasonClose').classList.add('hidden');
+        window.showToast(`Temporada "${seasonName}" archivada con éxito`);
+    } catch (e) {
+        window.showToast('Error al cerrar temporada', true);
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+window.clearFinancialHistory = function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    if (!window.finances || window.finances.length === 0) return window.showToast('El historial ya está vacío', true);
+
+    window.showConfirm('¿Borrar TODO el historial financiero y dejar las deudas en $0.00? Esta acción no se puede deshacer.', async () => {
+        try {
+            const batch = db.batch();
+            window.finances.forEach(t => batch.delete(db.collection(window.financesPath).doc(t.id)));
+            window.players.forEach(p => batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: 0, isPaidUp: true }, { merge: true }));
+            await batch.commit();
+            window.showToast('Historial financiero reiniciado');
+        } catch (e) {
+            window.showToast('Error al limpiar historial', true);
+        }
+    });
+};
+
+window.migrarFotosAStorage = async function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    const pending = (window.players || []).filter(p => p && typeof p.image === 'string' && p.image.startsWith('data:image'));
+    if (pending.length === 0) return window.showToast('Todas las fotos ya están optimizadas en la nube');
+
+    const btn = document.getElementById('btn-migrar-fotos');
+    if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Migrando (0/${pending.length})...`; }
+
+    let migrated = 0;
+    for (const p of pending) {
+        try {
+            const res = await fetch(p.image);
+            const blob = await res.blob();
+            const ref = firebase.storage().ref(`jugadores/${p.id}.jpg`);
+            await ref.put(blob);
+            const url = await ref.getDownloadURL();
+            await db.collection(window.playersPath).doc(p.id).update({ image: url });
+            migrated++;
+            if (btn) btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Migrando (${migrated}/${pending.length})...`;
+        } catch (err) {
+            console.error('Error migrando foto de', p.name, err);
+        }
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Migrar Fotos'; }
+    window.showToast(`Se migraron ${migrated} foto(s) a Firebase Storage`);
 };
 window.initApp = async function() {
 if(window.appInitialized) return; window.appInitialized = true;
