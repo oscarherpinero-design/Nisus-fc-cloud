@@ -893,6 +893,7 @@ window.renderFinances();
 };
 window.clearRate = function() { window.currentExchangeRate = null; const input = document.getElementById('custom-rate-input'); if(input) input.value = ''; window.renderFinances(); };
 window.renderFinances = function() {
+if (typeof window.renderFinancesTicker === 'function') window.renderFinancesTicker();
 let income = 0, expense = 0;
 (window.finances || []).forEach(t => {
 if(!t) return;
@@ -1135,6 +1136,7 @@ const chartConfig = { type: 'doughnut', data: { labels: labels.length ? labels :
 ['expenses-donut-chart-dash', 'expenses-donut-chart-fin'].forEach(id => { const canvas = document.getElementById(id); if (canvas) window.donutCharts.push(new Chart(canvas, chartConfig)); });
 };
 window.renderMatches = function() {
+if (typeof window.renderMatchesTicker === 'function') window.renderMatchesTicker();
 const grid = document.getElementById('matches-grid'); if(!grid) return; grid.innerHTML = '';
 let list = (window.matches || []).filter(m => m && m.status !== 'archived'); if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
 list.sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -1176,24 +1178,28 @@ window.renderBirthdaysAvailability = function() {
 const allPlayers = (window.players || []).filter(p => p && !p.isStaff);
 const bEl = document.getElementById('birthdays-strip');
 if(bEl) {
-const today = new Date(); const ty = today.getFullYear();
-const upcoming = allPlayers.filter(p => p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')).map(p => {
-const parts = p.birthdate.split('-'); const bm = parseInt(parts[1])-1, bd = parseInt(parts[2]);
-let next = new Date(ty, bm, bd);
-const days = Math.ceil((next - today) / (1000*60*60*24));
-if (days < 0) { next = new Date(ty+1, bm, bd); }
-const dCalc = Math.ceil((next - today) / (1000*60*60*24));
-return { p, dCalc, next };
-}).sort((a,b)=>a.dCalc-b.dCalc).slice(0,6);
-bEl.innerHTML = '';
-if(upcoming.length===0) bEl.innerHTML='<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium py-2 px-1">Sin fechas de nacimiento registradas</p>';
-else upcoming.forEach(item => {
-const p = item.p; const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?'; const ini = validName.charAt(0).toUpperCase();
-const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 font-black flex items-center justify-center text-xs">${ini}</div>`;
-const dStr = item.next.toLocaleDateString('es-ES', {day:'numeric', month:'short'}); const isToday = item.dCalc === 0;
-const badge = isToday ? `<span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">¡Hoy!</span>` : `<span class="text-[10px] font-bold text-slate-400">${item.dCalc}d</span>`;
-bEl.innerHTML += `<div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 shrink-0 min-w-[180px] ${isToday?'ring-2 ring-pink-400':''}"><div class="relative">${img}${isToday?'<div class="absolute -top-1 -right-1 text-sm">🎂</div>':''}</div><div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${validName}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[10px] font-bold text-pink-500">${dStr}</span>${badge}</div></div></div>`;
-});
+    const today = new Date(); today.setHours(0,0,0,0); const ty = today.getFullYear();
+    const upcoming = allPlayers.filter(p => p.birthdate && typeof p.birthdate === 'string' && p.birthdate.includes('-')).map(p => {
+        const parts = p.birthdate.split('-'); const bm = parseInt(parts[1])-1, bd = parseInt(parts[2]);
+        let next = new Date(ty, bm, bd);
+        if (next < today) next = new Date(ty+1, bm, bd);
+        const dCalc = Math.round((next - today) / (1000*60*60*24));
+        return { p, dCalc, next };
+    }).sort((a,b) => a.dCalc - b.dCalc).slice(0, 8);
+
+    if (upcoming.length === 0) {
+        bEl.innerHTML = '<span class="px-4 text-xs text-slate-400 italic font-medium">Sin fechas de nacimiento registradas en el plantel</span>';
+    } else {
+        const items = upcoming.map(item => {
+            const validName = (typeof item.p.name === 'string' && item.p.name.trim() !== '') ? item.p.name.trim() : 'Jugador';
+            const dStr = item.next.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+            const tag = item.dCalc === 0
+                ? `<span class="bg-pink-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">🎉 ¡Hoy!</span>`
+                : `<span class="text-[10px] font-bold text-slate-400">(en ${item.dCalc}d)</span>`;
+            return `<div onclick="window.openPlayerProfile('${item.p.id}')" class="inline-flex items-center gap-2 px-5 text-xs cursor-pointer hover:opacity-75 transition"><span>🎂</span><span class="font-bold text-slate-800 dark:text-slate-200">${validName}</span><span class="font-black text-pink-500">${dStr}</span>${tag}<span class="text-slate-300 dark:text-slate-700 ml-3">•</span></div>`;
+        });
+        bEl.innerHTML = window.buildSmoothTicker(items, 4);
+    }
 }
 const aEl = document.getElementById('availability-strip');
 if(aEl) {
@@ -1787,6 +1793,59 @@ window.migrarFotosAStorage = async function() {
     }
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Migrar Fotos'; }
     window.showToast(`Se migraron ${migrated} foto(s) a Firebase Storage`);
+};
+window.buildSmoothTicker = function(itemsHtmlArray, speedPerItem = 4) {
+    if (!itemsHtmlArray || itemsHtmlArray.length === 0) return '';
+    const reps = Math.max(1, Math.ceil(6 / itemsHtmlArray.length));
+    let half = '';
+    for (let i = 0; i < reps; i++) half += itemsHtmlArray.join('');
+    const duration = Math.max(18, itemsHtmlArray.length * reps * speedPerItem);
+    return `<div class="ticker-track" style="--ticker-speed: ${duration}s;">${half}${half}</div>`;
+};
+
+window.renderFinancesTicker = function() {
+    const el = document.getElementById('finances-ticker');
+    if (!el) return;
+    const debtors = [];
+    (window.players || []).filter(p => p && !p.isStaff && (p.status === 'active' || !p.status)).forEach(p => {
+        const d = window.getPlayerDebts(p.id);
+        if (d.total > 0.01) debtors.push({ id: p.id, name: (p.name || 'Jugador').trim(), total: d.total });
+    });
+    debtors.sort((a, b) => b.total - a.total);
+
+    if (debtors.length === 0) {
+        el.innerHTML = `<span class="px-4 text-xs font-bold text-green-600 dark:text-green-400"><i class="fas fa-check-circle mr-1"></i> Todo el plantel está solvente y al día</span>`;
+        return;
+    }
+
+    const items = debtors.map(d => {
+        const bsTxt = window.currentExchangeRate ? ` <span class="text-[10px] text-slate-400 font-medium">(≈ ${(d.total * window.currentExchangeRate).toFixed(2)} Bs)</span>` : '';
+        const clickAttr = window.isAdmin ? `onclick="window.openPaySpecific('${d.id}')" class="inline-flex items-center gap-2 px-5 text-xs cursor-pointer hover:opacity-75 transition"` : `class="inline-flex items-center gap-2 px-5 text-xs"`;
+        return `<div ${clickAttr}><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="font-bold text-slate-700 dark:text-slate-200">${d.name}:</span><span class="font-black text-red-600 dark:text-red-400">$${d.total.toFixed(2)}</span>${bsTxt}<span class="text-slate-300 dark:text-slate-700 ml-3">•</span></div>`;
+    });
+    el.innerHTML = window.buildSmoothTicker(items, 4);
+};
+
+window.renderMatchesTicker = function() {
+    const el = document.getElementById('matches-ticker');
+    if (!el) return;
+    let pending = (window.matches || []).filter(m => m && m.status === 'pending');
+    if (window.currentFilter !== 'all') pending = pending.filter(m => m.modality === window.currentFilter);
+    pending.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const nx = pending[0];
+    if (!nx) {
+        el.innerHTML = `<span class="px-4 text-xs font-bold text-brand-100 dark:text-slate-400 italic">No hay próximos partidos agendados en esta modalidad</span>`;
+        return;
+    }
+
+    const dStr = nx.date ? new Date(nx.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase() : 'FECHA POR DEFINIR';
+    const mod = nx.modality === 'f7' ? 'Fútbol 7' : 'Fútbol 11';
+    const kit = nx.kit === 'black' ? 'Uniforme Negro' : 'Uniforme Blanco/Azul';
+    const loc = nx.location ? (nx.location.startsWith('http') ? 'Ubicación con Mapa' : nx.location) : 'Cancha por confirmar';
+
+    const segment = `<div onclick="window.editMatch('${nx.id}')" class="inline-flex items-center gap-3 px-6 text-xs cursor-pointer hover:opacity-85 transition"><span class="font-black text-amber-300 uppercase tracking-wide">VS ${nx.opponent}</span><span class="text-white/40">|</span><span class="font-bold"><i class="far fa-calendar-alt mr-1 text-brand-300"></i>${dStr}</span><span class="text-white/40">|</span><span class="font-bold"><i class="fas fa-trophy mr-1 text-amber-300"></i>${nx.tournament || 'Amistoso'} (${mod})</span><span class="text-white/40">|</span><span class="font-medium text-brand-100"><i class="fas fa-tshirt mr-1"></i>${kit}</span><span class="text-white/40">|</span><span class="font-medium text-brand-100"><i class="fas fa-map-marker-alt mr-1"></i>${loc}</span><span class="text-amber-400 ml-4">⚡</span></div>`;
+    el.innerHTML = window.buildSmoothTicker([segment], 7);
 };
 window.initApp = async function() {
 if(window.appInitialized) return; window.appInitialized = true;
