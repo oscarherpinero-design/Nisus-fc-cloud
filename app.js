@@ -66,7 +66,7 @@ document.querySelectorAll('.admin-only').forEach(el => el.classList.add('force-h
 }
 };
 window.toggleAdmin = function() {
-if(window.isAdmin) { window.isAdmin=false; localStorage.removeItem('nisus_admin'); window.updateAdminUI(); window.showToast("Modo lectura activado"); }
+if(window.isAdmin) { window.isAdmin=false; localStorage.removeItem('nisus_admin'); if(typeof window.clearRate === 'function') window.clearRate(); window.updateAdminUI(); window.showToast("Modo lectura activado"); }
 else { document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('admin-pin').value=''; document.getElementById('admin-pin').focus(); }
 };
 window.closePinModal = function() { document.getElementById('pinModal').classList.add('hidden'); };
@@ -868,22 +868,25 @@ document.body.appendChild(link); link.click(); document.body.removeChild(link);
 window.showToast("Excel descargado correctamente");
 };
 window.exchangeRateBCV = null;
-window.updateRateBadge = function(mode, rate, dateStr) {
+window.currentExchangeRate = null;
+
+window.updateRateBadge = function(mode, rate) {
     const badge = document.getElementById('rate-status-badge');
     if (!badge) return;
     if (!rate || mode === 'off') {
         badge.textContent = 'Conversión desactivada (Solo USD)';
         badge.className = 'text-[10px] font-bold text-slate-400';
     } else if (mode === 'bcv') {
-        badge.textContent = `BCV Oficial: ${rate.toFixed(2)} Bs/$${dateStr ? ` (${dateStr})` : ''}`;
+        badge.textContent = `BCV Oficial activa: ${rate.toFixed(2)} Bs/$`;
         badge.className = 'text-[10px] font-bold text-green-600 dark:text-green-400';
     } else {
-        badge.textContent = `Tasa Manual: ${rate.toFixed(2)} Bs/$`;
+        badge.textContent = `Tasa Manual activa: ${rate.toFixed(2)} Bs/$`;
         badge.className = 'text-[10px] font-bold text-amber-600 dark:text-amber-400';
     }
 };
 
-window.fetchVenezuelaRates = async function(silent = false) {
+window.fetchVenezuelaRates = async function() {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
     const btnIcon = document.getElementById('bcv-spinner');
     if (btnIcon) btnIcon.classList.add('fa-spin');
     try {
@@ -891,29 +894,27 @@ window.fetchVenezuelaRates = async function(silent = false) {
         const data = await response.json();
         const rate = data && parseFloat(data.promedio);
         if (rate && rate > 0) {
-            const today = new Date().toISOString().split('T')[0];
             window.currentExchangeRate = rate;
-            localStorage.setItem('nisus_rate_prefs', JSON.stringify({ mode: 'bcv', rate: rate, date: today }));
             const inputEl = document.getElementById('custom-rate-input');
             if (inputEl) inputEl.value = rate.toFixed(2);
-            window.updateRateBadge('bcv', rate, 'Hoy');
-            if (!silent) window.showToast(`Tasa BCV actualizada: ${rate.toFixed(2)} Bs`);
-            if (!document.getElementById('finances').classList.contains('hidden')) window.renderFinances();
+            window.updateRateBadge('bcv', rate);
+            window.showToast(`Tasa BCV aplicada: ${rate.toFixed(2)} Bs`);
+            window.renderFinances();
         } else throw new Error("Sin datos de la API");
     } catch (error) {
-        if (!silent) window.showToast("Fallo al conectar con BCV. Ingresa la tasa manual.", true);
+        window.showToast("Fallo al conectar con BCV. Ingresa la tasa manual.", true);
     } finally {
         if (btnIcon) btnIcon.classList.remove('fa-spin');
     }
 };
 
 window.applyCustomRate = function() {
+    if (!window.isAdmin) return;
     const inputEl = document.getElementById('custom-rate-input');
     if (!inputEl) return;
     const val = parseFloat(inputEl.value.replace(/[^0-9,.]/g, '').replace(',', '.'));
     if (!isNaN(val) && val > 0) {
         window.currentExchangeRate = val;
-        localStorage.setItem('nisus_rate_prefs', JSON.stringify({ mode: 'manual', rate: val, date: new Date().toISOString().split('T')[0] }));
         window.updateRateBadge('manual', val);
     } else {
         window.currentExchangeRate = null;
@@ -924,7 +925,6 @@ window.applyCustomRate = function() {
 
 window.clearRate = function() {
     window.currentExchangeRate = null;
-    localStorage.setItem('nisus_rate_prefs', JSON.stringify({ mode: 'off', rate: null, date: '' }));
     const input = document.getElementById('custom-rate-input');
     if (input) input.value = '';
     window.updateRateBadge('off', null);
@@ -1930,7 +1930,6 @@ if (typeof loadInitialData === 'function') await loadInitialData();
 if (typeof setupRealtimeListeners === 'function') setupRealtimeListeners();
 if (typeof window.setupPWA === 'function') window.setupPWA();
 if (typeof window.updateAdminUI === 'function') window.updateAdminUI();
-if (typeof window.initExchangeRate === 'function') window.initExchangeRate();
 document.addEventListener('mousemove', window.dragMove);
 document.addEventListener('mouseup', window.dragEnd);
 const p = document.getElementById('tactical-pitch');
