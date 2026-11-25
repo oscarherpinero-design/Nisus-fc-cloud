@@ -54,7 +54,7 @@ if (typeof window.renderCashflowChart === 'function') { window.renderCashflowCha
 };
 window.updateAdminUI = function() {
 const btn = document.getElementById('btn-admin');
-const inputs = document.querySelectorAll('input:not(#admin-pin):not(#player-search), select:not(#player-position-filter):not(#season-filter):not(#season-filter-side), textarea');
+const inputs = document.querySelectorAll('input:not(#admin-pin):not(#player-search):not(.public-filter), select:not(#player-position-filter):not(#season-filter):not(#season-filter-side):not(#debt-filter):not(.public-filter), textarea');
 if (window.isAdmin) {
 document.body.classList.remove('read-only'); if(btn) btn.innerHTML = '<i class="fas fa-unlock text-green-400"></i>';
 inputs.forEach(el => { el.disabled = false; el.classList.remove('opacity-60', 'cursor-not-allowed'); });
@@ -1009,31 +1009,92 @@ debtorsList.innerHTML += `<li ${rowAction}><div class="flex items-center gap-3 w
 });
 if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">No hay deudas en esta categoría</li>';
 }
-const transList = document.getElementById('transactions-list');
-if (transList) {
-transList.innerHTML = '';
-const sorted = [...(window.finances || [])].filter(Boolean).sort((a,b) => new Date(b?.date || 0) - new Date(a?.date || 0));
-if (sorted.length === 0) { transList.innerHTML = '<tr><td colspan="3" class="px-6 py-5 text-center text-sm text-slate-500 font-medium">Sin movimientos registrados</td></tr>'; }
-else sorted.forEach(t => {
-const dateVal = t?.date && typeof t.date === 'string' && t.date.includes('-') ? t.date + 'T12:00:00' : new Date().toISOString();
-const dStr = new Date(dateVal).toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
-let extra = '';
-if (t?.matchId) { const m = (window.matches || []).find(x => x?.id === t.matchId); if (m) extra = ` vs ${m?.opponent || 'Rival desconocido'}`; }
-if (t?.playerId) { const p = (window.players || []).find(x => x?.id === t.playerId); if (p) extra += ` · ${p?.name || 'Jugador desconocido'}`; }
-const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
-let displayAmt = '', iconBadge = '';
-if (t?.type === 'expense') { displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`; }
-else if (t?.isPaid === false) { displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`; }
-else if (validAmt === 0) { displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`; }
-else { displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t?.amount||0).toFixed(2)}</p>`; iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`; }
-let receiptBtn = '';
-if (t?.type === 'income' && t?.playerId && validAmt > 0) { receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`; }
-transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t?.category || 'Sin categoría'}</p><p class="text-[10px] text-slate-400">${t?.description || ''}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right flex items-center justify-end">${receiptBtn}<button onclick="window.deleteTransaction('${t?.id}')" class="admin-only text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Anular"><i class="fas fa-trash"></i></button></td></tr>`;
-});
-}
+if (typeof window.renderTransactionsHistory === 'function') window.renderTransactionsHistory();
 if (window.currentFinTab === 'resumen' || !window.currentFinTab) {
 setTimeout(() => { if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart(); if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart(); }, 150);
 }
+};
+window.renderTransactionsHistory = function() {
+    const transList = document.getElementById('transactions-list');
+    if (!transList) return;
+
+    const allTx = [...(window.finances || [])].filter(Boolean).sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0));
+
+    const monthSel = document.getElementById('tx-month-filter');
+    if (monthSel) {
+        const curMonth = monthSel.value || 'all';
+        const months = [...new Set(allTx.map(t => (t.date || '').slice(0, 7)).filter(m => /^\d{4}-\d{2}$/.test(m)))].sort((a, b) => b.localeCompare(a));
+        monthSel.innerHTML = '<option value="all">Todos los meses</option>' + months.map(ym => {
+            const lbl = new Date(ym + '-15T12:00:00').toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+            return `<option value="${ym}">${lbl.charAt(0).toUpperCase() + lbl.slice(1)}</option>`;
+        }).join('');
+        monthSel.value = months.includes(curMonth) ? curMonth : 'all';
+    }
+
+    const q = (document.getElementById('tx-search')?.value || '').trim().toLowerCase();
+    const typeF = document.getElementById('tx-type-filter')?.value || 'all';
+    const monthF = document.getElementById('tx-month-filter')?.value || 'all';
+
+    const filtered = allTx.filter(t => {
+        if (monthF !== 'all' && (t.date || '').slice(0, 7) !== monthF) return false;
+        const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
+        if (typeF === 'income' && !(t.type === 'income' && validAmt > 0)) return false;
+        if (typeF === 'expense' && t.type !== 'expense') return false;
+        if (typeF === 'pending' && t.isPaid !== false) return false;
+        if (q) {
+            const p = t.playerId ? (window.players || []).find(x => x?.id === t.playerId) : null;
+            const m = t.matchId ? (window.matches || []).find(x => x?.id === t.matchId) : null;
+            const haystack = `${t.category || ''} ${t.description || ''} ${p?.name || ''} ${p?.alias || ''} ${m?.opponent || ''}`.toLowerCase();
+            if (!haystack.includes(q)) return false;
+        }
+        return true;
+    });
+
+    transList.innerHTML = '';
+    let fInc = 0, fExp = 0;
+
+    if (filtered.length === 0) {
+        transList.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-sm text-slate-500 font-medium">No se encontraron movimientos con estos filtros</td></tr>';
+    } else {
+        filtered.forEach(t => {
+            const dateVal = t?.date && typeof t.date === 'string' && t.date.includes('-') ? t.date + 'T12:00:00' : new Date().toISOString();
+            const dStr = new Date(dateVal).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+            let extra = '';
+            if (t?.matchId) { const m = (window.matches || []).find(x => x?.id === t.matchId); if (m) extra = ` vs ${m?.opponent || 'Rival desconocido'}`; }
+            if (t?.playerId) { const p = (window.players || []).find(x => x?.id === t.playerId); if (p) extra += ` · ${p?.name || 'Jugador desconocido'}`; }
+            const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
+
+            if (t.type === 'income') fInc += validAmt;
+            else if (t.type === 'expense') fExp += validAmt;
+
+            let displayAmt = '', iconBadge = '';
+            if (t?.type === 'expense') {
+                displayAmt = `<p class="font-black text-red-600 dark:text-red-400">-$${(t?.amount || 0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"><i class="fas fa-arrow-up"></i></span>`;
+            } else if (t?.isPaid === false) {
+                displayAmt = `<p class="font-black text-amber-500" title="Pendiente de Cobro">⏳ $${(t?.amount || 0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i class="fas fa-clock"></i></span>`;
+            } else if (validAmt === 0) {
+                displayAmt = `<p class="font-black text-slate-400 line-through" title="Saldada (Ver Abono)">$${(t?.amount || 0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-slate-100 dark:bg-slate-800 text-slate-400"><i class="fas fa-check"></i></span>`;
+            } else {
+                displayAmt = `<p class="font-black text-green-600 dark:text-green-400">+$${(t?.amount || 0).toFixed(2)}</p>`;
+                iconBadge = `<span class="w-9 h-9 rounded-lg flex items-center justify-center text-sm bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><i class="fas fa-arrow-down"></i></span>`;
+            }
+
+            let receiptBtn = '';
+            if (t?.type === 'income' && t?.playerId && validAmt > 0) {
+                receiptBtn = `<button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition mr-1" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar"></i></button>`;
+            }
+            const delCls = window.isAdmin ? '' : 'force-hidden';
+            transList.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4"><div class="flex items-center gap-3">${iconBadge}<div><p class="font-bold text-sm text-slate-800 dark:text-slate-200">${t?.category || 'Sin categoría'}</p><p class="text-[10px] text-slate-400">${t?.description || ''}${extra}</p></div></div></td><td class="px-6 py-4 text-right whitespace-nowrap">${displayAmt}<p class="text-[10px] text-slate-400">${dStr}</p></td><td class="px-6 py-4 text-right flex items-center justify-end">${receiptBtn}<button onclick="window.deleteTransaction('${t?.id}')" class="admin-only ${delCls} text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Anular"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+    }
+
+    const sumEl = document.getElementById('tx-filter-summary');
+    if (sumEl) {
+        sumEl.innerHTML = `<span>Mostrando ${filtered.length} de ${allTx.length} mov.</span><div class="flex items-center gap-3"><span class="text-green-600 dark:text-green-400">+$${fInc.toFixed(2)}</span><span class="text-red-500">-$${fExp.toFixed(2)}</span><span class="text-slate-800 dark:text-white">Neto: $${(fInc - fExp).toFixed(2)}</span></div>`;
+    }
 };
 window.openPaySpecific = function(playerId) {
 if (!window.isAdmin) return window.showToast('Solo los administradores pueden registrar cobros', true);
