@@ -1203,20 +1203,31 @@ if(bEl) {
 }
 const aEl = document.getElementById('availability-strip');
 if(aEl) {
-const statusMap = { injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' }, suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' }, absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' }, inactive: { lbl:'Inactivo', icon:'fa-pause-circle', col:'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700' } };
-const unavailable = allPlayers.filter(p => p.status && p.status !== 'active');
-const activeCount = allPlayers.length - unavailable.length;
-aEl.innerHTML = '';
-aEl.innerHTML += `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
-if(unavailable.length === 0) { aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`; }
-else {
-unavailable.sort((a,b)=>((a.name||'').localeCompare(b.name||''))).forEach(p => {
-const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
-const s = statusMap[p.status] || statusMap.absent;
-const ret = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : '';
-aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${validName} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`;
-});
-}
+    const statusMap = {
+        injured: { lbl:'Lesión', icon:'fa-briefcase-medical', col:'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' },
+        suspended: { lbl:'Sanción', icon:'fa-gavel', col:'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' },
+        absent: { lbl:'Ausente', icon:'fa-plane', col:'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600' }
+    };
+    const inactiveCount = allPlayers.filter(p => p.status === 'inactive').length;
+    const otherUnavailable = allPlayers.filter(p => p.status && p.status !== 'active' && p.status !== 'inactive');
+    const activeCount = allPlayers.length - inactiveCount - otherUnavailable.length;
+
+    aEl.innerHTML = `<div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-2 rounded-xl border border-green-200 dark:border-green-800/50 font-bold text-xs"><i class="fas fa-check-circle"></i> ${activeCount} disponibles</div>`;
+
+    if (inactiveCount > 0) {
+        aEl.innerHTML += `<div onclick="document.getElementById('player-position-filter').value='inactive'; window.renderPlayers();" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs cursor-pointer hover:opacity-80 transition" title="Ver jugadores inactivos"><i class="fas fa-pause-circle"></i> ${inactiveCount} ${inactiveCount === 1 ? 'inactivo' : 'inactivos'}</div>`;
+    }
+
+    if (otherUnavailable.length === 0 && inactiveCount === 0) {
+        aEl.innerHTML += `<p class="text-sm text-slate-500 dark:text-slate-400 italic font-medium self-center">Plantel completo</p>`;
+    } else {
+        otherUnavailable.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => {
+            const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+            const s = statusMap[p.status] || statusMap.absent;
+            const ret = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? ` <span class="opacity-70">· hasta ${p.returnDate.split('-').reverse().join('/')}</span>` : '';
+            aEl.innerHTML += `<div class="flex items-center gap-1.5 ${s.col} px-3 py-2 rounded-xl border font-bold text-xs"><i class="fas ${s.icon}"></i> ${validName} <span class="opacity-70 font-medium">${s.lbl}</span>${ret}</div>`;
+        });
+    }
 }
 };
 window.updateDashboard = function() {
