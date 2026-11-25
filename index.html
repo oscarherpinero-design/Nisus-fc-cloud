@@ -268,7 +268,10 @@
                 <div class="admin-only bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center"><i class="fas fa-exchange-alt"></i></div>
-                        <span class="font-bold text-sm text-slate-700 dark:text-slate-300">Convertir a Bolívares</span>
+                        <div>
+                            <span class="font-bold text-sm text-slate-700 dark:text-slate-300 block leading-tight">Convertir a Bolívares</span>
+                            <span id="rate-status-badge" class="text-[10px] font-bold text-slate-400">Cargando tasa...</span>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto">
                         <input type="text" inputmode="decimal" id="custom-rate-input" placeholder="Tasa manual..." class="input-premium py-2 px-3 text-sm w-32" oninput="window.applyCustomRate()">
