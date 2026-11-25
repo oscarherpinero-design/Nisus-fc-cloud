@@ -1648,8 +1648,9 @@ return `<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dar
 }
 }
 setTimeout(() => {
-if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
-if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
+    if (typeof window.renderCashflowChart === 'function') window.renderCashflowChart();
+    if (typeof window.renderExpensesDonutChart === 'function') window.renderExpensesDonutChart();
+    if (typeof window.initComparatorSelects === 'function') window.initComparatorSelects();
 }, 400);
 };
 window.checkAutoActivations = async function() {
@@ -2541,6 +2542,142 @@ window.rejectPaymentReport = function(reportId) {
             window.showToast('Error al rechazar', true);
         }
     });
+};
+window.cmpRadarChart = null;
+
+window.initComparatorSelects = function() {
+    const selA = document.getElementById('cmp-player-a');
+    const selB = document.getElementById('cmp-player-b');
+    if (!selA || !selB) return;
+
+    let list = (window.players || []).filter(p => p && !p.isStaff && (p.status === 'active' || !p.status));
+    if (window.currentFilter === 'f11') list = list.filter(p => p.availableF11);
+    if (window.currentFilter === 'f7') list = list.filter(p => p.availableF7);
+    list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    if (list.length < 2) {
+        selA.innerHTML = '<option value="">Faltan jugadores</option>';
+        selB.innerHTML = '<option value="">Faltan jugadores</option>';
+        const bars = document.getElementById('cmp-stats-bars');
+        if (bars) bars.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-6">Se necesitan al menos 2 jugadores activos para comparar</p>';
+        return;
+    }
+
+    const prevA = selA.value;
+    const prevB = selB.value;
+    const opts = list.map(p => `<option value="${p.id}">${p.number ? '#' + p.number + ' ' : ''}${p.name}</option>`).join('');
+    selA.innerHTML = opts;
+    selB.innerHTML = opts;
+
+    selA.value = list.some(p => p.id === prevA) ? prevA : list[0].id;
+    selB.value = (list.some(p => p.id === prevB) && prevB !== selA.value) ? prevB : list[1].id;
+    window.renderPlayerComparator();
+};
+
+window.renderPlayerComparator = function() {
+    const idA = document.getElementById('cmp-player-a')?.value;
+    const idB = document.getElementById('cmp-player-b')?.value;
+    const barsEl = document.getElementById('cmp-stats-bars');
+    if (!idA || !idB || !barsEl) return;
+
+    const pA = (window.players || []).find(p => p && p.id === idA);
+    const pB = (window.players || []).find(p => p && p.id === idB);
+    if (!pA || !pB) return;
+
+    const totalTr = (window.trainings || []).length;
+    const getMetrics = (p) => {
+        const games = window.getPlayerStat(p, 'games');
+        const goals = window.getPlayerStat(p, 'goals');
+        const assists = window.getPlayerStat(p, 'assists');
+        const mvps = window.getPlayerStat(p, 'mvps');
+        const yellows = window.getPlayerStat(p, 'yellows');
+        const reds = window.getPlayerStat(p, 'reds');
+        const att = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
+        const attPct = totalTr > 0 ? Math.round((att / totalTr) * 100) : 0;
+        return { games, goals, assists, mvps, yellows, reds, attPct };
+    };
+
+    const mA = getMetrics(pA);
+    const mB = getMetrics(pB);
+    const nameA = (pA.showAlias && pA.alias) ? pA.alias : (pA.name || 'A').split(' ')[0];
+    const nameB = (pB.showAlias && pB.alias) ? pB.alias : (pB.name || 'B').split(' ')[0];
+
+    const rows = [
+        { label: 'Partidos Jugados', a: mA.games, b: mB.games, suffix: '' },
+        { label: 'Goles', a: mA.goals, b: mB.goals, suffix: '' },
+        { label: 'Asistencias', a: mA.assists, b: mB.assists, suffix: '' },
+        { label: 'Premios MVP', a: mA.mvps, b: mB.mvps, suffix: '' },
+        { label: 'Asistencia Entrenos', a: mA.attPct, b: mB.attPct, suffix: '%' },
+        { label: 'Tarjetas (🟨/🟥)', a: mA.yellows + mA.reds, b: mB.yellows + mB.reds, suffix: '', lowerBetter: true }
+    ];
+
+    barsEl.innerHTML = `
+        <div class="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-black uppercase tracking-wider">
+            <span class="text-sky-600 dark:text-sky-400 truncate max-w-[45%]"><i class="fas fa-circle text-[8px] mr-1.5"></i>${nameA}</span>
+            <span class="text-amber-600 dark:text-amber-400 truncate max-w-[45%] text-right">${nameB}<i class="fas fa-circle text-[8px] ml-1.5"></i></span>
+        </div>` + rows.map(r => {
+            const max = Math.max(r.a, r.b, 1);
+            const pctA = Math.round((r.a / max) * 100);
+            const pctB = Math.round((r.b / max) * 100);
+            const winA = r.lowerBetter ? (r.a < r.b) : (r.a > r.b);
+            const winB = r.lowerBetter ? (r.b < r.a) : (r.b > r.a);
+            return `
+                <div>
+                    <div class="flex justify-between items-center text-xs mb-1">
+                        <span class="font-black ${winA ? 'text-sky-600 dark:text-sky-400' : 'text-slate-500'}">${r.a}${r.suffix}</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">${r.label}</span>
+                        <span class="font-black ${winB ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'}">${r.b}${r.suffix}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 h-2">
+                        <div class="bg-slate-100 dark:bg-slate-800 rounded-l-full overflow-hidden flex justify-end">
+                            <div class="bg-sky-500 h-full rounded-l-full transition-all duration-300" style="width:${pctA}%"></div>
+                        </div>
+                        <div class="bg-slate-100 dark:bg-slate-800 rounded-r-full overflow-hidden">
+                            <div class="bg-amber-500 h-full rounded-r-full transition-all duration-300" style="width:${pctB}%"></div>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+
+    if (window.cmpRadarChart) { window.cmpRadarChart.destroy(); window.cmpRadarChart = null; }
+    const canvas = document.getElementById('cmp-radar-chart');
+    if (typeof Chart !== 'undefined' && canvas) {
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#cbd5e1' : '#64748b';
+        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+        const toRadar = (m) => [
+            Math.min(100, (m.goals / (m.games || 1)) * 120),
+            Math.min(100, (m.assists / (m.games || 1)) * 150),
+            Math.min(100, m.attPct),
+            Math.min(100, (m.mvps / (m.games || 1)) * 400),
+            Math.max(0, 100 - (m.yellows * 15) - (m.reds * 30))
+        ];
+        window.cmpRadarChart = new Chart(canvas, {
+            type: 'radar',
+            data: {
+                labels: ['Goleo', 'Creación', 'Compromiso', 'MVP', 'Disciplina'],
+                datasets: [
+                    { label: nameA, data: toRadar(mA), backgroundColor: 'rgba(14, 165, 233, 0.22)', borderColor: '#0ea5e9', pointBackgroundColor: '#0ea5e9', borderWidth: 2 },
+                    { label: nameB, data: toRadar(mB), backgroundColor: 'rgba(245, 158, 11, 0.22)', borderColor: '#f59e0b', pointBackgroundColor: '#f59e0b', borderWidth: 2 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: gridColor },
+                        grid: { color: gridColor },
+                        pointLabels: { color: textColor, font: { size: 10, weight: 'bold' } },
+                        ticks: { display: false, max: 100, min: 0, stepSize: 20 }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: textColor, font: { size: 11, weight: 'bold' }, boxWidth: 12 } }
+                }
+            }
+        });
+    }
 };
 {    
 window.initApp();
