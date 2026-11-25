@@ -2279,7 +2279,7 @@ window.openReportPaymentModal = function() {
 
     document.getElementById('rp-debt').innerHTML = '<option value="">Selecciona primero tu nombre</option>';
     document.getElementById('rp-amount').value = '';
-    document.getElementById('rp-method').value = 'Efectivo ($)';
+    document.getElementById('rp-method').value = 'Pago Móvil';
     window.togglePaymentMethodFields();
     document.getElementById('modal-report-payment').classList.remove('hidden');
 };
