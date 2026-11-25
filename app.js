@@ -2179,9 +2179,94 @@ document.addEventListener('DOMContentLoaded', window.initApp);
 } else 
 window.paymentReports = window.paymentReports || [];
 
+window.paymentReports = window.paymentReports || [];
+window.PAGO_MOVIL_INFO = {
+    banco: 'Banesco (0134)',
+    telefono: '0414-0000000',
+    titularId: 'V-00.000.000'
+};
+window._pendingProofBlob = null;
+
+window.togglePaymentMethodFields = function() {
+    const method = document.getElementById('rp-method')?.value || 'Efectivo ($)';
+    const pmInfo = document.getElementById('rp-pm-info');
+    const refWrap = document.getElementById('rp-ref-container');
+    const refInput = document.getElementById('rp-ref');
+
+    if (method === 'Pago Móvil') {
+        if (pmInfo) pmInfo.classList.remove('hidden');
+        if (refWrap) refWrap.classList.remove('hidden');
+        if (refInput) refInput.required = true;
+    } else {
+        if (pmInfo) pmInfo.classList.add('hidden');
+        if (refWrap) refWrap.classList.add('hidden');
+        if (refInput) { refInput.required = false; refInput.value = ''; }
+    }
+};
+
+window.copyPagoMovilData = function() {
+    const info = window.PAGO_MOVIL_INFO;
+    const txt = `Pago Móvil NISUS FC\nBanco: ${info.banco}\nTeléfono: ${info.telefono}\nCI/RIF: ${info.titularId}`;
+    navigator.clipboard.writeText(txt)
+        .then(() => window.showToast('Datos de Pago Móvil copiados'))
+        .catch(() => window.showToast('No se pudo copiar', true));
+};
+
+window.handleProofImageChange = function(e) {
+    const file = e.target.files?.[0];
+    const wrap = document.getElementById('rp-proof-preview-wrap');
+    const img = document.getElementById('rp-proof-preview');
+    window._pendingProofBlob = null;
+    if (!file) {
+        if (wrap) wrap.classList.add('hidden');
+        return;
+    }
+    if (!file.type.startsWith('image/')) {
+        e.target.value = '';
+        if (wrap) wrap.classList.add('hidden');
+        return window.showToast('Solo se permiten imágenes', true);
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const im = new Image();
+        im.onload = function() {
+            const maxDim = 900;
+            let w = im.width, h = im.height;
+            if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            const ct = cv.getContext('2d');
+            ct.imageSmoothingQuality = 'high';
+            ct.drawImage(im, 0, 0, w, h);
+            cv.toBlob(function(blob) {
+                if (!blob) return window.showToast('Error al procesar comprobante', true);
+                window._pendingProofBlob = blob;
+                if (img) img.src = URL.createObjectURL(blob);
+                if (wrap) wrap.classList.remove('hidden');
+            }, 'image/jpeg', 0.8);
+        };
+        im.onerror = () => window.showToast('Imagen no válida', true);
+        im.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
 window.openReportPaymentModal = function() {
     const form = document.getElementById('report-payment-form');
     if (form) form.reset();
+    window._pendingProofBlob = null;
+    const wrap = document.getElementById('rp-proof-preview-wrap');
+    if (wrap) wrap.classList.add('hidden');
+
+    const bEl = document.getElementById('pm-bank');
+    const phEl = document.getElementById('pm-phone');
+    const idEl = document.getElementById('pm-id');
+    if (bEl) bEl.textContent = window.PAGO_MOVIL_INFO.banco;
+    if (phEl) phEl.textContent = window.PAGO_MOVIL_INFO.telefono;
+    if (idEl) idEl.textContent = window.PAGO_MOVIL_INFO.titularId;
+
     const sel = document.getElementById('rp-player');
     if (!sel) return;
 
@@ -2194,6 +2279,8 @@ window.openReportPaymentModal = function() {
 
     document.getElementById('rp-debt').innerHTML = '<option value="">Selecciona primero tu nombre</option>';
     document.getElementById('rp-amount').value = '';
+    document.getElementById('rp-method').value = 'Efectivo ($)';
+    window.togglePaymentMethodFields();
     document.getElementById('modal-report-payment').classList.remove('hidden');
 };
 
@@ -2240,16 +2327,45 @@ window.submitPaymentReport = async function(e) {
     const amount = parseFloat(document.getElementById('rp-amount').value);
     if (isNaN(amount) || amount <= 0) return window.showToast('Ingresa un monto válido en USD', true);
 
+    const method = document.getElementById('rp-method').value;
+    const reference = (document.getElementById('rp-ref')?.value || '').trim();
+    if (method === 'Pago Móvil' && !reference) {
+        return window.showToast('Ingresa el número de referencia del Pago Móvil', true);
+    }
+
+    if (!window._pendingProofBlob) {
+        return window.showToast('Adjunta la imagen del comprobante', true);
+    }
+
     const debtSel = document.getElementById('rp-debt');
     const specificDebtId = debtSel.value || '';
     const debtLabel = specificDebtId ? debtSel.options[debtSel.selectedIndex].text.split(' - $')[0] : 'Abono general a cuenta';
-    const method = document.getElementById('rp-method').value;
-    const reference = document.getElementById('rp-ref').value.trim();
 
     const btn = document.getElementById('btn-submit-report');
     btn.disabled = true; btn.textContent = 'Enviando...';
 
     const id = window.generateId();
+    let proofUrl = '';
+    try {
+        if (typeof firebase !== 'undefined' && typeof firebase.storage === 'function') {
+            const ref = firebase.storage().ref(`comprobantes_pagos/${id}.jpg`);
+            await ref.put(window._pendingProofBlob);
+            proofUrl = await ref.getDownloadURL();
+        } else {
+            proofUrl = await new Promise((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(fr.result);
+                fr.onerror = reject;
+                fr.readAsDataURL(window._pendingProofBlob);
+            });
+        }
+    } catch (upErr) {
+        console.error('Error subiendo comprobante:', upErr);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Enviar Pago';
+        return window.showToast('No se pudo subir el comprobante', true);
+    }
+
     const reportData = {
         id,
         playerId: p.id,
@@ -2258,7 +2374,8 @@ window.submitPaymentReport = async function(e) {
         specificDebtId,
         debtLabel,
         method,
-        reference,
+        reference: method === 'Pago Móvil' ? reference : 'Efectivo',
+        proofUrl,
         date: new Date().toISOString().split('T')[0],
         createdAt: Date.now(),
         status: 'pending'
@@ -2266,13 +2383,14 @@ window.submitPaymentReport = async function(e) {
 
     try {
         await db.collection('pagos_reportados').doc(id).set(reportData);
+        window._pendingProofBlob = null;
         document.getElementById('modal-report-payment').classList.add('hidden');
-        window.showToast('¡Pago reportado! El administrador lo verificará pronto.');
+        window.showToast('¡Pago enviado! El administrador revisará tu comprobante.');
     } catch (err) {
-        window.showToast('Error al enviar el reporte', true);
+        window.showToast('Error al enviar el pago', true);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check"></i> Enviar Reporte';
+        btn.innerHTML = '<i class="fas fa-check"></i> Enviar Pago';
     }
 };
 
@@ -2301,13 +2419,18 @@ window.renderPendingPaymentReports = function() {
 
     listEl.innerHTML = reports.map(r => {
         const dStr = r.date && r.date.includes('-') ? new Date(r.date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Hoy';
+        const refTxt = r.method === 'Pago Móvil' ? ` · Ref: <strong>${r.reference || 'N/A'}</strong>` : '';
+        const proofHtml = r.proofUrl
+            ? `<a href="${r.proofUrl}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-brand-700 dark:text-brand-300 px-3 py-1.5 rounded-lg text-[11px] font-bold transition"><i class="fas fa-image"></i> Ver comprobante</a>`
+            : '';
         return `
             <div class="bg-white dark:bg-darkcard rounded-xl p-4 border border-amber-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
                 <div class="flex justify-between items-start gap-2">
                     <div class="min-w-0">
                         <p class="font-black text-slate-900 dark:text-white text-sm truncate">${r.playerName || 'Jugador'}</p>
                         <p class="text-[11px] font-bold text-brand-600 dark:text-brand-400 truncate">${r.debtLabel || 'Abono a cuenta'}</p>
-                        <p class="text-[11px] text-slate-500 mt-1"><span class="font-bold text-slate-700 dark:text-slate-300">${r.method}:</span> ${r.reference || 'Sin ref.'} · <span class="text-[10px] text-slate-400">${dStr}</span></p>
+                        <p class="text-[11px] text-slate-500 mt-1"><span class="font-bold text-slate-700 dark:text-slate-300">${r.method || 'Efectivo ($)'}</span>${refTxt} · <span class="text-[10px] text-slate-400">${dStr}</span></p>
+                        ${proofHtml}
                     </div>
                     <span class="font-black text-lg text-emerald-600 dark:text-emerald-400 shrink-0">$${Number(r.amount || 0).toFixed(2)}</span>
                 </div>
@@ -2326,7 +2449,7 @@ window.approvePaymentReport = async function(reportId) {
 
     const batch = db.batch();
     const txDate = r.date || new Date().toISOString().split('T')[0];
-    const refTag = `[${r.method}${r.reference ? ' · Ref: ' + r.reference : ''}]`;
+    const refTag = r.method === 'Pago Móvil' ? `[Pago Móvil · Ref: ${r.reference || 'N/A'}]` : `[Efectivo ($)]`;
     const openDebts = window.getPlayerDebts(r.playerId).debts;
     let rem = parseFloat(r.amount) || 0;
     let lastTx = null;
@@ -2399,12 +2522,16 @@ window.approvePaymentReport = async function(reportId) {
 
 window.rejectPaymentReport = function(reportId) {
     if (!window.isAdmin) return window.showToast('Solo administradores', true);
-    window.showConfirm('¿Rechazar y descartar este reporte de pago?', async () => {
+    window.showConfirm('¿Rechazar y descartar este pago?', async () => {
         try {
+            const r = (window.paymentReports || []).find(x => x && x.id === reportId);
+            if (r?.proofUrl && r.proofUrl.includes('firebasestorage') && typeof firebase !== 'undefined' && typeof firebase.storage === 'function') {
+                try { await firebase.storage().ref(`comprobantes_pagos/${reportId}.jpg`).delete(); } catch (_) {}
+            }
             await db.collection('pagos_reportados').doc(reportId).delete();
-            window.showToast('Reporte descartado');
+            window.showToast('Pago rechazado');
         } catch (err) {
-            window.showToast('Error al descartar', true);
+            window.showToast('Error al rechazar', true);
         }
     });
 };
