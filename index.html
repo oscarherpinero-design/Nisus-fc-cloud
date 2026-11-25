@@ -241,6 +241,26 @@
                     <table class="w-full text-left border-collapse"><tbody id="stats-games-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></tbody></table>
                 </div>
             </div>
+           <!-- Comparador de Jugadores (Cara a Cara) -->
+            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <h3 class="font-black text-slate-800 dark:text-white text-lg flex items-center gap-2"><i class="fas fa-people-arrows text-brand-500"></i> Comparador Cara a Cara</h3>
+                        <p class="text-xs text-slate-400 font-medium">Enfrenta las estadísticas de dos jugadores del plantel</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                        <select id="cmp-player-a" onchange="window.renderPlayerComparator()" class="public-filter input-premium py-2 px-3 text-xs font-bold w-full sm:w-44 bg-white dark:bg-slate-800 border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300 cursor-pointer"></select>
+                        <span class="text-xs font-black text-slate-400 px-1">VS</span>
+                        <select id="cmp-player-b" onchange="window.renderPlayerComparator()" class="public-filter input-premium py-2 px-3 text-xs font-bold w-full sm:w-44 bg-white dark:bg-slate-800 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 cursor-pointer"></select>
+                    </div>
+                </div>
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                    <div id="cmp-stats-bars" class="space-y-4"></div>
+                    <div class="relative w-full h-72 flex items-center justify-center">
+                        <canvas id="cmp-radar-chart"></canvas>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section id="finances" class="hidden space-y-6">
