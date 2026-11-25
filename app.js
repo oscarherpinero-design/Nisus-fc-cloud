@@ -2270,12 +2270,19 @@ window.openReportPaymentModal = function() {
     const sel = document.getElementById('rp-player');
     if (!sel) return;
 
-    const list = (window.players || []).filter(p => p && !p.isStaff && (p.status === 'active' || !p.status)).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    sel.innerHTML = '<option value="">Selecciona tu nombre...</option>' + list.map(p => {
-        const total = window.getPlayerDebts(p.id).total;
-        const tag = total > 0.01 ? ` (Debe: $${total.toFixed(2)})` : ' (Al día)';
-        return `<option value="${p.id}">${p.name}${tag}</option>`;
-    }).join('');
+   const list = (window.players || [])
+        .filter(p => p && !p.isStaff && (p.status === 'active' || !p.status))
+        .map(p => ({ p, total: window.getPlayerDebts(p.id).total }))
+        .filter(item => item.total > 0.01)
+        .sort((a, b) => (a.p.name || '').localeCompare(b.p.name || ''));
+
+    if (list.length === 0) {
+        sel.innerHTML = '<option value="">Todos los jugadores están al día</option>';
+    } else {
+        sel.innerHTML = '<option value="">Selecciona tu nombre...</option>' + list.map(({ p, total }) =>
+            `<option value="${p.id}">${p.name} (Debe: $${total.toFixed(2)})</option>`
+        ).join('');
+    }
 
     document.getElementById('rp-debt').innerHTML = '<option value="">Selecciona primero tu nombre</option>';
     document.getElementById('rp-amount').value = '';
