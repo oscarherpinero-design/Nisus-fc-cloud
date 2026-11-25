@@ -868,30 +868,96 @@ document.body.appendChild(link); link.click(); document.body.removeChild(link);
 window.showToast("Excel descargado correctamente");
 };
 window.exchangeRateBCV = null;
-window.fetchVenezuelaRates = async function() {
-const btnIcon = document.getElementById('bcv-spinner'); if (btnIcon) btnIcon.classList.add('fa-spin');
-try {
-const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-const data = await response.json();
-if (data && data.promedio) {
-window.currentExchangeRate = data.promedio;
-const inputEl = document.getElementById('custom-rate-input'); if (inputEl) inputEl.value = data.promedio.toFixed(2);
-if (btnIcon) btnIcon.classList.remove('fa-spin');
-window.showToast(`Tasa BCV actualizada: ${data.promedio.toFixed(2)} Bs`);
-window.renderFinances();
-} else throw new Error("Sin datos de la API");
-} catch (error) {
-if (btnIcon) btnIcon.classList.remove('fa-spin');
-window.showToast("Fallo al conectar con BCV. Ingresa la tasa manual.", true);
-}
+window.updateRateBadge = function(mode, rate, dateStr) {
+    const badge = document.getElementById('rate-status-badge');
+    if (!badge) return;
+    if (!rate || mode === 'off') {
+        badge.textContent = 'Conversión desactivada (Solo USD)';
+        badge.className = 'text-[10px] font-bold text-slate-400';
+    } else if (mode === 'bcv') {
+        badge.textContent = `BCV Oficial: ${rate.toFixed(2)} Bs/$${dateStr ? ` (${dateStr})` : ''}`;
+        badge.className = 'text-[10px] font-bold text-green-600 dark:text-green-400';
+    } else {
+        badge.textContent = `Tasa Manual: ${rate.toFixed(2)} Bs/$`;
+        badge.className = 'text-[10px] font-bold text-amber-600 dark:text-amber-400';
+    }
 };
+
+window.fetchVenezuelaRates = async function(silent = false) {
+    const btnIcon = document.getElementById('bcv-spinner');
+    if (btnIcon) btnIcon.classList.add('fa-spin');
+    try {
+        const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        const data = await response.json();
+        const rate = data && parseFloat(data.promedio);
+        if (rate && rate > 0) {
+            const today = new Date().toISOString().split('T')[0];
+            window.currentExchangeRate = rate;
+            localStorage.setItem('nisus_rate_prefs', JSON.stringify({ mode: 'bcv', rate: rate, date: today }));
+            const inputEl = document.getElementById('custom-rate-input');
+            if (inputEl) inputEl.value = rate.toFixed(2);
+            window.updateRateBadge('bcv', rate, 'Hoy');
+            if (!silent) window.showToast(`Tasa BCV actualizada: ${rate.toFixed(2)} Bs`);
+            if (!document.getElementById('finances').classList.contains('hidden')) window.renderFinances();
+        } else throw new Error("Sin datos de la API");
+    } catch (error) {
+        if (!silent) window.showToast("Fallo al conectar con BCV. Ingresa la tasa manual.", true);
+    } finally {
+        if (btnIcon) btnIcon.classList.remove('fa-spin');
+    }
+};
+
 window.applyCustomRate = function() {
-const inputEl = document.getElementById('custom-rate-input'); if (!inputEl) return;
-const val = parseFloat(inputEl.value.replace(/[^0-9,.]/g, '').replace(',', '.'));
-if (!isNaN(val) && val > 0) window.currentExchangeRate = val; else window.currentExchangeRate = null;
-window.renderFinances();
+    const inputEl = document.getElementById('custom-rate-input');
+    if (!inputEl) return;
+    const val = parseFloat(inputEl.value.replace(/[^0-9,.]/g, '').replace(',', '.'));
+    if (!isNaN(val) && val > 0) {
+        window.currentExchangeRate = val;
+        localStorage.setItem('nisus_rate_prefs', JSON.stringify({ mode: 'manual', rate: val, date: new Date().toISOString().split('T')[0] }));
+        window.updateRateBadge('manual', val);
+    } else {
+        window.currentExchangeRate = null;
+        window.updateRateBadge('off', null);
+    }
+    window.renderFinances();
 };
-window.clearRate = function() { window.currentExchangeRate = null; const input = document.getElementById('custom-rate-input'); if(input) input.value = ''; window.renderFinances(); };
+
+window.clearRate = function() {
+    window.currentExchangeRate = null;
+    localStorage.setItem('nisus_rate_prefs', JSON.stringify({ mode: 'off', rate: null, date: '' }));
+    const input = document.getElementById('custom-rate-input');
+    if (input) input.value = '';
+    window.updateRateBadge('off', null);
+    window.renderFinances();
+};
+
+window.initExchangeRate = function() {
+    const today = new Date().toISOString().split('T')[0];
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem('nisus_rate_prefs')); } catch (e) {}
+    const inputEl = document.getElementById('custom-rate-input');
+
+    if (!saved) {
+        window.fetchVenezuelaRates(true);
+        return;
+    }
+    if (saved.mode === 'off') {
+        window.currentExchangeRate = null;
+        if (inputEl) inputEl.value = '';
+        window.updateRateBadge('off', null);
+    } else if (saved.mode === 'manual' && saved.rate > 0) {
+        window.currentExchangeRate = saved.rate;
+        if (inputEl) inputEl.value = Number(saved.rate).toFixed(2);
+        window.updateRateBadge('manual', Number(saved.rate));
+    } else if (saved.mode === 'bcv') {
+        if (saved.rate > 0) {
+            window.currentExchangeRate = Number(saved.rate);
+            if (inputEl) inputEl.value = Number(saved.rate).toFixed(2);
+            window.updateRateBadge('bcv', Number(saved.rate), saved.date === today ? 'Hoy' : saved.date);
+        }
+        if (saved.date !== today) window.fetchVenezuelaRates(true);
+    }
+};
 window.renderFinances = function() {
 if (typeof window.renderFinancesTicker === 'function') window.renderFinancesTicker();
 let income = 0, expense = 0;
@@ -1864,6 +1930,7 @@ if (typeof loadInitialData === 'function') await loadInitialData();
 if (typeof setupRealtimeListeners === 'function') setupRealtimeListeners();
 if (typeof window.setupPWA === 'function') window.setupPWA();
 if (typeof window.updateAdminUI === 'function') window.updateAdminUI();
+if (typeof window.initExchangeRate === 'function') window.initExchangeRate();
 document.addEventListener('mousemove', window.dragMove);
 document.addEventListener('mouseup', window.dragEnd);
 const p = document.getElementById('tactical-pitch');
