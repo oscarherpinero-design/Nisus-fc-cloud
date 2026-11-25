@@ -1731,6 +1731,12 @@ function setupRealtimeListeners() {
         if (!window.isReady) { checkInitialReady(); return; }
         safeRenderInventory();
     });
+
+    db.collection('pagos_reportados').onSnapshot((s) => {
+        window.paymentReports = [];
+        s.forEach(d => window.paymentReports.push({ ...d.data(), id: d.id }));
+        if (typeof window.renderPendingPaymentReports === 'function') window.renderPendingPaymentReports();
+    });
 }
 window.newInventoryItem = function() {
 document.getElementById('inventory-form').reset();
@@ -2170,6 +2176,238 @@ if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.ad
 };
 if (document.readyState === 'loading') {
 document.addEventListener('DOMContentLoaded', window.initApp);
-} else {
+} else 
+window.paymentReports = window.paymentReports || [];
+
+window.openReportPaymentModal = function() {
+    const form = document.getElementById('report-payment-form');
+    if (form) form.reset();
+    const sel = document.getElementById('rp-player');
+    if (!sel) return;
+
+    const list = (window.players || []).filter(p => p && !p.isStaff && (p.status === 'active' || !p.status)).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    sel.innerHTML = '<option value="">Selecciona tu nombre...</option>' + list.map(p => {
+        const total = window.getPlayerDebts(p.id).total;
+        const tag = total > 0.01 ? ` (Debe: $${total.toFixed(2)})` : ' (Al día)';
+        return `<option value="${p.id}">${p.name}${tag}</option>`;
+    }).join('');
+
+    document.getElementById('rp-debt').innerHTML = '<option value="">Selecciona primero tu nombre</option>';
+    document.getElementById('rp-amount').value = '';
+    document.getElementById('modal-report-payment').classList.remove('hidden');
+};
+
+window.handleReportPlayerChange = function() {
+    const playerId = document.getElementById('rp-player').value;
+    const debtSel = document.getElementById('rp-debt');
+    const amtInput = document.getElementById('rp-amount');
+    if (!playerId) {
+        debtSel.innerHTML = '<option value="">Selecciona primero tu nombre</option>';
+        amtInput.value = '';
+        return;
+    }
+    const dData = window.getPlayerDebts(playerId);
+    if (dData.debts.length === 0) {
+        debtSel.innerHTML = '<option value="">Pago por adelantado / Colaboración</option>';
+        amtInput.value = '';
+    } else {
+        debtSel.innerHTML = `<option value="">Abono general a mi cuenta (Total: $${dData.total.toFixed(2)})</option>` +
+            dData.debts.map(d => `<option value="${d.id}">${d.desc} - $${d.amount.toFixed(2)}</option>`).join('');
+        amtInput.value = dData.total.toFixed(2);
+    }
+};
+
+window.handleReportDebtChange = function() {
+    const playerId = document.getElementById('rp-player').value;
+    const debtId = document.getElementById('rp-debt').value;
+    const amtInput = document.getElementById('rp-amount');
+    if (!playerId) return;
+    const dData = window.getPlayerDebts(playerId);
+    if (!debtId) {
+        if (dData.total > 0.01) amtInput.value = dData.total.toFixed(2);
+    } else {
+        const found = dData.debts.find(d => d.id === debtId);
+        if (found) amtInput.value = found.amount.toFixed(2);
+    }
+};
+
+window.submitPaymentReport = async function(e) {
+    e.preventDefault();
+    const playerId = document.getElementById('rp-player').value;
+    const p = (window.players || []).find(x => x && x.id === playerId);
+    if (!p) return window.showToast('Selecciona tu nombre', true);
+
+    const amount = parseFloat(document.getElementById('rp-amount').value);
+    if (isNaN(amount) || amount <= 0) return window.showToast('Ingresa un monto válido en USD', true);
+
+    const debtSel = document.getElementById('rp-debt');
+    const specificDebtId = debtSel.value || '';
+    const debtLabel = specificDebtId ? debtSel.options[debtSel.selectedIndex].text.split(' - $')[0] : 'Abono general a cuenta';
+    const method = document.getElementById('rp-method').value;
+    const reference = document.getElementById('rp-ref').value.trim();
+
+    const btn = document.getElementById('btn-submit-report');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+
+    const id = window.generateId();
+    const reportData = {
+        id,
+        playerId: p.id,
+        playerName: p.name,
+        amount: Number(amount.toFixed(2)),
+        specificDebtId,
+        debtLabel,
+        method,
+        reference,
+        date: new Date().toISOString().split('T')[0],
+        createdAt: Date.now(),
+        status: 'pending'
+    };
+
+    try {
+        await db.collection('pagos_reportados').doc(id).set(reportData);
+        document.getElementById('modal-report-payment').classList.add('hidden');
+        window.showToast('¡Pago reportado! El administrador lo verificará pronto.');
+    } catch (err) {
+        window.showToast('Error al enviar el reporte', true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Enviar Reporte';
+    }
+};
+
+window.renderPendingPaymentReports = function() {
+    const reports = (window.paymentReports || []).filter(r => r && r.status === 'pending').sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const badge = document.getElementById('nav-fin-badge');
+    const panel = document.getElementById('pending-reports-panel');
+    const countEl = document.getElementById('pending-reports-count');
+    const listEl = document.getElementById('pending-reports-list');
+
+    if (badge) {
+        badge.textContent = reports.length;
+        if (reports.length > 0) badge.classList.remove('hidden');
+        else badge.classList.add('hidden');
+    }
+    if (!panel || !listEl) return;
+
+    if (reports.length === 0) {
+        panel.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+    }
+
+    panel.classList.remove('hidden');
+    if (countEl) countEl.textContent = reports.length;
+
+    listEl.innerHTML = reports.map(r => {
+        const dStr = r.date && r.date.includes('-') ? new Date(r.date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Hoy';
+        return `
+            <div class="bg-white dark:bg-darkcard rounded-xl p-4 border border-amber-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                <div class="flex justify-between items-start gap-2">
+                    <div class="min-w-0">
+                        <p class="font-black text-slate-900 dark:text-white text-sm truncate">${r.playerName || 'Jugador'}</p>
+                        <p class="text-[11px] font-bold text-brand-600 dark:text-brand-400 truncate">${r.debtLabel || 'Abono a cuenta'}</p>
+                        <p class="text-[11px] text-slate-500 mt-1"><span class="font-bold text-slate-700 dark:text-slate-300">${r.method}:</span> ${r.reference || 'Sin ref.'} · <span class="text-[10px] text-slate-400">${dStr}</span></p>
+                    </div>
+                    <span class="font-black text-lg text-emerald-600 dark:text-emerald-400 shrink-0">$${Number(r.amount || 0).toFixed(2)}</span>
+                </div>
+                <div class="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="window.approvePaymentReport('${r.id}')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"><i class="fas fa-check"></i> Aprobar</button>
+                    <button type="button" onclick="window.rejectPaymentReport('${r.id}')" class="px-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 text-red-500 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" title="Rechazar"><i class="fas fa-times"></i> Rechazar</button>
+                </div>
+            </div>`;
+    }).join('');
+};
+
+window.approvePaymentReport = async function(reportId) {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    const r = (window.paymentReports || []).find(x => x && x.id === reportId);
+    if (!r) return;
+
+    const batch = db.batch();
+    const txDate = r.date || new Date().toISOString().split('T')[0];
+    const refTag = `[${r.method}${r.reference ? ' · Ref: ' + r.reference : ''}]`;
+    const openDebts = window.getPlayerDebts(r.playerId).debts;
+    let rem = parseFloat(r.amount) || 0;
+    let lastTx = null;
+
+    const applyToDebt = (debtObj) => {
+        if (rem <= 0.01 || !debtObj) return;
+        const payHere = Math.min(rem, debtObj.amount);
+        const isFull = Math.abs(debtObj.amount - payHere) < 0.01;
+        const finId = window.generateId();
+        const txObj = {
+            id: finId,
+            type: 'income',
+            amount: Number(payHere.toFixed(2)),
+            date: txDate,
+            category: 'Abono a Deuda (Jugador)',
+            description: `${isFull ? 'Pago' : 'Abono'}: ${debtObj.desc} ${refTag}`,
+            matchId: null,
+            playerId: r.playerId,
+            specificDebtId: debtObj.id
+        };
+        batch.set(db.collection(window.financesPath).doc(finId), txObj);
+        lastTx = txObj;
+
+        if (isFull) {
+            if (debtObj.id.startsWith('arb_')) {
+                const parentId = debtObj.id.slice(4);
+                const arbTx = (window.finances || []).find(x => x && x.id === parentId);
+                if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...new Set([...(arbTx.paidBy || []), r.playerId])] }, { merge: true });
+            } else {
+                batch.set(db.collection(window.financesPath).doc(debtObj.id), { isPaid: true }, { merge: true });
+            }
+        }
+        rem -= payHere;
+    };
+
+    if (r.specificDebtId) {
+        const target = openDebts.find(d => d.id === r.specificDebtId);
+        if (target) applyToDebt(target);
+        openDebts.filter(d => d.id !== r.specificDebtId).forEach(d => applyToDebt(d));
+    } else {
+        openDebts.forEach(d => applyToDebt(d));
+    }
+
+    if (rem > 0.01) {
+        const extraId = window.generateId();
+        const extraTx = {
+            id: extraId,
+            type: 'income',
+            amount: Number(rem.toFixed(2)),
+            date: txDate,
+            category: 'Otro Ingreso',
+            description: `Pago adelantado / Excedente ${refTag}`,
+            matchId: null,
+            playerId: r.playerId
+        };
+        batch.set(db.collection(window.financesPath).doc(extraId), extraTx);
+        lastTx = extraTx;
+    }
+
+    batch.delete(db.collection('pagos_reportados').doc(r.id));
+
+    try {
+        await batch.commit();
+        if (lastTx) window._lastPaidTx = lastTx;
+        window.showToast(`Pago de ${r.playerName} aprobado y sumado a caja`);
+    } catch (err) {
+        window.showToast('Error al aprobar el pago', true);
+    }
+};
+
+window.rejectPaymentReport = function(reportId) {
+    if (!window.isAdmin) return window.showToast('Solo administradores', true);
+    window.showConfirm('¿Rechazar y descartar este reporte de pago?', async () => {
+        try {
+            await db.collection('pagos_reportados').doc(reportId).delete();
+            window.showToast('Reporte descartado');
+        } catch (err) {
+            window.showToast('Error al descartar', true);
+        }
+    });
+};
+{    
 window.initApp();
 }
