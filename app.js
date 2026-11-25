@@ -215,8 +215,8 @@ let imageUrl = document.getElementById('p-image-base64').value;
 if (window._removePhotoFlag) { imageUrl = ''; try { await firebase.storage().ref(`jugadores/${docId}.jpg`).delete(); } catch(err) {} }
 else if (window._pendingPhotoBlob) { try { const ref = firebase.storage().ref(`jugadores/${docId}.jpg`); await ref.put(window._pendingPhotoBlob); imageUrl = await ref.getDownloadURL(); } catch (error) { window.showToast('Error subiendo imagen', true); imageUrl = oldP ? (oldP.image || '') : ''; }
 } else if (!imageUrl && oldP && oldP.image && !oldP.image.startsWith('data:image')) { imageUrl = oldP.image; }
-const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: imageUrl, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, statusNotes: statusNotes, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, isPaidUp: document.getElementById('p-is-paid-up').checked };
-if(oldP && oldP.debtAmount !== undefined) pData.debtAmount = oldP.debtAmount;
+const realDebt = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(docId).total : 0;
+const pData = { id: docId, name: document.getElementById('p-name').value, alias: document.getElementById('p-alias').value, showAlias: document.getElementById('p-show-alias').checked, number: document.getElementById('p-number').value, positions: positions, image: imageUrl, birthdate: document.getElementById('p-birthdate').value, foot: document.getElementById('p-foot').value, status: pStatus, returnDate: returnD, statusNotes: statusNotes, availableF11: document.getElementById('p-avail-f11').checked, availableF7: document.getElementById('p-avail-f7').checked, isStaff: document.getElementById('p-is-staff').checked, debtAmount: Number(realDebt.toFixed(2)), isPaidUp: realDebt <= 0.01 };
 try { await db.collection(window.playersPath).doc(docId).set(pData); window._pendingPhotoBlob = null; window._removePhotoFlag = false; window.showToast('Guardado'); window.showSection('players'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Ficha"; }
 };
 window.editPlayer = function(id) {
@@ -652,34 +652,110 @@ p.innerHTML += `<div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm b
 });
 };
 const finCategories = { income: ['Cuota Mensual', 'Inscripción', 'Cobro Manual', 'Abono a Deuda (Jugador)', 'Sponsor', 'Otro Ingreso'], expense: ['Arbitraje', 'Cancha', 'Uniformes', 'Materiales', 'Multa Tarjeta', 'Otro Egreso'] };
+window.matchesDebtFilter = function(debtItem, filterVal) {
+    if (!filterVal || filterVal === 'all') return true;
+    if (debtItem.typeKey) return debtItem.typeKey === filterVal;
+    const desc = (debtItem.desc || '').toLowerCase();
+    if (filterVal === 'mensualidad') return desc.includes('mensual');
+    if (filterVal === 'arbitraje') return desc.includes('arbitraje');
+    if (filterVal === 'multa') return desc.includes('multa');
+    return false;
+};
+
 window.getPlayerDebts = function(playerId) {
-let total = 0, debts = []; if (!playerId) return { total, debts };
-const p = (window.players || []).find(x => x?.id === playerId);
-if (p && parseFloat(p.debtAmount) > 0) total = parseFloat(p.debtAmount);
-(window.finances || []).forEach(t => {
-if (t?.playerId === playerId && t?.type === 'income' && t?.isPaid === false) {
-const abonos = (window.finances || []).filter(x => x?.category === 'Abono a Deuda (Jugador)' && x?.specificDebtId === t.id);
-const totalAbonado = abonos.reduce((sum, x) => sum + (parseFloat(x?.amount) || 0), 0);
-const amt = (parseFloat(t?.amount) || 0) - totalAbonado;
-if (amt > 0.01) { const m = t.matchId ? (window.matches || []).find(x => x.id === t.matchId) : null; const mTxt = m ? ` (vs ${m.opponent})` : ''; debts.push({ id: t.id, desc: (t.description || t.category || 'Deuda') + mTxt, amount: amt, date: t.date || '' }); }
-}
-if (t?.category === 'Arbitraje' && t?.matchId) {
-const match = (window.matches || []).find(m => m.id === t.matchId);
-if (match && Array.isArray(match.lineup)) {
-const validPlayers = match.lineup.filter(l => { const pObj = window.players.find(x => x.id === l.playerId); return pObj && !pObj.isStaff; });
-const isCalledUp = validPlayers.some(l => l.playerId === playerId);
-const hasPaid = t.paidBy && Array.isArray(t.paidBy) && t.paidBy.includes(playerId);
-if (isCalledUp && !hasPaid) {
-const cuota = (parseFloat(t.amount) || 0) / validPlayers.length;
-if (cuota > 0) debts.push({ id: 'arb_' + t.id, desc: `Cuota Arbitraje: vs ${match.opponent}`, amount: cuota, date: t.date || '' });
-}
-}
-}
-});
-const calcTotal = debts.reduce((sum, d) => sum + d.amount, 0);
-if (total > calcTotal + 0.01) debts.push({ id: 'generic_' + playerId, desc: 'Saldo pendiente anterior', amount: total - calcTotal, date: '' });
-else if (calcTotal > total) total = calcTotal;
-return { total, debts };
+    let debts = [];
+    if (!playerId) return { total: 0, debts };
+    const allFin = window.finances || [];
+
+    allFin.forEach(t => {
+        if (!t) return;
+        if (t.playerId === playerId && t.isPaid === false && (t.type === 'income' || t.category === 'Multa Tarjeta')) {
+            const abonos = allFin.filter(x => x && x.category === 'Abono a Deuda (Jugador)' && x.specificDebtId === t.id);
+            const totalAbonado = abonos.reduce((sum, x) => sum + (parseFloat(x.amount) || 0), 0);
+            const amt = (parseFloat(t.amount) || 0) - totalAbonado;
+            if (amt > 0.01) {
+                const m = t.matchId ? (window.matches || []).find(x => x && x.id === t.matchId) : null;
+                const mTxt = m ? ` (vs ${m.opponent})` : '';
+                const rawDesc = t.description || t.category || 'Deuda';
+                const lowerAll = `${t.category || ''} ${rawDesc}`.toLowerCase();
+                let typeKey = 'otro';
+                if (t.category === 'Cuota Mensual' || lowerAll.includes('mensual')) typeKey = 'mensualidad';
+                else if (t.category === 'Multa Tarjeta' || lowerAll.includes('multa')) typeKey = 'multa';
+                else if (lowerAll.includes('arbitraje')) typeKey = 'arbitraje';
+
+                const prefix = (t.category === 'Multa Tarjeta' && !rawDesc.toLowerCase().includes('multa')) ? 'Multa: ' : '';
+                debts.push({ id: t.id, desc: prefix + rawDesc + mTxt, amount: amt, date: t.date || '', typeKey });
+            }
+        }
+
+        if (t.category === 'Arbitraje' && t.matchId) {
+            const match = (window.matches || []).find(m => m && m.id === t.matchId);
+            if (match && Array.isArray(match.lineup)) {
+                const validPlayers = match.lineup.filter(l => {
+                    const pObj = (window.players || []).find(x => x && x.id === l.playerId);
+                    return pObj && !pObj.isStaff;
+                });
+                const isCalledUp = validPlayers.some(l => l.playerId === playerId);
+                const hasPaid = Array.isArray(t.paidBy) && t.paidBy.includes(playerId);
+                if (isCalledUp && !hasPaid && validPlayers.length > 0) {
+                    const cuota = (parseFloat(t.amount) || 0) / validPlayers.length;
+                    const arbId = 'arb_' + t.id;
+                    const abonosArb = allFin.filter(x => x && x.category === 'Abono a Deuda (Jugador)' && x.playerId === playerId && x.specificDebtId === arbId);
+                    const abonadoArb = abonosArb.reduce((sum, x) => sum + (parseFloat(x.amount) || 0), 0);
+                    const restArb = cuota - abonadoArb;
+                    if (restArb > 0.01) {
+                        debts.push({ id: arbId, desc: `Cuota Arbitraje: vs ${match.opponent}`, amount: restArb, date: t.date || '', typeKey: 'arbitraje' });
+                    }
+                }
+            }
+        }
+    });
+
+    debts.sort((a, b) => new Date(a.date || '1970-01-01') - new Date(b.date || '1970-01-01'));
+    const generalAbonos = allFin
+        .filter(x => x && x.category === 'Abono a Deuda (Jugador)' && x.playerId === playerId && !x.specificDebtId)
+        .sort((a, b) => new Date(a.date || '1970-01-01') - new Date(b.date || '1970-01-01'));
+
+    generalAbonos.forEach(ab => {
+        let rem = parseFloat(ab.amount) || 0;
+        const abDate = ab.date || '9999-12-31';
+        debts.forEach(d => {
+            if (rem <= 0.01 || d.amount <= 0.01) return;
+            if (!d.date || d.date <= abDate) {
+                const used = Math.min(rem, d.amount);
+                d.amount -= used;
+                rem -= used;
+            }
+        });
+    });
+
+    debts = debts.filter(d => d.amount > 0.01);
+    const total = debts.reduce((sum, d) => sum + d.amount, 0);
+    return { total: total > 0.01 ? total : 0, debts };
+};
+
+window.syncPlayersDebtFields = async function() {
+    if (!window.isAdmin || !window.isReady || window._syncingDebts) return;
+    window._syncingDebts = true;
+    try {
+        const batch = db.batch();
+        let count = 0;
+        (window.players || []).forEach(p => {
+            if (!p || !p.id) return;
+            const realTotal = Number(window.getPlayerDebts(p.id).total.toFixed(2));
+            const realPaidUp = realTotal <= 0.01;
+            const curDebt = parseFloat(p.debtAmount) || 0;
+            if (Math.abs(curDebt - realTotal) > 0.01 || Boolean(p.isPaidUp) !== realPaidUp) {
+                batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: realTotal, isPaidUp: realPaidUp }, { merge: true });
+                count++;
+            }
+        });
+        if (count > 0) await batch.commit();
+    } catch (err) {
+        console.error('Error sincronizando saldos:', err);
+    } finally {
+        window._syncingDebts = false;
+    }
 };
 window.getMorosityStatus = function(playerId) {
 const dData = window.getPlayerDebts(playerId);
@@ -725,31 +801,110 @@ window.getPlayerDebts(playerId).debts.forEach(d => { const o = document.createEl
 };
 window.handleSpecificDebtSelect = function() { const debtId = document.getElementById('f-specific-debt').value; if (!debtId) return; const playerId = document.getElementById('f-player').value; const debt = window.getPlayerDebts(playerId).debts.find(d => d.id === debtId); if (debt) document.getElementById('f-amount').value = debt.amount.toFixed(2); };
 window.saveTransaction = async function(e) {
-e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
-const btn = document.getElementById('btn-save-fin'); btn.disabled = true; btn.textContent = "Guardando...";
-const docId = document.getElementById('f-id').value || window.generateId(), type = document.getElementById('f-type').value, category = document.getElementById('f-category').value, amount = parseFloat(document.getElementById('f-amount').value), date = document.getElementById('f-date').value, description = document.getElementById('f-desc').value, matchId = document.getElementById('f-match').value || null, playerId = document.getElementById('f-player').value || null, specificDebtId = document.getElementById('f-specific-debt').value || null;
-const tData = { id: docId, type: type, amount: amount, date: date, category: category, description: description, matchId: matchId, playerId: playerId };
-if (specificDebtId) tData.specificDebtId = specificDebtId; if (category === 'Cobro Manual' || category === 'Multa Tarjeta') tData.isPaid = false; if (category === 'Arbitraje') tData.paidBy = [];
-const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(docId), tData);
-if (playerId) {
-const p = window.players.find(x => x.id === playerId);
-if (p) {
-if (category === 'Cobro Manual' || category === 'Multa Tarjeta') { batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true }); }
-else if (category === 'Abono a Deuda (Jugador)' && !specificDebtId) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
-}
-}
-try { await batch.commit(); window.showToast('Movimiento guardado'); window.showSection('finances'); } catch(err) { window.showToast('Error al guardar', true); } finally { btn.disabled = false; btn.textContent = "Guardar"; }
+    e.preventDefault();
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const btn = document.getElementById('btn-save-fin');
+    btn.disabled = true; btn.textContent = "Guardando...";
+
+    const docId = document.getElementById('f-id').value || window.generateId();
+    const type = document.getElementById('f-type').value;
+    const category = document.getElementById('f-category').value;
+    const amount = parseFloat(document.getElementById('f-amount').value);
+    const date = document.getElementById('f-date').value;
+    const description = document.getElementById('f-desc').value;
+    const matchId = document.getElementById('f-match').value || null;
+    const playerId = document.getElementById('f-player').value || null;
+    const specificDebtId = document.getElementById('f-specific-debt').value || null;
+
+    const batch = db.batch();
+
+    if (category === 'Abono a Deuda (Jugador)' && playerId) {
+        const openDebts = window.getPlayerDebts(playerId).debts;
+        if (specificDebtId) {
+            const target = openDebts.find(d => d.id === specificDebtId);
+            const payAmt = target ? Math.min(amount, target.amount) : amount;
+            const isFull = target && Math.abs(target.amount - payAmt) < 0.01;
+            batch.set(db.collection(window.financesPath).doc(docId), {
+                id: docId, type: 'income', amount: Number(payAmt.toFixed(2)), date, category, description, matchId, playerId, specificDebtId
+            });
+            if (isFull) {
+                if (specificDebtId.startsWith('arb_')) {
+                    const parentId = specificDebtId.slice(4);
+                    const arbTx = (window.finances || []).find(x => x && x.id === parentId);
+                    if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...new Set([...(arbTx.paidBy || []), playerId])] }, { merge: true });
+                } else {
+                    batch.set(db.collection(window.financesPath).doc(specificDebtId), { isPaid: true }, { merge: true });
+                }
+            }
+        } else {
+            let rem = amount;
+            openDebts.forEach(d => {
+                if (rem <= 0.01) return;
+                const payHere = Math.min(rem, d.amount);
+                const abId = window.generateId();
+                const isFull = Math.abs(d.amount - payHere) < 0.01;
+                batch.set(db.collection(window.financesPath).doc(abId), {
+                    id: abId, type: 'income', amount: Number(payHere.toFixed(2)), date, category, description: `${description} (${d.desc})`, matchId: null, playerId, specificDebtId: d.id
+                });
+                if (isFull) {
+                    if (d.id.startsWith('arb_')) {
+                        const parentId = d.id.slice(4);
+                        const arbTx = (window.finances || []).find(x => x && x.id === parentId);
+                        if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...new Set([...(arbTx.paidBy || []), playerId])] }, { merge: true });
+                    } else {
+                        batch.set(db.collection(window.financesPath).doc(d.id), { isPaid: true }, { merge: true });
+                    }
+                }
+                rem -= payHere;
+            });
+            if (rem > 0.01) {
+                batch.set(db.collection(window.financesPath).doc(docId), {
+                    id: docId, type: 'income', amount: Number(rem.toFixed(2)), date, category: 'Otro Ingreso', description: `${description} (Excedente)`, matchId, playerId
+                });
+            }
+        }
+    } else {
+        const tData = { id: docId, type, amount, date, category, description, matchId, playerId };
+        if (category === 'Cobro Manual' || category === 'Multa Tarjeta') tData.isPaid = false;
+        if (category === 'Arbitraje') tData.paidBy = [];
+        batch.set(db.collection(window.financesPath).doc(docId), tData);
+    }
+
+    try {
+        await batch.commit();
+        window.showToast('Movimiento guardado');
+        window.showSection('finances');
+    } catch (err) {
+        window.showToast('Error al guardar', true);
+    } finally {
+        btn.disabled = false; btn.textContent = "Guardar";
+    }
 };
+
 window.deleteTransaction = function(id) {
-window.showConfirm('¿Eliminar este movimiento?', async () => {
-try {
-const t = window.finances.find(x => x.id === id);
-if (t && t.playerId && (t.category === 'Cobro Manual' || t.category === 'Multa Tarjeta' || t.category === 'Cuota Mensual') && !t.isPaid) {
-const p = window.players.find(x => x.id === t.playerId); if (p) await db.collection(window.playersPath).doc(t.playerId).set({ debtAmount: Math.max(0, (p.debtAmount || 0) - t.amount) }, { merge: true });
-}
-await db.collection(window.financesPath).doc(id).delete(); window.showToast('Movimiento eliminado');
-} catch(e) { window.showToast('Error', true); }
-});
+    window.showConfirm('¿Eliminar este movimiento?', async () => {
+        try {
+            const batch = db.batch();
+            const t = (window.finances || []).find(x => x && x.id === id);
+            if (t && t.category === 'Abono a Deuda (Jugador)' && t.specificDebtId) {
+                if (t.specificDebtId.startsWith('arb_')) {
+                    const parentId = t.specificDebtId.slice(4);
+                    const arbTx = (window.finances || []).find(x => x && x.id === parentId);
+                    if (arbTx && Array.isArray(arbTx.paidBy)) {
+                        batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: arbTx.paidBy.filter(pid => pid !== t.playerId) }, { merge: true });
+                    }
+                } else {
+                    const parentDebt = (window.finances || []).find(x => x && x.id === t.specificDebtId);
+                    if (parentDebt) batch.set(db.collection(window.financesPath).doc(t.specificDebtId), { isPaid: false }, { merge: true });
+                }
+            }
+            batch.delete(db.collection(window.financesPath).doc(id));
+            await batch.commit();
+            window.showToast('Movimiento eliminado');
+        } catch (e) {
+            window.showToast('Error', true);
+        }
+    });
 };
 window.switchFinancesTab = function(tab) {
 window.currentFinTab = tab;
@@ -789,13 +944,7 @@ const debtData = window.getPlayerDebts(playerId);
 const debtFilter = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'all';
 let filteredDebts = debtData.debts;
 if (debtFilter !== 'all') {
-filteredDebts = debtData.debts.filter(d => {
-const desc = d.desc.toLowerCase();
-if (debtFilter === 'mensualidad') return desc.includes('mensual');
-if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
-if (debtFilter === 'multa') return desc.includes('multa');
-return false;
-});
+    filteredDebts = debtData.debts.filter(d => window.matchesDebtFilter(d, debtFilter));
 }
 const totalFiltered = filteredDebts.reduce((sum, d) => sum + d.amount, 0);
 if (totalFiltered <= 0) return window.showToast('Sin deuda en esta categoría', true);
@@ -816,13 +965,7 @@ window.players.filter(p => !p.isStaff && (p.status === 'active' || !p.status)).s
 const d = window.getPlayerDebts(p.id); let totalFiltered = 0;
 if (debtFilter === 'all') { totalFiltered = d.total; }
 else {
-const filtered = d.debts.filter(x => {
-const desc = x.desc.toLowerCase();
-if (debtFilter === 'mensualidad') return desc.includes('mensual');
-if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
-if (debtFilter === 'multa') return desc.includes('multa');
-return false;
-});
+const filtered = d.debts.filter(x => window.matchesDebtFilter(x, debtFilter));
 totalFiltered = filtered.reduce((sum, x) => sum + x.amount, 0);
 }
 if (totalFiltered > 0.01) {
@@ -960,6 +1103,7 @@ window.initExchangeRate = function() {
 };
 window.renderFinances = function() {
 if (typeof window.renderFinancesTicker === 'function') window.renderFinancesTicker();
+if (typeof window.syncPlayersDebtFields === 'function') window.syncPlayersDebtFields();   
 let income = 0, expense = 0;
 (window.finances || []).forEach(t => {
 if(!t) return;
@@ -987,13 +1131,7 @@ const debtFilter = document.getElementById('debt-filter') ? document.getElementB
 const debtData = window.getPlayerDebts(p.id); let totalDebt = 0;
 if (debtFilter === 'all') { totalDebt = debtData.total; }
 else {
-const filtered = debtData.debts.filter(d => {
-const desc = d.desc.toLowerCase();
-if (debtFilter === 'mensualidad') return desc.includes('mensual');
-if (debtFilter === 'arbitraje') return desc.includes('arbitraje');
-if (debtFilter === 'multa') return desc.includes('multa');
-return false;
-});
+const filtered = debtData.debts.filter(d => window.matchesDebtFilter(d, debtFilter));
 totalDebt = filtered.reduce((sum, d) => sum + d.amount, 0);
 }
 if (totalDebt > 0.01) {
@@ -1119,45 +1257,62 @@ if (payAmount > maxAmount) { payAmount = maxAmount; inputEl.value = maxAmount.to
 window.paySpecificDebt(playerId, debtId, payAmount, maxAmount);
 };
 window.paySpecificDebt = async function(playerId, debtId, amount, maxAmount) {
-if (!window.isAdmin) return window.showToast('Solo Lectura', true);
-const isFullPayment = Math.abs(maxAmount - amount) < 0.01; const finId = window.generateId();
-const tData = { id: finId, type: 'income', amount: amount, date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: isFullPayment ? 'Pago total de deuda' : 'Abono parcial a deuda', playerId: playerId, specificDebtId: debtId };
-const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(finId), tData);
-if (debtId.startsWith('arb_')) {
-if (isFullPayment) { const parentId = debtId.split('_')[1]; const arbTx = (window.finances||[]).find(x => x.id === parentId); if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true }); }
-} else {
-if (isFullPayment) batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
-const p = (window.players||[]).find(x => x.id === playerId);
-if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
-}
-try {
-await batch.commit(); window._lastPaidTx = tData; window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
-window.openPaySpecific(playerId); window.renderFinances();
-} catch(e) { window.showToast('Error al registrar abono', true); }
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const isFullPayment = Math.abs(maxAmount - amount) < 0.01;
+    const finId = window.generateId();
+    const tData = { id: finId, type: 'income', amount: Number(amount.toFixed(2)), date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: isFullPayment ? 'Pago total de deuda' : 'Abono parcial a deuda', playerId: playerId, specificDebtId: debtId };
+    const batch = db.batch();
+    batch.set(db.collection(window.financesPath).doc(finId), tData);
+
+    if (isFullPayment) {
+        if (debtId.startsWith('arb_')) {
+            const parentId = debtId.slice(4);
+            const arbTx = (window.finances || []).find(x => x && x.id === parentId);
+            if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...new Set([...(arbTx.paidBy || []), playerId])] }, { merge: true });
+        } else {
+            batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true }, { merge: true });
+        }
+    }
+    try {
+        await batch.commit();
+        window._lastPaidTx = tData;
+        window.showToast(isFullPayment ? 'Deuda saldada' : 'Abono registrado exitosamente');
+        window.openPaySpecific(playerId);
+        window.renderFinances();
+    } catch (e) {
+        window.showToast('Error al registrar abono', true);
+    }
 };
+
 window.forgiveSpecificDebt = function(playerId, debtId, amount) {
-if (!window.isAdmin) return window.showToast('Solo Lectura', true);
-window.showConfirm('¿Anular esta deuda permanentemente?', async () => {
-const batch = db.batch();
-try {
-if (debtId.startsWith('arb_')) {
-const parentId = debtId.split('_')[1]; const arbTx = (window.finances||[]).find(x => x.id === parentId);
-if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...(arbTx.paidBy || []), playerId] }, { merge: true });
-} else if (debtId.startsWith('generic_')) {
-const p = (window.players||[]).find(x => x.id === playerId);
-if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
-} else {
-const tx = (window.finances||[]).find(x => x.id === debtId);
-if (tx) {
-batch.delete(db.collection(window.financesPath).doc(debtId));
-const p = (window.players||[]).find(x => x.id === playerId);
-if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - tx.amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
-}
-}
-await batch.commit(); window.showToast('Deuda anulada');
-window.openPaySpecific(playerId); window.renderFinances();
-} catch(e) { window.showToast('Error al anular', true); }
-});
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    window.showConfirm('¿Anular esta deuda permanentemente?', async () => {
+        const batch = db.batch();
+        try {
+            if (debtId.startsWith('arb_')) {
+                const parentId = debtId.slice(4);
+                const arbTx = (window.finances || []).find(x => x && x.id === parentId);
+                if (arbTx) batch.set(db.collection(window.financesPath).doc(parentId), { paidBy: [...new Set([...(arbTx.paidBy || []), playerId])] }, { merge: true });
+            } else {
+                const tx = (window.finances || []).find(x => x && x.id === debtId);
+                if (tx) {
+                    const abonos = (window.finances || []).filter(x => x && x.category === 'Abono a Deuda (Jugador)' && x.specificDebtId === debtId);
+                    const abonado = abonos.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+                    if (abonado > 0.01) {
+                        batch.set(db.collection(window.financesPath).doc(debtId), { isPaid: true, amount: Number(abonado.toFixed(2)), description: `${tx.description || tx.category} (Resto condonado)` }, { merge: true });
+                    } else {
+                        batch.delete(db.collection(window.financesPath).doc(debtId));
+                    }
+                }
+            }
+            await batch.commit();
+            window.showToast('Deuda anulada');
+            window.openPaySpecific(playerId);
+            window.renderFinances();
+        } catch (e) {
+            window.showToast('Error al anular', true);
+        }
+    });
 };
 window.downloadReceiptFromTx = function(txId) {
 const tx = window.finances.find(t => t.id === txId) || window._lastPaidTx;
@@ -1220,11 +1375,28 @@ batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: (p.debtAmou
 try { await batch.commit(); window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); } catch(e) { window.showToast('Error al cobrar', true); }
 };
 window.markDuesPaid = async function(txId, playerId) {
-if (!window.isAdmin) return window.showToast('Solo Lectura', true);
-const tx = window.finances.find(t => t.id === txId); if (!tx) return;
-const batch = db.batch(); batch.set(db.collection(window.financesPath).doc(txId), { isPaid: true }, { merge: true });
-const p = window.players.find(x => x.id === playerId); if (p) { const newDebt = Math.max(0, (p.debtAmount || 0) - tx.amount); batch.set(db.collection(window.playersPath).doc(playerId), { debtAmount: newDebt, isPaidUp: newDebt <= 0.01 }, { merge: true }); }
-try { await batch.commit(); window.showToast('Cuota marcada como pagada'); } catch(e) { window.showToast('Error', true); }
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const tx = (window.finances || []).find(t => t && t.id === txId);
+    if (!tx) return;
+    const abonos = (window.finances || []).filter(x => x && x.category === 'Abono a Deuda (Jugador)' && x.specificDebtId === txId);
+    const abonado = abonos.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+    const batch = db.batch();
+    if (abonado > 0.01) {
+        const rest = Math.max(0, (parseFloat(tx.amount) || 0) - abonado);
+        if (rest > 0.01) {
+            const finId = window.generateId();
+            batch.set(db.collection(window.financesPath).doc(finId), {
+                id: finId, type: 'income', amount: Number(rest.toFixed(2)), date: new Date().toISOString().split('T')[0], category: 'Abono a Deuda (Jugador)', description: `Saldo cuota mensual ${tx.duesMonth || ''}`.trim(), playerId, specificDebtId: txId
+            });
+        }
+    }
+    batch.set(db.collection(window.financesPath).doc(txId), { isPaid: true }, { merge: true });
+    try {
+        await batch.commit();
+        window.showToast('Cuota marcada como pagada');
+    } catch (e) {
+        window.showToast('Error', true);
+    }
 };
 window.cashflowCharts = [];
 window.renderCashflowChart = function() {
