@@ -317,16 +317,34 @@
                         <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><ul id="debtors-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></ul></div>
                     </div>
                     
-                    <!-- Columna 2: Historial (Restaurada al diseño original) -->
+                    <!-- Columna 2: Historial con Buscador y Filtros -->
                     <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 overflow-hidden lg:col-span-2 flex flex-col">
-                        <div class="bg-slate-50 dark:bg-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
-                            <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-history text-brand-500 mr-2"></i>Historial</h3>
-                            <div class="flex items-center gap-2">
-                                <button onclick="window.exportFinancesCSV()" class="admin-only text-[10px] text-green-600 hover:text-green-800 font-bold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"><i class="fas fa-file-csv text-sm"></i> Exportar CSV</button>
-                                <button onclick="window.clearFinancialHistory()" class="admin-only text-[10px] text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded flex items-center gap-1 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                        <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-100 dark:border-slate-800 space-y-3 shrink-0">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-black text-slate-800 dark:text-white"><i class="fas fa-history text-brand-500 mr-2"></i>Historial</h3>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="window.exportFinancesCSV()" class="admin-only text-[10px] text-green-600 hover:text-green-800 font-bold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"><i class="fas fa-file-csv text-sm"></i> Exportar CSV</button>
+                                    <button onclick="window.clearFinancialHistory()" class="admin-only text-[10px] text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded flex items-center gap-1 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <div class="relative flex-1">
+                                    <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                    <input type="text" id="tx-search" oninput="window.renderTransactionsHistory()" placeholder="Buscar jugador, rival o concepto..." class="public-filter input-premium !pl-9 py-2 text-xs w-full bg-white dark:bg-slate-800">
+                                </div>
+                                <select id="tx-type-filter" onchange="window.renderTransactionsHistory()" class="public-filter input-premium py-2 px-3 text-xs font-bold sm:w-40 bg-white dark:bg-slate-800 cursor-pointer">
+                                    <option value="all">Todos los tipos</option>
+                                    <option value="income">Solo Ingresos</option>
+                                    <option value="expense">Solo Egresos</option>
+                                    <option value="pending">Por Cobrar ⏳</option>
+                                </select>
+                                <select id="tx-month-filter" onchange="window.renderTransactionsHistory()" class="public-filter input-premium py-2 px-3 text-xs font-bold sm:w-40 bg-white dark:bg-slate-800 cursor-pointer">
+                                    <option value="all">Todos los meses</option>
+                                </select>
                             </div>
                         </div>
                         <div class="p-0 overflow-y-auto custom-scroll flex-1 max-h-[500px]"><table class="w-full text-left border-collapse"><tbody id="transactions-list" class="divide-y divide-slate-100 dark:divide-slate-800/50"></tbody></table></div>
+                        <div id="tx-filter-summary" class="px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap justify-between items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0"></div>
                     </div>
                 </div>
             </div>
