@@ -2182,8 +2182,8 @@ window.paymentReports = window.paymentReports || [];
 window.paymentReports = window.paymentReports || [];
 window.PAGO_MOVIL_INFO = {
     banco: 'Banesco (0134)',
-    telefono: '0414-0000000',
-    titularId: 'V-00.000.000'
+    telefono: '0414-3330273',
+    titularId: 'V-2766412'
 };
 window._pendingProofBlob = null;
 
