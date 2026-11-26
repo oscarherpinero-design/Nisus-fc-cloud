@@ -817,7 +817,16 @@ window.getMorosityStatus = function(playerId) {
     const todayStr = new Date().toISOString().split('T')[0];
     let hasVencida = false;
     dData.debts.forEach(d => {
-        if (d.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(d.dueDate)) {
+        if (d.typeKey === 'arbitraje' || d.typeKey === 'multa') {
+            if (d.date && /^\d{4}-\d{2}-\d{2}$/.test(d.date)) {
+                const limitDate = new Date(d.date + 'T12:00:00');
+                limitDate.setDate(limitDate.getDate() + 1);
+                const limitStr = limitDate.toISOString().split('T')[0];
+                if (todayStr > limitStr) hasVencida = true;
+            } else {
+                hasVencida = true;
+            }
+        } else if (d.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(d.dueDate)) {
             if (todayStr > d.dueDate) hasVencida = true;
         } else if (d.typeKey === 'mensualidad' && d.date && typeof d.date === 'string') {
             const parts = d.date.split('-');
