@@ -737,7 +737,8 @@ window.getPlayerDebts = function(playerId) {
                 else if (lowerAll.includes('arbitraje')) typeKey = 'arbitraje';
 
                 const prefix = (t.category === 'Multa Tarjeta' && !rawDesc.toLowerCase().includes('multa')) ? 'Multa: ' : '';
-                debts.push({ id: t.id, desc: prefix + rawDesc + mTxt, amount: amt, date: t.date || '', typeKey });
+                const rateMode = (typeKey === 'multa' || typeKey === 'arbitraje') ? 'eur' : (t.rateMode || (typeKey === 'mensualidad' ? 'usd' : 'eur'));
+debts.push({ id: t.id, desc: prefix + rawDesc + mTxt, amount: amt, date: t.date || '', dueDate: t.dueDate || '', typeKey, rateMode });
             }
         }
 
@@ -757,7 +758,7 @@ window.getPlayerDebts = function(playerId) {
                     const abonadoArb = abonosArb.reduce((sum, x) => sum + (parseFloat(x.amount) || 0), 0);
                     const restArb = cuota - abonadoArb;
                     if (restArb > 0.01) {
-                        debts.push({ id: arbId, desc: `Cuota Arbitraje: vs ${match.opponent}`, amount: restArb, date: t.date || '', typeKey: 'arbitraje' });
+                        debts.push({ id: arbId, desc: `Cuota Arbitraje: vs ${match.opponent}`, amount: restArb, date: t.date || '', dueDate: '', typeKey: 'arbitraje', rateMode: 'eur' });
                     }
                 }
             }
@@ -831,11 +832,16 @@ const matchSelect = document.getElementById('f-match'); matchSelect.innerHTML = 
 window.toggleMatchSelect(); window.updateAdminUI(); window.showSection('financesForm');
 };
 window.toggleMatchSelect = function() {
-const cat = document.getElementById('f-category').value, mc = document.getElementById('f-match-container'), pc = document.getElementById('f-player-container'), sdc = document.getElementById('f-specific-debt-container');
-if (cat === 'Arbitraje' || cat === 'Multa Tarjeta' || cat === 'Cobro Manual') mc.classList.remove('hidden'); else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
-if (cat === 'Cobro Manual' || cat === 'Multa Tarjeta' || cat === 'Abono a Deuda (Jugador)') { pc.classList.remove('hidden'); window.populateFinPlayerSelect(); } else { pc.classList.add('hidden'); document.getElementById('f-player').value = ''; }
-if (cat === 'Abono a Deuda (Jugador)') { sdc.classList.remove('hidden'); window.populateSpecificDebts(); } else { sdc.classList.add('hidden'); document.getElementById('f-specific-debt').value = ''; }
-window.calcArbitraje();
+    const cat = document.getElementById('f-category').value;
+    const mc = document.getElementById('f-match-container');
+    const pc = document.getElementById('f-player-container');
+    const sdc = document.getElementById('f-specific-debt-container');
+    const rc = document.getElementById('f-rate-config-container');
+    if (cat === 'Arbitraje' || cat === 'Multa Tarjeta' || cat === 'Cobro Manual') mc.classList.remove('hidden'); else { mc.classList.add('hidden'); document.getElementById('f-match').value = ''; document.getElementById('f-arbitraje-calc').classList.add('hidden'); }
+    if (cat === 'Cobro Manual' || cat === 'Multa Tarjeta' || cat === 'Abono a Deuda (Jugador)' || cat === 'Inscripción') { pc.classList.remove('hidden'); window.populateFinPlayerSelect(); } else { pc.classList.add('hidden'); document.getElementById('f-player').value = ''; }
+    if (cat === 'Abono a Deuda (Jugador)') { sdc.classList.remove('hidden'); window.populateSpecificDebts(); } else { sdc.classList.add('hidden'); document.getElementById('f-specific-debt').value = ''; }
+    if (rc) { if (cat === 'Cobro Manual' || cat === 'Inscripción') rc.classList.remove('hidden'); else rc.classList.add('hidden'); }
+    window.calcArbitraje();
 };
 window.populateFinPlayerSelect = function() { const sel = document.getElementById('f-player'); sel.innerHTML = '<option value="">Selecciona...</option>'; window.players.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); }); };
 window.calcArbitraje = function() {
@@ -917,7 +923,9 @@ window.saveTransaction = async function(e) {
             }
         }
     } else {
-        const tData = { id: docId, type, amount, date, category, description, matchId, playerId };
+        const rateMode = (category === 'Multa Tarjeta' || category === 'Arbitraje') ? 'eur' : (document.getElementById('f-rate-mode')?.value || 'eur');
+        const dueDate = (category === 'Cobro Manual' || category === 'Inscripción') ? (document.getElementById('f-due-date')?.value || '') : '';
+        const tData = { id: docId, type, amount, date, category, description, matchId, playerId, rateMode, dueDate };
         if (category === 'Cobro Manual' || category === 'Multa Tarjeta') tData.isPaid = false;
         if (category === 'Arbitraje') tData.paidBy = [];
         batch.set(db.collection(window.financesPath).doc(docId), tData);
@@ -1419,18 +1427,36 @@ summaryEl.textContent = `${paidCount}/${activePlayers.length} pagadas · ${charg
 }
 };
 window.chargeMonthlyDues = async function() {
-if (!window.isAdmin) return window.showToast('Solo Lectura', true);
-const month = document.getElementById('dues-month').value, amount = parseFloat(document.getElementById('dues-amount').value);
-if (!month) return window.showToast('Selecciona un mes', true); if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
-const checkboxes = document.querySelectorAll('.dues-charge-cb:checked'); if (checkboxes.length === 0) return window.showToast('Selecciona al menos un jugador para cobrar', true);
-const toChargeIds = Array.from(checkboxes).map(cb => cb.value), toCharge = window.players.filter(p => toChargeIds.includes(p.id));
-const batch = db.batch(), dateStr = month + '-01';
-toCharge.forEach(p => {
-const id = window.generateId();
-batch.set(db.collection(window.financesPath).doc(id), { id, type: 'income', amount, date: dateStr, category: 'Cuota Mensual', description: 'Cuota mensual ' + month, playerId: p.id, duesMonth: month, isPaid: false });
-batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
-});
-try { await batch.commit(); window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); } catch(e) { window.showToast('Error al cobrar', true); }
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const month = document.getElementById('dues-month').value, amount = parseFloat(document.getElementById('dues-amount').value);
+    const dueDate = document.getElementById('dues-due-date')?.value || '';
+    if (!month) return window.showToast('Selecciona un mes', true); if (!amount || amount <= 0) return window.showToast('Ingresa un monto válido', true);
+    const checkboxes = document.querySelectorAll('.dues-charge-cb:checked'); if (checkboxes.length === 0) return window.showToast('Selecciona al menos un jugador para cobrar', true);
+    const toChargeIds = Array.from(checkboxes).map(cb => cb.value), toCharge = window.players.filter(p => toChargeIds.includes(p.id));
+    const batch = db.batch(), dateStr = month + '-01';
+    toCharge.forEach(p => {
+        const id = window.generateId();
+        batch.set(db.collection(window.financesPath).doc(id), { id, type: 'income', amount, date: dateStr, dueDate, rateMode: 'usd', category: 'Cuota Mensual', description: 'Cuota mensual ' + month, playerId: p.id, duesMonth: month, isPaid: false });
+        batch.set(db.collection(window.playersPath).doc(p.id), { debtAmount: (p.debtAmount || 0) + amount, isPaidUp: false }, { merge: true });
+    });
+    try { await batch.commit(); window.showToast(`Cuotas generadas para ${toCharge.length} jugador(es)`); } catch(e) { window.showToast('Error al cobrar', true); }
+};
+
+window.updateMonthlyDuesDeadline = async function() {
+    if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const month = document.getElementById('dues-month')?.value;
+    const dueDate = document.getElementById('dues-due-date')?.value || '';
+    if (!month || !dueDate) return window.showToast('Selecciona el mes y la fecha límite', true);
+    const targets = (window.finances || []).filter(t => t && t.category === 'Cuota Mensual' && t.duesMonth === month);
+    if (targets.length === 0) return window.showToast('No hay cuotas generadas para ese mes todavía', true);
+    const batch = db.batch();
+    targets.forEach(t => batch.set(db.collection(window.financesPath).doc(t.id), { dueDate, rateMode: 'usd' }, { merge: true }));
+    try {
+        await batch.commit();
+        window.showToast(`Fecha límite actualizada (${dueDate}) para ${targets.length} cuota(s)`);
+    } catch (e) {
+        window.showToast('Error al actualizar fecha límite', true);
+    }
 };
 window.markDuesPaid = async function(txId, playerId) {
     if (!window.isAdmin) return window.showToast('Solo Lectura', true);
@@ -2341,8 +2367,217 @@ window.openReportPaymentModal = function() {
     document.getElementById('rp-debt').innerHTML = '<option value="">Selecciona primero tu nombre</option>';
     document.getElementById('rp-amount').value = '';
     document.getElementById('rp-method').value = 'Pago Móvil';
+    window.bcvRatesCache = { usd: null, eur: null, fetchedAt: 0 };
+window._lastReportBsCalc = { bsAmount: 0, label: '' };
+
+window.fetchDualBCVRates = async function() {
+    const now = Date.now();
+    if (window.bcvRatesCache.usd && window.bcvRatesCache.eur && (now - window.bcvRatesCache.fetchedAt < 1800000)) {
+        return window.bcvRatesCache;
+    }
+    try {
+        const [resUsd, resEur] = await Promise.all([
+            fetch('https://ve.dolarapi.com/v1/dolares/oficial'),
+            fetch('https://ve.dolarapi.com/v1/euros/oficial')
+        ]);
+        const dUsd = await resUsd.json();
+        const dEur = await resEur.json();
+        const usd = parseFloat(dUsd?.promedio) || null;
+        const eur = parseFloat(dEur?.promedio) || null;
+        if (usd || eur) {
+            window.bcvRatesCache = { usd, eur, fetchedAt: now };
+        }
+    } catch (e) {
+        console.error('Error consultando tasas BCV:', e);
+    }
+    return window.bcvRatesCache;
+};
+
+window.getEffectiveDebtRateType = function(debt) {
+    if (!debt) return 'eur';
+    if (debt.typeKey === 'arbitraje' || debt.typeKey === 'multa') return 'eur';
+    const baseMode = debt.rateMode || (debt.typeKey === 'mensualidad' ? 'usd' : 'eur');
+    if (baseMode === 'eur') return 'eur';
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (debt.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(debt.dueDate)) {
+        return todayStr > debt.dueDate ? 'eur' : 'usd';
+    }
+    if (debt.typeKey === 'mensualidad' && debt.date && typeof debt.date === 'string') {
+        const parts = debt.date.split('-');
+        if (parts.length === 3 && todayStr > `${parts[0]}-${parts[1]}-25`) return 'eur';
+    }
+    return 'usd';
+};
+
+window.updateReportBsPreview = function() {
+    const method = document.getElementById('rp-method')?.value || 'Pago Móvil';
+    const bsEl = document.getElementById('rp-bs-amount');
+    const infoEl = document.getElementById('rp-bs-rate-info');
+    if (!bsEl || !infoEl || method !== 'Pago Móvil') return;
+
+    const amount = parseFloat(document.getElementById('rp-amount')?.value) || 0;
+    const playerId = document.getElementById('rp-player')?.value || '';
+    const debtId = document.getElementById('rp-debt')?.value || '';
+    const { usd, eur } = window.bcvRatesCache;
+
+    if (!usd && !eur) {
+        bsEl.textContent = 'Tasa no disponible';
+        infoEl.textContent = 'No se pudo consultar el BCV ahora';
+        window._lastReportBsCalc = { bsAmount: 0, label: '' };
+        return;
+    }
+    if (amount <= 0) {
+        bsEl.textContent = '0,00 Bs';
+        infoEl.textContent = `BCV $: ${usd ? usd.toFixed(2) : '--'} · BCV €: ${eur ? eur.toFixed(2) : '--'}`;
+        window._lastReportBsCalc = { bsAmount: 0, label: '' };
+        return;
+    }
+
+    const dData = playerId ? window.getPlayerDebts(playerId) : { debts: [] };
+    let totalBs = 0;
+    let label = '';
+
+    if (debtId) {
+        const target = dData.debts.find(d => d.id === debtId);
+        const rType = window.getEffectiveDebtRateType(target);
+        const rate = rType === 'usd' ? (usd || eur) : (eur || usd);
+        totalBs = amount * rate;
+        label = rType === 'usd' ? `Tasa BCV Dólar ($): ${rate.toFixed(2)} Bs` : `Tasa BCV Euro (€): ${rate.toFixed(2)} Bs`;
+    } else if (dData.debts.length > 0) {
+        let rem = amount;
+        let usedUsd = false, usedEur = false;
+        dData.debts.forEach(d => {
+            if (rem <= 0.01) return;
+            const part = Math.min(rem, d.amount);
+            const rType = window.getEffectiveDebtRateType(d);
+            const rate = rType === 'usd' ? (usd || eur) : (eur || usd);
+            totalBs += part * rate;
+            if (rType === 'usd') usedUsd = true; else usedEur = true;
+            rem -= part;
+        });
+        if (rem > 0.01) {
+            const rate = eur || usd;
+            totalBs += rem * rate;
+            usedEur = true;
+        }
+        if (usedUsd && usedEur) label = `Mixto (BCV $ ${(usd||0).toFixed(2)} / BCV € ${(eur||0).toFixed(2)})`;
+        else if (usedUsd) label = `Tasa BCV Dólar ($): ${(usd||0).toFixed(2)} Bs`;
+        else label = `Tasa BCV Euro (€): ${(eur||0).toFixed(2)} Bs`;
+    } else {
+        const rate = eur || usd;
+        totalBs = amount * rate;
+        label = `Tasa BCV Euro (€): ${rate.toFixed(2)} Bs`;
+    }
+
+    window._lastReportBsCalc = { bsAmount: Number(totalBs.toFixed(2)), label };
+    bsEl.textContent = `${totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`;
+    infoEl.textContent = label;
+};
+
+window.copyReportBsAmount = function() {
+    const val = window._lastReportBsCalc?.bsAmount || 0;
+    if (val <= 0) return window.showToast('Selecciona tu deuda primero', true);
+    navigator.clipboard.writeText(val.toFixed(2))
+        .then(() => window.showToast(`Monto copiado: ${val.toFixed(2)} Bs`))
+        .catch(() => window.showToast('No se pudo copiar', true));
+};
+
+window.togglePaymentMethodFields = function() {
+    const method = document.getElementById('rp-method')?.value || 'Efectivo ($)';
+    const pmInfo = document.getElementById('rp-pm-info');
+    const refWrap = document.getElementById('rp-ref-container');
+    const refInput = document.getElementById('rp-ref');
+    const proofInput = document.getElementById('rp-proof-file');
+    const proofLabel = document.getElementById('rp-proof-label');
+
+    if (method === 'Pago Móvil') {
+        if (pmInfo) pmInfo.classList.remove('hidden');
+        if (refWrap) refWrap.classList.remove('hidden');
+        if (refInput) refInput.required = true;
+        if (proofInput) proofInput.required = true;
+        if (proofLabel) proofLabel.textContent = 'Comprobante (Imagen) *';
+        window.updateReportBsPreview();
+    } else {
+        if (pmInfo) pmInfo.classList.add('hidden');
+        if (refWrap) refWrap.classList.add('hidden');
+        if (refInput) { refInput.required = false; refInput.value = ''; }
+        if (proofInput) proofInput.required = false;
+        if (proofLabel) proofLabel.textContent = 'Comprobante (Opcional en Efectivo)';
+    }
+};
+
+window.copyPagoMovilData = function() {
+    const info = window.PAGO_MOVIL_INFO;
+    const txt = `Pago Móvil NISUS FC\nBanco: ${info.banco}\nTeléfono: ${info.telefono}\nCI/RIF: ${info.titularId}`;
+    navigator.clipboard.writeText(txt)
+        .then(() => window.showToast('Datos de Pago Móvil copiados'))
+        .catch(() => window.showToast('No se pudo copiar', true));
+};
+
+window.handleProofImageChange = function(e) {
+    const file = e.target.files?.[0];
+    const wrap = document.getElementById('rp-proof-preview-wrap');
+    const img = document.getElementById('rp-proof-preview');
+    window._pendingProofBlob = null;
+    if (!file) { if (wrap) wrap.classList.add('hidden'); return; }
+    if (!file.type.startsWith('image/')) { e.target.value = ''; if (wrap) wrap.classList.add('hidden'); return window.showToast('Solo se permiten imágenes', true); }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const im = new Image();
+        im.onload = function() {
+            const maxDim = 900; let w = im.width, h = im.height;
+            if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+            const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+            const ct = cv.getContext('2d'); ct.imageSmoothingQuality = 'high'; ct.drawImage(im, 0, 0, w, h);
+            cv.toBlob(function(blob) {
+                if (!blob) return window.showToast('Error al procesar comprobante', true);
+                window._pendingProofBlob = blob;
+                if (img) img.src = URL.createObjectURL(blob);
+                if (wrap) wrap.classList.remove('hidden');
+            }, 'image/jpeg', 0.8);
+        };
+        im.onerror = () => window.showToast('Imagen no válida', true);
+        im.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
+window.openReportPaymentModal = function() {
+    const form = document.getElementById('report-payment-form');
+    if (form) form.reset();
+    window._pendingProofBlob = null;
+    const wrap = document.getElementById('rp-proof-preview-wrap');
+    if (wrap) wrap.classList.add('hidden');
+
+    const bEl = document.getElementById('pm-bank'), phEl = document.getElementById('pm-phone'), idEl = document.getElementById('pm-id');
+    if (bEl) bEl.textContent = window.PAGO_MOVIL_INFO.banco;
+    if (phEl) phEl.textContent = window.PAGO_MOVIL_INFO.telefono;
+    if (idEl) idEl.textContent = window.PAGO_MOVIL_INFO.titularId;
+
+    const sel = document.getElementById('rp-player');
+    if (!sel) return;
+
+    const list = (window.players || [])
+        .filter(p => p && !p.isStaff && (p.status === 'active' || !p.status))
+        .map(p => ({ p, total: window.getPlayerDebts(p.id).total }))
+        .filter(item => item.total > 0.01)
+        .sort((a, b) => (a.p.name || '').localeCompare(b.p.name || ''));
+
+    if (list.length === 0) {
+        sel.innerHTML = '<option value="">Todos los jugadores están al día</option>';
+    } else {
+        sel.innerHTML = '<option value="">Selecciona tu nombre...</option>' + list.map(({ p, total }) =>
+            `<option value="${p.id}">${p.name} (Debe: $${total.toFixed(2)})</option>`
+        ).join('');
+    }
+
+    document.getElementById('rp-debt').innerHTML = '<option value="">Selecciona primero tu nombre</option>';
+    document.getElementById('rp-amount').value = '';
+    document.getElementById('rp-method').value = 'Pago Móvil';
     window.togglePaymentMethodFields();
     document.getElementById('modal-report-payment').classList.remove('hidden');
+    window.fetchDualBCVRates().then(() => window.updateReportBsPreview());
 };
 
 window.handleReportPlayerChange = function() {
@@ -2352,6 +2587,7 @@ window.handleReportPlayerChange = function() {
     if (!playerId) {
         debtSel.innerHTML = '<option value="">Selecciona primero tu nombre</option>';
         amtInput.value = '';
+        window.updateReportBsPreview();
         return;
     }
     const dData = window.getPlayerDebts(playerId);
@@ -2360,9 +2596,13 @@ window.handleReportPlayerChange = function() {
         amtInput.value = '';
     } else {
         debtSel.innerHTML = `<option value="">Abono general a mi cuenta (Total: $${dData.total.toFixed(2)})</option>` +
-            dData.debts.map(d => `<option value="${d.id}">${d.desc} - $${d.amount.toFixed(2)}</option>`).join('');
+            dData.debts.map(d => {
+                const tag = window.getEffectiveDebtRateType(d) === 'usd' ? 'BCV $' : 'BCV €';
+                return `<option value="${d.id}">${d.desc} - $${d.amount.toFixed(2)} (${tag})</option>`;
+            }).join('');
         amtInput.value = dData.total.toFixed(2);
     }
+    window.updateReportBsPreview();
 };
 
 window.handleReportDebtChange = function() {
@@ -2377,6 +2617,7 @@ window.handleReportDebtChange = function() {
         const found = dData.debts.find(d => d.id === debtId);
         if (found) amtInput.value = found.amount.toFixed(2);
     }
+    window.updateReportBsPreview();
 };
 
 window.submitPaymentReport = async function(e) {
@@ -2390,13 +2631,8 @@ window.submitPaymentReport = async function(e) {
 
     const method = document.getElementById('rp-method').value;
     const reference = (document.getElementById('rp-ref')?.value || '').trim();
-    if (method === 'Pago Móvil' && !reference) {
-        return window.showToast('Ingresa el número de referencia del Pago Móvil', true);
-    }
-
-    if (!window._pendingProofBlob) {
-        return window.showToast('Adjunta la imagen del comprobante', true);
-    }
+    if (method === 'Pago Móvil' && !reference) return window.showToast('Ingresa el número de referencia del Pago Móvil', true);
+    if (method === 'Pago Móvil' && !window._pendingProofBlob) return window.showToast('Adjunta la imagen del comprobante', true);
 
     const debtSel = document.getElementById('rp-debt');
     const specificDebtId = debtSel.value || '';
@@ -2407,51 +2643,47 @@ window.submitPaymentReport = async function(e) {
 
     const id = window.generateId();
     let proofUrl = '';
-    try {
-        if (typeof firebase !== 'undefined' && typeof firebase.storage === 'function') {
-            const ref = firebase.storage().ref(`comprobantes_pagos/${id}.jpg`);
-            await ref.put(window._pendingProofBlob);
-            proofUrl = await ref.getDownloadURL();
-        } else {
-            proofUrl = await new Promise((resolve, reject) => {
-                const fr = new FileReader();
-                fr.onload = () => resolve(fr.result);
-                fr.onerror = reject;
-                fr.readAsDataURL(window._pendingProofBlob);
-            });
+    if (window._pendingProofBlob) {
+        try {
+            if (typeof firebase !== 'undefined' && typeof firebase.storage === 'function') {
+                const ref = firebase.storage().ref(`comprobantes_pagos/${id}.jpg`);
+                await ref.put(window._pendingProofBlob);
+                proofUrl = await ref.getDownloadURL();
+            } else {
+                proofUrl = await new Promise((resolve, reject) => {
+                    const fr = new FileReader();
+                    fr.onload = () => resolve(fr.result);
+                    fr.onerror = reject;
+                    fr.readAsDataURL(window._pendingProofBlob);
+                });
+            }
+        } catch (upErr) {
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Enviar Pago';
+            return window.showToast('No se pudo subir el comprobante', true);
         }
-    } catch (upErr) {
-        console.error('Error subiendo comprobante:', upErr);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check"></i> Enviar Pago';
-        return window.showToast('No se pudo subir el comprobante', true);
     }
 
+    const bsInfo = method === 'Pago Móvil' && window._lastReportBsCalc?.bsAmount > 0
+        ? `${window._lastReportBsCalc.bsAmount.toFixed(2)} Bs (${window._lastReportBsCalc.label})`
+        : '';
+
     const reportData = {
-        id,
-        playerId: p.id,
-        playerName: p.name,
-        amount: Number(amount.toFixed(2)),
-        specificDebtId,
-        debtLabel,
-        method,
+        id, playerId: p.id, playerName: p.name, amount: Number(amount.toFixed(2)),
+        specificDebtId, debtLabel, method,
         reference: method === 'Pago Móvil' ? reference : 'Efectivo',
-        proofUrl,
-        date: new Date().toISOString().split('T')[0],
-        createdAt: Date.now(),
-        status: 'pending'
+        bsInfo, proofUrl,
+        date: new Date().toISOString().split('T')[0], createdAt: Date.now(), status: 'pending'
     };
 
     try {
         await db.collection('pagos_reportados').doc(id).set(reportData);
         window._pendingProofBlob = null;
         document.getElementById('modal-report-payment').classList.add('hidden');
-        window.showToast('¡Pago enviado! El administrador revisará tu comprobante.');
+        window.showToast('¡Pago enviado! El administrador lo revisará pronto.');
     } catch (err) {
         window.showToast('Error al enviar el pago', true);
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check"></i> Enviar Pago';
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Enviar Pago';
     }
 };
 
