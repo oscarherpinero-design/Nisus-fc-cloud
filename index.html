@@ -854,7 +854,32 @@
             </div>
         </div>
     </main>
-
+<!-- Barra de navegación inferior (Solo móviles) -->
+    <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_25px_-5px_rgba(0,0,0,0.08)]">
+        <div class="grid grid-cols-5 items-center h-16 max-w-md mx-auto">
+            <button type="button" onclick="window.showSection('dashboard')" id="nav-bottom-dashboard" class="flex flex-col items-center justify-center gap-1 py-1.5 text-brand-600 dark:text-brand-400 transition-colors">
+                <i class="fas fa-chart-pie text-lg leading-none"></i>
+                <span class="text-[10px] font-bold">Resumen</span>
+            </button>
+            <button type="button" onclick="window.showSection('players')" id="nav-bottom-players" class="flex flex-col items-center justify-center gap-1 py-1.5 text-slate-400 dark:text-slate-500 transition-colors">
+                <i class="fas fa-users text-lg leading-none"></i>
+                <span class="text-[10px] font-bold">Plantilla</span>
+            </button>
+            <button type="button" onclick="window.showSection('matches')" id="nav-bottom-matches" class="flex flex-col items-center justify-center gap-1 py-1.5 text-slate-400 dark:text-slate-500 transition-colors">
+                <i class="fas fa-calendar-alt text-lg leading-none"></i>
+                <span class="text-[10px] font-bold">Partidos</span>
+            </button>
+            <button type="button" onclick="window.showSection('finances')" id="nav-bottom-finances" class="relative flex flex-col items-center justify-center gap-1 py-1.5 text-slate-400 dark:text-slate-500 transition-colors">
+                <span id="nav-bottom-fin-badge" class="admin-only hidden absolute top-1 right-3 bg-red-500 text-white text-[9px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center shadow-sm">0</span>
+                <i class="fas fa-wallet text-lg leading-none"></i>
+                <span class="text-[10px] font-bold">Finanzas</span>
+            </button>
+            <button type="button" onclick="window.toggleMenu()" class="flex flex-col items-center justify-center gap-1 py-1.5 text-slate-400 dark:text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+                <i class="fas fa-bars text-lg leading-none"></i>
+                <span class="text-[10px] font-bold">Más</span>
+            </button>
+        </div>
+    </nav>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
