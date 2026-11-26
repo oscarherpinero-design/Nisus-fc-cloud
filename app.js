@@ -1911,69 +1911,95 @@ function setupRealtimeListeners() {
         if (typeof window.renderPendingPaymentReports === 'function') window.renderPendingPaymentReports();
     });
 }
+window.populateInventoryCustodianSelect = function(selectedId = '') {
+    const sel = document.getElementById('inv-custodian');
+    if (!sel) return;
+    const members = (window.players || [])
+        .filter(p => p && (p.status === 'active' || !p.status))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    sel.innerHTML = '<option value="">En el Club / Sin asignar</option>' +
+        members.map(p => `<option value="${p.id}">${p.isStaff ? '(CT) ' : ''}${p.name}</option>`).join('');
+    sel.value = selectedId || '';
+};
+
 window.newInventoryItem = function() {
-document.getElementById('inventory-form').reset();
-document.getElementById('inv-id').value = '';
-window.updateAdminUI(); window.showSection('inventoryForm');
+    document.getElementById('inventory-form').reset();
+    document.getElementById('inv-id').value = '';
+    window.populateInventoryCustodianSelect('');
+    window.updateAdminUI();
+    window.showSection('inventoryForm');
 };
+
 window.editInventoryItem = function(id) {
-const item = window.inventory.find(x => x.id === id); if(!item) return;
-document.getElementById('inv-id').value = item.id;
-document.getElementById('inv-name').value = item.name;
-document.getElementById('inv-category').value = item.category || 'Balones';
-document.getElementById('inv-total').value = item.total || 0;
-document.getElementById('inv-lost').value = item.lost || 0;
-document.getElementById('inv-notes').value = item.notes || '';
-window.updateAdminUI(); window.showSection('inventoryForm');
+    const item = window.inventory.find(x => x.id === id); if (!item) return;
+    document.getElementById('inv-id').value = item.id;
+    document.getElementById('inv-name').value = item.name;
+    document.getElementById('inv-category').value = item.category || 'Balones';
+    document.getElementById('inv-total').value = item.total || 0;
+    document.getElementById('inv-lost').value = item.lost || 0;
+    document.getElementById('inv-notes').value = item.notes || '';
+    window.populateInventoryCustodianSelect(item.custodianId || '');
+    window.updateAdminUI();
+    window.showSection('inventoryForm');
 };
+
 window.saveInventoryItem = async function(e) {
-e.preventDefault(); if(!window.isAdmin) return window.showToast('Solo Lectura', true);
-const btn = document.getElementById('btn-save-inv'); btn.disabled = true; btn.textContent = "Guardando...";
-const id = document.getElementById('inv-id').value || window.generateId();
-const data = {
-id: id,
-name: document.getElementById('inv-name').value,
-category: document.getElementById('inv-category').value,
-total: parseInt(document.getElementById('inv-total').value) || 0,
-lost: parseInt(document.getElementById('inv-lost').value) || 0,
-notes: document.getElementById('inv-notes').value,
-lastUpdated: new Date().toISOString().split('T')[0]
+    e.preventDefault(); if (!window.isAdmin) return window.showToast('Solo Lectura', true);
+    const btn = document.getElementById('btn-save-inv'); btn.disabled = true; btn.textContent = "Guardando...";
+    const id = document.getElementById('inv-id').value || window.generateId();
+    const data = {
+        id: id,
+        name: document.getElementById('inv-name').value,
+        category: document.getElementById('inv-category').value,
+        total: parseInt(document.getElementById('inv-total').value) || 0,
+        lost: parseInt(document.getElementById('inv-lost').value) || 0,
+        custodianId: document.getElementById('inv-custodian')?.value || '',
+        notes: document.getElementById('inv-notes').value,
+        lastUpdated: new Date().toISOString().split('T')[0]
+    };
+    try {
+        await db.collection(window.inventoryPath).doc(id).set(data);
+        window.showToast('Material guardado'); window.showSection('inventory');
+    } catch (err) { window.showToast('Error', true); }
+    finally { btn.disabled = false; btn.textContent = "Guardar"; }
 };
-try {
-await db.collection(window.inventoryPath).doc(id).set(data);
-window.showToast('Material guardado'); window.showSection('inventory');
-} catch(err) { window.showToast('Error', true); }
-finally { btn.disabled = false; btn.textContent = "Guardar"; }
-};
+
 window.deleteInventoryItem = function(id) {
-window.showConfirm('¿Eliminar material permanentemente?', async () => {
-try { await db.collection(window.inventoryPath).doc(id).delete(); window.showToast('Eliminado'); }
-catch(e) { window.showToast('Error', true); }
-});
+    window.showConfirm('¿Eliminar material permanentemente?', async () => {
+        try { await db.collection(window.inventoryPath).doc(id).delete(); window.showToast('Eliminado'); }
+        catch (e) { window.showToast('Error', true); }
+    });
 };
+
 window.renderInventory = function() {
-const grid = document.getElementById('inventory-grid'); if(!grid) return; grid.innerHTML = '';
-const icons = { 'Balones': 'fa-futbol text-slate-800 dark:text-white', 'Petos': 'fa-tshirt text-brand-500', 'Conos': 'fa-exclamation-triangle text-orange-500', 'Médico': 'fa-medkit text-red-500', 'Otro': 'fa-box-open text-slate-500' };
-if(window.inventory.length === 0) { grid.innerHTML = '<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay utilería registrada</div>'; return; }
-window.inventory.sort((a,b) => a.category.localeCompare(b.category)).forEach(i => {
-const stock = (i.total || 0) - (i.lost || 0);
-const stockColor = stock === 0 ? 'text-red-500' : (stock < (i.total/2) ? 'text-orange-500' : 'text-green-500');
-const icon = icons[i.category] || icons['Otro'];
-grid.innerHTML += `
-<div class="bg-white dark:bg-darkcard rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 relative transition-all hover:shadow-soft">
-<div class="admin-only absolute top-4 right-4 flex gap-2">
-<button onclick="window.editInventoryItem('${i.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 transition"><i class="fas fa-edit text-xs"></i></button>
-<button onclick="window.deleteInventoryItem('${i.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 transition"><i class="fas fa-trash text-xs"></i></button>
-</div>
-<div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl"><i class="fas ${icon}"></i></div><div class="pr-12"><h3 class="font-black text-slate-900 dark:text-white leading-tight">${i.name}</h3><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${i.category}</p></div></div>
-<div class="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
-<div><p class="text-[9px] font-bold uppercase text-slate-400">Total</p><p class="font-black text-lg text-slate-700 dark:text-slate-300 leading-none mt-1">${i.total}</p></div>
-<div class="border-l border-slate-200 dark:border-slate-700"><p class="text-[9px] font-bold uppercase text-slate-400">Pérdida</p><p class="font-black text-lg text-red-500 leading-none mt-1">${i.lost}</p></div>
-<div class="border-l border-slate-200 dark:border-slate-700"><p class="text-[9px] font-bold uppercase text-slate-400">Stock</p><p class="font-black text-lg ${stockColor} leading-none mt-1">${stock}</p></div>
-</div>
-${i.notes ? `<p class="mt-3 text-[11px] font-medium text-slate-500 italic bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">"${i.notes}"</p>` : ''}
-</div>`;
-});
+    const grid = document.getElementById('inventory-grid'); if (!grid) return; grid.innerHTML = '';
+    const icons = { 'Balones': 'fa-futbol text-slate-800 dark:text-white', 'Petos': 'fa-tshirt text-brand-500', 'Conos': 'fa-exclamation-triangle text-orange-500', 'Médico': 'fa-medkit text-red-500', 'Otro': 'fa-box-open text-slate-500' };
+    if (window.inventory.length === 0) { grid.innerHTML = '<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay utilería registrada</div>'; return; }
+    window.inventory.sort((a, b) => a.category.localeCompare(b.category)).forEach(i => {
+        const stock = (i.total || 0) - (i.lost || 0);
+        const stockColor = stock === 0 ? 'text-red-500' : (stock < (i.total / 2) ? 'text-orange-500' : 'text-green-500');
+        const icon = icons[i.category] || icons['Otro'];
+        const custodian = i.custodianId ? (window.players || []).find(p => p && p.id === i.custodianId) : null;
+        const custodianHtml = custodian
+            ? `<div class="mt-3 flex items-center gap-2 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 px-3 py-2 rounded-xl border border-brand-200 dark:border-brand-800/40 text-xs font-bold"><i class="fas fa-user-check text-brand-500"></i><span class="truncate">Lo tiene: ${custodian.name}</span></div>`
+            : `<div class="mt-3 flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold"><i class="fas fa-warehouse text-slate-400"></i><span>En el Club</span></div>`;
+
+        grid.innerHTML += `
+        <div class="bg-white dark:bg-darkcard rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 relative transition-all hover:shadow-soft">
+            <div class="admin-only absolute top-4 right-4 flex gap-2">
+                <button onclick="window.editInventoryItem('${i.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 transition"><i class="fas fa-edit text-xs"></i></button>
+                <button onclick="window.deleteInventoryItem('${i.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 transition"><i class="fas fa-trash text-xs"></i></button>
+            </div>
+            <div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl"><i class="fas ${icon}"></i></div><div class="pr-12"><h3 class="font-black text-slate-900 dark:text-white leading-tight">${i.name}</h3><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${i.category}</p></div></div>
+            <div class="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
+                <div><p class="text-[9px] font-bold uppercase text-slate-400">Total</p><p class="font-black text-lg text-slate-700 dark:text-slate-300 leading-none mt-1">${i.total}</p></div>
+                <div class="border-l border-slate-200 dark:border-slate-700"><p class="text-[9px] font-bold uppercase text-slate-400">Pérdida</p><p class="font-black text-lg text-red-500 leading-none mt-1">${i.lost}</p></div>
+                <div class="border-l border-slate-200 dark:border-slate-700"><p class="text-[9px] font-bold uppercase text-slate-400">Stock</p><p class="font-black text-lg ${stockColor} leading-none mt-1">${stock}</p></div>
+            </div>
+            ${custodianHtml}
+            ${i.notes ? `<p class="mt-3 text-[11px] font-medium text-slate-500 italic bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">"${i.notes}"</p>` : ''}
+        </div>`;
+    });
 };
 window.exportMatchResult = function(id) {
     const m = (window.matches || []).find(x => x.id === id);
