@@ -392,21 +392,74 @@ if(d.yellows > 0 || d.suspended) { discEl.innerHTML += `<div class="flex justify
 if(discEl.innerHTML === '') discEl.innerHTML = '<p class="text-sm text-slate-500 italic text-center py-4">Historial limpio. ¡Buen comportamiento!</p>';
 };
 window.renderProfileFinanzas = function(p) {
-const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0, debts: [] };
-const mor = typeof window.getMorosityStatus === 'function' ? window.getMorosityStatus(p.id) : { label: 'Deuda', color: 'yellow' };
-const badgeColors = mor.color === 'green' ? 'bg-green-100 text-green-700' : mor.color === 'yellow' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
-document.getElementById('pp-debt-badge').className = `px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${badgeColors}`;
-document.getElementById('pp-debt-badge').innerHTML = `${mor.label}: $${dData.total.toFixed(2)}`;
-const listEl = document.getElementById('pp-finances-list'); listEl.innerHTML = '';
-const myTxs = (window.finances || []).filter(t => t.playerId === p.id).sort((a,b) => new Date(b.date||0) - new Date(a.date||0)).slice(0,10);
-if(myTxs.length === 0) listEl.innerHTML = '<tr><td class="py-4 text-sm text-slate-500 italic text-center">Sin movimientos financieros</td></tr>';
-myTxs.forEach(t => {
-const dStr = new Date((t.date||'')+'T12:00:00').toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
-const validAmt = typeof window.getValidCashAmount === 'function' ? window.getValidCashAmount(t) : 0;
-let estado = '', color = '';
-if (t.isPaid === false) { estado = 'Pendiente'; color = 'text-amber-500'; } else if (t.category === 'Abono a Deuda (Jugador)') { estado = 'Abono'; color = 'text-green-500'; } else { estado = 'Pagado'; color = 'text-slate-400'; }
-listEl.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0"><td class="py-3"><p class="text-xs font-bold text-slate-800 dark:text-slate-200">${t.category}</p><p class="text-[10px] text-slate-400">${dStr}</p></td><td class="py-3 text-right"><p class="text-sm font-black ${color}">$${(t.amount||0).toFixed(2)}</p><p class="text-[9px] font-bold uppercase ${color}">${estado}</p></td></tr>`;
-});
+    const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0, debts: [] };
+    const mor = typeof window.getMorosityStatus === 'function' ? window.getMorosityStatus(p.id) : { label: 'Deuda', color: 'yellow' };
+    const badgeColors = mor.color === 'green'
+        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+        : mor.color === 'yellow'
+            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+
+    const badgeEl = document.getElementById('pp-debt-badge');
+    if (badgeEl) {
+        badgeEl.className = `px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${badgeColors}`;
+        badgeEl.innerHTML = dData.total > 0.01 ? `${mor.label}: $${dData.total.toFixed(2)}` : `<i class="fas fa-check-circle mr-1"></i>Al Día ($0.00)`;
+    }
+
+    const listEl = document.getElementById('pp-finances-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    // 1. Deudas pendientes reales (incluye cuotas, multas, cobros manuales y arbitrajes)
+    dData.debts.forEach(d => {
+        const dStr = (d.date && d.date.includes('-'))
+            ? new Date(d.date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+            : 'Saldo pendiente';
+        listEl.innerHTML += `
+            <tr class="border-b border-slate-100 dark:border-slate-800 last:border-0 bg-red-50/30 dark:bg-red-900/10">
+                <td class="py-3 px-2">
+                    <p class="text-xs font-bold text-slate-800 dark:text-slate-200">${d.desc}</p>
+                    <p class="text-[10px] text-red-500 font-bold uppercase">${dStr} · Por pagar</p>
+                </td>
+                <td class="py-3 px-2 text-right whitespace-nowrap">
+                    <p class="text-sm font-black text-red-600 dark:text-red-400">$${d.amount.toFixed(2)}</p>
+                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">Pendiente</span>
+                </td>
+            </tr>`;
+    });
+
+    // 2. Pagos y abonos efectivamente realizados por el jugador
+    const paidTxs = (window.finances || [])
+        .filter(t => t && t.playerId === p.id && t.type === 'income' && window.getValidCashAmount(t) > 0)
+        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+    paidTxs.forEach(t => {
+        const dStr = (t.date && t.date.includes('-'))
+            ? new Date(t.date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+            : '';
+        const isAbono = t.category === 'Abono a Deuda (Jugador)';
+        const title = t.description || t.category || 'Pago';
+        listEl.innerHTML += `
+            <tr class="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <td class="py-3 px-2">
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">${title}</p>
+                    <p class="text-[10px] text-slate-400">${dStr} · ${t.category}</p>
+                </td>
+                <td class="py-3 px-2 text-right whitespace-nowrap">
+                    <div class="flex items-center justify-end gap-2">
+                        <div>
+                            <p class="text-sm font-black text-emerald-600 dark:text-emerald-400">+$${(t.amount || 0).toFixed(2)}</p>
+                            <p class="text-[9px] font-bold uppercase text-emerald-600 dark:text-emerald-400">${isAbono ? 'Abonado' : 'Pagado'}</p>
+                        </div>
+                        <button onclick="window.downloadReceiptFromTx('${t.id}')" class="text-brand-500 hover:text-brand-600 w-7 h-7 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition flex items-center justify-center" title="Descargar Recibo"><i class="fas fa-file-invoice-dollar text-xs"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+    });
+
+    if (listEl.innerHTML === '') {
+        listEl.innerHTML = '<tr><td class="py-6 text-sm text-slate-500 italic text-center">Sin movimientos financieros registrados</td></tr>';
+    }
 };
 window.renderProfileFicha = function(p) {
 const c = document.getElementById('pp-card-container');
@@ -1142,8 +1195,13 @@ const img = p.image ? `<img src="${p.image}" class="w-10 h-10 rounded-full objec
 let bsEquivalent = window.currentExchangeRate ? `<span class="text-[9px] text-slate-400 block mt-0.5">≈ ${(totalDebt * window.currentExchangeRate).toFixed(2)} Bs</span>` : '';
 const rowAction = window.isAdmin ? `onclick="window.openPlayerFinancialReport('${p.id}')" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"` : `class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 last:border-0"`;
 const adminButtons = window.isAdmin ? `<div class="flex items-center gap-2 mt-1"><button onclick="event.stopPropagation(); window.sendDirectWhatsApp('${p.id}')" class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 flex items-center justify-center transition shadow-sm" title="Enviar recordatorio"><i class="fab fa-whatsapp"></i></button><span class="text-[9px] text-brand-600 dark:text-brand-400 font-bold uppercase cursor-pointer px-2 py-1 bg-brand-50 rounded" onclick="event.stopPropagation(); window.openPaySpecific('${p.id}')">💰 Pagar</span></div>` : ``;
-debtorsList.innerHTML += `<li ${rowAction}><div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${validName}</p><span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm"><i class="fas fa-exclamation-triangle"></i> EN MORA</span></div></div><div class="text-right shrink-0 flex flex-col items-end gap-1"><p class="font-black text-lg leading-none text-red-500">$${totalDebt.toFixed(2)}</p>${bsEquivalent}${adminButtons}</div></li>`;
-}
+const mor = window.getMorosityStatus(p.id);
+const isMora = mor.status === 'mora';
+const statusBadge = isMora
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm"><i class="fas fa-exclamation-triangle"></i> EN MORA</span>`
+    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-[8px] font-black uppercase tracking-widest border bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 shadow-sm"><i class="fas fa-clock"></i> EN PLAZO</span>`;
+const amtColor = isMora ? 'text-red-500' : 'text-amber-500';
+debtorsList.innerHTML += `<li ${rowAction}><div class="flex items-center gap-3 w-[60%]">${img}<div class="min-w-0"><p class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">${validName}</p>${statusBadge}</div></div><div class="text-right shrink-0 flex flex-col items-end gap-1"><p class="font-black text-lg leading-none ${amtColor}">$${totalDebt.toFixed(2)}</p>${bsEquivalent}${adminButtons}</div></li>`;}
 });
 if (!hasDebtors) debtorsList.innerHTML = '<li class="p-6 text-center text-sm text-slate-500 font-medium">No hay deudas en esta categoría</li>';
 }
