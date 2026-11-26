@@ -242,50 +242,114 @@ document.getElementById('form-title').innerHTML = '<i class="fas fa-user-edit te
 };
 window.deletePlayer = function(id) { window.showConfirm('¿Eliminar jugador permanentemente?', async () => { try { await db.collection(window.playersPath).doc(id).delete(); try { await firebase.storage().ref(`jugadores/${id}.jpg`).delete(); } catch(err) {} window.showToast('Eliminado'); } catch(e) { window.showToast('Error', true); } }); };
 window.renderPlayers = function() {
-const grid = document.getElementById('players-grid'); if(!grid) return; grid.innerHTML = '';
-let list = (window.players || []).filter(p => p.status !== 'inactive' || document.getElementById('player-position-filter')?.value === 'inactive');
-if(window.currentFilter==='f11') list = list.filter(p => p?.availableF11); else if(window.currentFilter==='f7') list = list.filter(p => p?.availableF7);
-const q = (document.getElementById('player-search')?.value || '').trim().toLowerCase();
-const posF = document.getElementById('player-position-filter')?.value || '';
-if(q) list = list.filter(p => { const n = (p?.name || '').toLowerCase(); const al = (p?.alias || '').toLowerCase(); const num = String(p?.number || ''); return n.includes(q) || al.includes(q) || num === q; });
-if(posF) {
-if(posF === 'Staff') list = list.filter(p => p?.isStaff);
-else if(posF === 'inactive') list = (window.players || []).filter(p => p?.status === 'inactive');
-else list = list.filter(p => { const posRaw = p?.positions || p?.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); return pos.includes(posF); });
-}
-list.sort((a,b) => { if (a?.isStaff && !b?.isStaff) return 1; if (!a?.isStaff && b?.isStaff) return -1; const nA = parseInt(a?.number) || 9999; const nB = parseInt(b?.number) || 9999; if(nA !== nB) return nA - nB; return (a?.name || '').localeCompare(b?.name || ''); });
-if(list.length === 0){ grid.innerHTML = `<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay registros</div>`; return; }
-list.forEach(p => {
-if(!p) return;
-const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), yellows = window.getPlayerStat(p, 'yellows'), reds = window.getPlayerStat(p, 'reds'), mvps = window.getPlayerStat(p, 'mvps'), cleanSheets = window.getPlayerStat(p, 'cleanSheets');
-const attendance = (window.trainings || []).filter(t => t?.attendees && Array.isArray(t.attendees) && t.attendees.includes(p.id)).length;
-let b=''; const badges = [];
-const posRaw = p.positions || p.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
-if(p.availableF11) badges.push('<span class="bg-brand-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F11</span>');
-if(p.availableF7) badges.push('<span class="bg-green-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F7</span>');
-if(mvps > 0) badges.push(`<span class="bg-yellow-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase"><i class="fas fa-star"></i> ${mvps}</span>`);
-if(pos.includes('Portero') && cleanSheets > 0) badges.push(`<span class="bg-teal-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">🛡️ ${cleanSheets}</span>`);
-b = badges.join('<span class="text-slate-300 dark:text-slate-600 text-[8px]">·</span> '); if(b) b = `<div class="flex items-center gap-1 flex-wrap">${b}</div>`;
-const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0 };
-const debtBadge = (dData?.total || 0) > 0.01 ? `<span class="text-red-500 dark:text-red-400 font-black text-[10px] ml-1"><i class="fas fa-exclamation-circle"></i> ${(dData.total).toFixed(2)}</span>` : '<span class="text-green-500 dark:text-green-400 font-black text-[10px] ml-1"><i class="fas fa-check-circle"></i> Al Día</span>';
-let sb='', oc=''; const returnDateStr = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? p.returnDate.split('-').reverse().join('/') : 'Indefinido';
-if(p.status==='injured'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate?` (Hasta ${returnDateStr})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
-else if(p.status==='suspended'){ sb=`<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2 text-center w-full"><i class="fas fa-ban mr-1"></i> Sanción</span>`; oc='opacity-75 hover:opacity-100'; }
-else if(p.status==='absent'){ sb=`<span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-600 block mt-2 text-center w-full"><i class="fas fa-plane mr-1"></i> Ausente${p.returnDate?` (Hasta ${returnDateStr})`:''}</span>`; oc='opacity-75 hover:opacity-100'; }
-else if(p.status==='inactive'){ sb=`<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-300 dark:border-slate-700 block mt-2 text-center w-full"><i class="fas fa-pause-circle mr-1"></i> Inactivo / En duda</span>`; oc='opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all'; }
-let pb='', sh='';
-if(p.isStaff){
-pb = `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-3 py-1 rounded font-bold text-[10px] uppercase tracking-widest"><i class="fas fa-user-tie"></i> Cuerpo Técnico</span>`;
-sh = `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl mb-4 border border-slate-200 dark:border-slate-800"><div class="flex-1"><p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">ASIST. ENT</p><p class="text-xl font-black text-slate-800 dark:text-slate-200">${attendance}</p></div><div class="flex gap-4"><div class="text-center"><p class="text-[9px]">🟨</p><p class="font-black text-yellow-500">${yellows}</p></div><div class="text-center"><p class="text-[9px]">🟥</p><p class="font-black text-red-500">${reds}</p></div></div></div>`;
-} else {
-pb = `<span class="bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-white px-2 py-1 rounded font-black text-xs mr-1 shadow-sm">#${p.number||'-'}</span>` + pos.map(x=>`<span class="bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 px-2 py-1 rounded border border-brand-200 dark:border-brand-800/50 font-bold text-[10px] shadow-sm">${x}</span>`).join(' ');
-sh = `<div class="grid grid-cols-6 gap-1 text-center bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl mb-4 border border-slate-200 dark:border-slate-800"><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-slate-400 font-bold uppercase">PJ</p><p class="font-black text-slate-800 dark:text-slate-200">${games}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-brand-500 font-bold uppercase">ENT</p><p class="font-black text-brand-600 dark:text-brand-400">${attendance}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-slate-400 font-bold uppercase">G</p><p class="font-black text-green-500">${goals}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px] text-slate-400 font-bold uppercase">A</p><p class="font-black text-blue-500">${assists}</p></div><div class="border-r border-slate-200 dark:border-slate-700"><p class="text-[9px]">🟨</p><p class="font-black text-yellow-500">${yellows}</p></div><div><p class="text-[9px]">🟥</p><p class="font-black text-red-500">${reds}</p></div></div>`;
-}
-const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
-const ini = validName.charAt(0).toUpperCase();
-const img = p.image?`<img src="${p.image}" class="w-16 h-16 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md">`:`<div class="w-16 h-16 rounded-full ${p.isStaff?'bg-purple-100 text-purple-600 dark:bg-purple-900/50':'bg-brand-100 text-brand-600 dark:bg-brand-900/50'} font-black flex items-center justify-center text-2xl border-2 border-slate-200 dark:border-slate-700 shadow-md">${ini}</div>`;
-grid.innerHTML += `<div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-5 flex flex-col ${oc} relative transition-all hover:-translate-y-1 hover:shadow-lg"><div class="admin-only absolute top-4 right-4 flex gap-2 z-20"><button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit"></i></button><button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash"></i></button></div><div class="flex items-center gap-4 mb-3 mt-2 cursor-pointer" onclick="window.openPlayerProfile('${p.id}')">${img}<div class="overflow-hidden"><h3 class="font-black text-slate-900 dark:text-white text-lg truncate">${validName === '?' ? 'Sin Nombre' : validName}</h3>${p.alias?`<p class="font-medium italic text-slate-400 text-xs">"${p.alias}"</p>`:''}${b}</div></div><div class="flex items-center justify-between mb-3"><div class="flex flex-wrap gap-1">${pb}</div>${debtBadge}</div>${sb}<div class="mt-auto pt-4">${sh}<button onclick="window.openPlayerProfile('${p.id}')" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 text-brand-700 dark:text-brand-300 rounded-xl text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2"><i class="fas fa-id-card"></i> Ver Perfil</button></div></div>`;
-});
+    const grid = document.getElementById('players-grid'); if (!grid) return; grid.innerHTML = '';
+    let list = (window.players || []).filter(p => p.status !== 'inactive' || document.getElementById('player-position-filter')?.value === 'inactive');
+    if (window.currentFilter === 'f11') list = list.filter(p => p?.availableF11);
+    else if (window.currentFilter === 'f7') list = list.filter(p => p?.availableF7);
+
+    const q = (document.getElementById('player-search')?.value || '').trim().toLowerCase();
+    const posF = document.getElementById('player-position-filter')?.value || '';
+    if (q) list = list.filter(p => { const n = (p?.name || '').toLowerCase(); const al = (p?.alias || '').toLowerCase(); const num = String(p?.number || ''); return n.includes(q) || al.includes(q) || num === q; });
+    if (posF) {
+        if (posF === 'Staff') list = list.filter(p => p?.isStaff);
+        else if (posF === 'inactive') list = (window.players || []).filter(p => p?.status === 'inactive');
+        else list = list.filter(p => { const posRaw = p?.positions || p?.position || []; const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]); return pos.includes(posF); });
+    }
+    list.sort((a, b) => {
+        if (a?.isStaff && !b?.isStaff) return 1;
+        if (!a?.isStaff && b?.isStaff) return -1;
+        const nA = parseInt(a?.number) || 9999; const nB = parseInt(b?.number) || 9999;
+        if (nA !== nB) return nA - nB;
+        return (a?.name || '').localeCompare(b?.name || '');
+    });
+
+    if (list.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-slate-500 py-10 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay registros</div>`;
+        return;
+    }
+
+    list.forEach(p => {
+        if (!p) return;
+        const games = window.getPlayerStat(p, 'games'), goals = window.getPlayerStat(p, 'goals'), assists = window.getPlayerStat(p, 'assists'), yellows = window.getPlayerStat(p, 'yellows'), reds = window.getPlayerStat(p, 'reds'), mvps = window.getPlayerStat(p, 'mvps'), cleanSheets = window.getPlayerStat(p, 'cleanSheets');
+        const attendance = (window.trainings || []).filter(t => t?.attendees && Array.isArray(t.attendees) && t.attendees.includes(p.id)).length;
+
+        const posRaw = p.positions || p.position || [];
+        const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
+
+        const badges = [];
+        if (p.availableF11) badges.push('<span class="bg-brand-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F11</span>');
+        if (p.availableF7) badges.push('<span class="bg-green-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">F7</span>');
+        if (mvps > 0) badges.push(`<span class="bg-yellow-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase"><i class="fas fa-star"></i> ${mvps}</span>`);
+        if (pos.includes('Portero') && cleanSheets > 0) badges.push(`<span class="bg-teal-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase">🛡️ ${cleanSheets}</span>`);
+        const b = badges.length ? `<div class="flex items-center gap-1 flex-wrap mt-1">${badges.join('')}</div>` : '';
+
+        const dData = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id) : { total: 0 };
+        const hasDebt = (dData?.total || 0) > 0.01;
+        const mor = typeof window.getMorosityStatus === 'function' ? window.getMorosityStatus(p.id) : { status: hasDebt ? 'mora' : 'aldia' };
+
+        let topBar = 'from-brand-500 to-emerald-500';
+        let debtBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/25 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 font-black text-[10px] shrink-0"><i class="fas fa-check-circle"></i> Al Día</span>';
+        if (p.isStaff) {
+            topBar = 'from-purple-500 to-indigo-500';
+        } else if (hasDebt && mor.status === 'mora') {
+            topBar = 'from-red-500 to-rose-500';
+            debtBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-900/25 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 font-black text-[10px] shrink-0"><i class="fas fa-exclamation-circle"></i> $${dData.total.toFixed(2)}</span>`;
+        } else if (hasDebt) {
+            topBar = 'from-amber-400 to-orange-500';
+            debtBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/25 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 font-black text-[10px] shrink-0"><i class="fas fa-clock"></i> $${dData.total.toFixed(2)}</span>`;
+        }
+
+        let sb = '', oc = '';
+        const returnDateStr = p.returnDate && typeof p.returnDate === 'string' && p.returnDate.includes('-') ? p.returnDate.split('-').reverse().join('/') : 'Indefinido';
+        if (p.status === 'injured') { sb = `<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2.5 text-center w-full"><i class="fas fa-briefcase-medical mr-1"></i> Lesión${p.returnDate ? ` (Hasta ${returnDateStr})` : ''}</span>`; oc = 'opacity-80 hover:opacity-100'; }
+        else if (p.status === 'suspended') { sb = `<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-red-200 dark:border-red-800/50 block mt-2.5 text-center w-full"><i class="fas fa-ban mr-1"></i> Sanción</span>`; oc = 'opacity-80 hover:opacity-100'; }
+        else if (p.status === 'absent') { sb = `<span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-300 dark:border-slate-600 block mt-2.5 text-center w-full"><i class="fas fa-plane mr-1"></i> Ausente${p.returnDate ? ` (Hasta ${returnDateStr})` : ''}</span>`; oc = 'opacity-80 hover:opacity-100'; }
+        else if (p.status === 'inactive') { sb = `<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-300 dark:border-slate-700 block mt-2.5 text-center w-full"><i class="fas fa-pause-circle mr-1"></i> Inactivo / En duda</span>`; oc = 'opacity-55 grayscale hover:grayscale-0 hover:opacity-100 transition-all'; }
+
+        let pb = '', sh = '';
+        if (p.isStaff) {
+            pb = `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2.5 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest"><i class="fas fa-user-tie mr-1"></i>Cuerpo Técnico</span>`;
+            sh = `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl mb-3 border border-slate-200/80 dark:border-slate-800"><div class="flex-1"><p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">ASIST. ENT</p><p class="text-xl font-black text-slate-800 dark:text-slate-200">${attendance}</p></div><div class="flex gap-4"><div class="text-center"><p class="text-[9px]">🟨</p><p class="font-black text-yellow-500">${yellows}</p></div><div class="text-center"><p class="text-[9px]">🟥</p><p class="font-black text-red-500">${reds}</p></div></div></div>`;
+        } else {
+            pb = `<span class="bg-slate-900 dark:bg-slate-700 text-white px-2 py-0.5 rounded-md font-black text-[11px] shadow-sm">#${p.number || '-'}</span>` + pos.slice(0, 2).map(x => `<span class="bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 px-2 py-0.5 rounded-md border border-brand-200/70 dark:border-brand-800/50 font-bold text-[10px]">${x}</span>`).join('');
+            sh = `<div class="grid grid-cols-6 gap-1 text-center bg-slate-50 dark:bg-slate-900/60 py-2.5 px-1.5 rounded-xl mb-3 border border-slate-200/80 dark:border-slate-800"><div class="border-r border-slate-200 dark:border-slate-700/80"><p class="text-[8px] text-slate-400 font-bold uppercase">PJ</p><p class="font-black text-sm text-slate-800 dark:text-slate-200">${games}</p></div><div class="border-r border-slate-200 dark:border-slate-700/80"><p class="text-[8px] text-brand-500 font-bold uppercase">ENT</p><p class="font-black text-sm text-brand-600 dark:text-brand-400">${attendance}</p></div><div class="border-r border-slate-200 dark:border-slate-700/80"><p class="text-[8px] text-slate-400 font-bold uppercase">G</p><p class="font-black text-sm text-green-500">${goals}</p></div><div class="border-r border-slate-200 dark:border-slate-700/80"><p class="text-[8px] text-slate-400 font-bold uppercase">A</p><p class="font-black text-sm text-blue-500">${assists}</p></div><div class="border-r border-slate-200 dark:border-slate-700/80"><p class="text-[8px]">🟨</p><p class="font-black text-sm text-yellow-500">${yellows}</p></div><div><p class="text-[8px]">🟥</p><p class="font-black text-sm text-red-500">${reds}</p></div></div>`;
+        }
+
+        const validName = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : '?';
+        const ini = validName.charAt(0).toUpperCase();
+        const ringCls = p.isStaff ? 'ring-purple-400/50' : (hasDebt ? (mor.status === 'mora' ? 'ring-red-400/50' : 'ring-amber-400/50') : 'ring-brand-400/40');
+        const img = p.image
+            ? `<img src="${p.image}" class="w-16 h-16 rounded-2xl object-cover ring-2 ${ringCls} shadow-md shrink-0">`
+            : `<div class="w-16 h-16 rounded-2xl ${p.isStaff ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/50' : 'bg-brand-100 text-brand-600 dark:bg-brand-900/50'} font-black flex items-center justify-center text-2xl ring-2 ${ringCls} shadow-md shrink-0">${ini}</div>`;
+        const watermark = p.isStaff ? 'CT' : (p.number ? `#${p.number}` : '');
+
+        grid.innerHTML += `
+        <div class="bg-white dark:bg-darkcard rounded-2xl shadow-soft dark:shadow-soft-dark border border-slate-200 dark:border-slate-800 p-5 pt-6 flex flex-col ${oc} relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${topBar}"></div>
+            ${watermark ? `<span class="absolute -bottom-3 right-2 text-7xl font-black italic text-slate-900/[0.04] dark:text-white/[0.04] select-none pointer-events-none leading-none">${watermark}</span>` : ''}
+            <div class="admin-only absolute top-3.5 right-3.5 flex gap-1.5 z-20">
+                <button onclick="window.editPlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100/90 dark:bg-slate-800/90 text-brand-500 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fas fa-edit text-xs"></i></button>
+                <button onclick="window.deletePlayer('${p.id}')" class="w-8 h-8 rounded-full bg-slate-100/90 dark:bg-slate-800/90 text-red-400 hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-trash text-xs"></i></button>
+            </div>
+            <div class="flex items-center gap-3.5 mb-3.5 relative z-10 cursor-pointer pr-14" onclick="window.openPlayerProfile('${p.id}')">
+                ${img}
+                <div class="min-w-0">
+                    <h3 class="font-black text-slate-900 dark:text-white text-base sm:text-lg leading-tight truncate">${validName === '?' ? 'Sin Nombre' : validName}</h3>
+                    ${p.alias ? `<p class="font-medium italic text-slate-400 text-xs truncate">"${p.alias}"</p>` : ''}
+                    ${b}
+                </div>
+            </div>
+            <div class="flex items-center justify-between gap-2 mb-2 relative z-10">
+                <div class="flex flex-wrap items-center gap-1 min-w-0">${pb}</div>
+                ${debtBadge}
+            </div>
+            <div class="relative z-10">${sb}</div>
+            <div class="mt-auto pt-3 relative z-10">
+                ${sh}
+                <button onclick="window.openPlayerProfile('${p.id}')" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 text-brand-700 dark:text-brand-300 rounded-xl text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2"><i class="fas fa-id-card"></i> Ver Perfil</button>
+            </div>
+        </div>`;
+    });
 };
 window.currentPlayer360 = null; window.radarChart360 = null;
 window.switchProfileTab = function(tab) {
