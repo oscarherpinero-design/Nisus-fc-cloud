@@ -100,13 +100,16 @@
             <button onclick="window.toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl p-2 focus:outline-none transition"><i class="fas fa-times"></i></button>
         </div>
         
-        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-darkcard md:hidden">
-            <p class="text-[10px] text-slate-400 font-bold uppercase mb-3 tracking-widest">Filtros Móvil</p>
-            <div class="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1 text-sm items-center justify-between mb-3 border border-slate-200 dark:border-slate-800">
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-darkcard">
+            <p class="text-[10px] text-slate-400 font-bold uppercase mb-2.5 tracking-widest">Temporada y Filtros</p>
+            <div class="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1 text-sm items-center justify-between mb-3 border border-slate-200 dark:border-slate-800 md:hidden">
                 <button onclick="window.setFilter('all')" id="btn-side-filter-all" class="flex-1 py-2 rounded-lg bg-white dark:bg-brand-600 text-slate-900 dark:text-white font-bold shadow-sm transition text-center">GRL</button>
                 <button onclick="window.setFilter('f11')" id="btn-side-filter-f11" class="flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition font-medium text-center">F11</button>
                 <button onclick="window.setFilter('f7')" id="btn-side-filter-f7" class="flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition font-medium text-center">F7</button>
             </div>
+            <select id="season-filter-side" onchange="window.setSeasonFilter(this.value)" class="public-filter input-premium py-2 text-xs font-bold cursor-pointer"><option value="all">Todas las Temporadas</option></select>
+            <select id="season-filter" class="hidden"><option value="all">Todas Temp.</option></select>
+        </div>
             <select id="season-filter-side" onchange="window.setSeasonFilter(this.value)" class="input-premium py-2 text-xs cursor-pointer"><option value="all">Todas las Temporadas</option></select>
             <select id="season-filter" class="hidden"><option value="all">Todas Temp.</option></select>
         </div>
