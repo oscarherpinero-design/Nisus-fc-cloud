@@ -625,6 +625,12 @@
                         <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Comprados</label><input type="number" id="inv-total" min="0" class="input-premium font-black"></div>
                         <div><label class="block text-xs font-bold text-red-500 uppercase tracking-widest mb-2">Perdidos / Rotos</label><input type="number" id="inv-lost" min="0" class="input-premium font-black text-red-500"></div>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">En Custodia de (¿Quién lo tiene?)</label>
+                        <select id="inv-custodian" class="input-premium">
+                            <option value="">En el Club / Sin asignar</option>
+                        </select>
+                    </div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Notas / Estado</label><input type="text" id="inv-notes" placeholder="Ej. Faltan 2 petos azules..." class="input-premium"></div>
                     <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-2"><button type="button" onclick="window.showSection('inventory')" class="px-6 py-3 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Cerrar</button><button type="submit" id="btn-save-inv" class="admin-only px-6 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-sm hover:bg-brand-700 transition">Guardar</button></div>
                 </form>
