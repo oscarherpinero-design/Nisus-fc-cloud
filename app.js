@@ -597,8 +597,7 @@ window.toggleScoreFields(); window.renderCallupList(); window.updateFormationOpt
 };
 window.editMatch = function(id) {
 const m = window.matches.find(x => x.id === id); if(!m) return;
-document.getElementById('m-id').value = m.id; document.getElementById('m-opponent').value = m.opponent; document.getElementById('m-date').value = m.date; document.getElementById('m-location').value = m.location||''; document.getElementById('m-tournament').value = m.tournament||''; document.getElementById('m-modality').value = m.modality||'f11'; document.getElementById('m-season').value = m.season||''; document.getElementById('m-matchday').value = m.matchday||''; document.getElementById('m-status').value = m.status; document.getElementById('m-kit').value = m.kit||'white_blue'; document.getElementById('m-opp-shirt').value = m.oppColor||'#ff0000'; document.getElementById('m-opp-shorts').value = m.oppShorts||m.oppColor||'#ff0000'; document.getElementById('m-opp-socks').value = m.oppSocks||m.oppColor||'#ff0000'; document.getElementById('m-opp-gk').value = m.oppGk||'#00ff00'; document.getElementById('m-notes').value = m.notes||'';
-if(m.status === 'finished') { document.getElementById('m-goals-us').value = m.goalsUs; document.getElementById('m-goals-them').value = m.goalsThem; } else { document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = ''; }
+document.getElementById('m-id').value = m.id; document.getElementById('m-opponent').value = m.opponent; document.getElementById('m-date').value = m.date; if (document.getElementById('m-time')) document.getElementById('m-time').value = m.time || ''; document.getElementById('m-location').value = m.location||''; document.getElementById('m-tournament').value = m.tournament||''; document.getElementById('m-modality').value = m.modality||'f11'; document.getElementById('m-season').value = m.season||''; document.getElementById('m-matchday').value = m.matchday||''; document.getElementById('m-status').value = m.status; document.getElementById('m-kit').value = m.kit||'white_blue'; document.getElementById('m-opp-shirt').value = m.oppColor||'#ff0000'; document.getElementById('m-opp-shorts').value = m.oppShorts||m.oppColor||'#ff0000'; document.getElementById('m-opp-socks').value = m.oppSocks||m.oppColor||'#ff0000'; document.getElementById('m-opp-gk').value = m.oppGk||'#00ff00'; document.getElementById('m-notes').value = m.notes||'';if(m.status === 'finished') { document.getElementById('m-goals-us').value = m.goalsUs; document.getElementById('m-goals-them').value = m.goalsThem; } else { document.getElementById('m-goals-us').value = ''; document.getElementById('m-goals-them').value = ''; }
 window.currentLineup = JSON.parse(JSON.stringify(m.lineup || [])); window.currentEvents = m.events ? JSON.parse(JSON.stringify(m.events)) : [];
 document.getElementById('match-form-title').innerHTML = '<i class="fas fa-edit text-brand-500 mr-2"></i>Editar Partido';
 window.renderCallupList(); window.toggleScoreFields(); window.updateFormationOptions();
@@ -625,7 +624,7 @@ ev.fineApplied = true; multasAplicadas++;
 }
 }
 });
-const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
+const nm = { id: docId, opponent: document.getElementById('m-opponent').value, date: document.getElementById('m-date').value, time: document.getElementById('m-time')?.value || '', location: document.getElementById('m-location').value, tournament: document.getElementById('m-tournament').value, modality: document.getElementById('m-modality').value, season: document.getElementById('m-season').value, matchday: document.getElementById('m-matchday').value, status: s, kit: document.getElementById('m-kit').value, oppColor: document.getElementById('m-opp-shirt').value, oppShorts: document.getElementById('m-opp-shorts').value, oppSocks: document.getElementById('m-opp-socks').value, oppGk: document.getElementById('m-opp-gk').value, goalsUs: gU, goalsThem: gT, mvp: mvp, captain: document.getElementById('m-captain')?.value||null, formation: document.getElementById('m-formation')?.value||'', notes: document.getElementById('m-notes').value, lineup: JSON.parse(JSON.stringify(window.currentLineup)), events: matchEvents };
 batch.set(db.collection(window.matchesPath).doc(docId), nm);
 try { await batch.commit(); window.showToast(multasAplicadas > 0 ? `Guardado (${multasAplicadas} multas aplicadas)` : 'Partido Guardado'); window.showSection('matches'); } catch(err) { window.showToast('Error', true); } finally { btn.disabled=false; btn.textContent="Guardar Partido"; }
 };
@@ -1624,7 +1623,8 @@ let list = (window.matches || []).filter(m => m && m.status !== 'archived'); if(
 list.sort((a,b) => new Date(b.date) - new Date(a.date));
 if(list.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-slate-500 bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">No hay partidos registrados</div>'; return; }
 list.forEach(m => {
-const dStr = new Date(m.date+'T12:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' }); const isF11 = m.modality === 'f11';
+const tStr = typeof window.formatMatchTime === 'function' ? window.formatMatchTime(m.time) : (m.time || '');
+const dStr = new Date(m.date+'T12:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' }) + (tStr ? ` · ${tStr}` : ''); const isF11 = m.modality === 'f11';
 const tBadge = `<span class="text-[9px] font-black px-2 py-1 rounded-lg shadow-sm ${isF11?'bg-blue-500 text-white':'bg-green-500 text-white'}">F${isF11?11:7}</span> <span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ml-1"><i class="fas fa-trophy mr-1 text-slate-400"></i>${m.tournament||'Amistoso'}</span>`;
 const sBadge = m.season ? `<span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 ml-1">T.${m.season}</span>` : '';
 const kBadge = m.kit==='white_blue' ? `<span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm ml-1"><i class="fas fa-tshirt text-blue-500"></i> B/A</span>` : `<span class="text-[9px] font-bold px-2 py-1 rounded-lg bg-slate-900 text-white shadow-sm ml-1"><i class="fas fa-tshirt text-slate-400"></i> Negra</span>`;
@@ -1715,15 +1715,59 @@ if(aEl) {
 window.updateDashboard = function() {
 let list = window.matches; if(window.currentFilter !== 'all') list = list.filter(m => m.modality === window.currentFilter); if(window.currentSeason !== 'all') list = list.filter(m => m.season === window.currentSeason);
 list.sort((a,b) => new Date(b.date) - new Date(a.date));
-const nx = list.filter(m => m.status === 'pending').sort((a,b) => new Date(a.date) - new Date(b.date))[0];
+window.formatMatchTime = window.formatMatchTime || function(timeStr) {
+    if (!timeStr || !timeStr.includes(':')) return '';
+    const [hRaw, mRaw] = timeStr.split(':');
+    const h = parseInt(hRaw, 10);
+    if (isNaN(h)) return timeStr;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${mRaw} ${ampm}`;
+};
+
+const nx = list.filter(m => m.status === 'pending').sort((a, b) => `${a.date || ''} ${a.time || '23:59'}`.localeCompare(`${b.date || ''} ${b.time || '23:59'}`))[0];
 const btn = document.getElementById('btn-tactics-next');
+const cdEl = document.getElementById('next-match-countdown');
+const oppVis = document.getElementById('next-match-opp-visual');
+
 if (nx) {
-document.getElementById('next-match-vs').textContent = nx.opponent;
-let loc=''; if(nx.location) loc=nx.location.startsWith('http')?`<a href="${nx.location}" target="_blank" class="text-white hover:text-brand-100 flex items-center justify-center gap-1 mt-2 text-xs bg-white/10 px-3 py-1 rounded-full w-fit mx-auto"><i class="fas fa-map-marker-alt"></i> Mapa</a>`:`<p class="text-brand-100/70 flex items-center justify-center gap-1 mt-2 text-[10px] uppercase tracking-widest"><i class="fas fa-map-marker-alt"></i> ${nx.location}</p>`;
-document.getElementById('next-match-date').innerHTML = new Date(nx.date+'T12:00:00').toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long'}) + loc;
-document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament}`;
-btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
-} else { document.getElementById('next-match-vs').textContent = "Sin partidos"; document.getElementById('next-match-date').textContent = "Programa un encuentro"; document.getElementById('next-match-type').innerHTML = `-`; btn.classList.add('hidden'); }
+    document.getElementById('next-match-vs').textContent = nx.opponent;
+    if (oppVis) {
+        oppVis.innerHTML = window.generateKitSVG(nx.oppColor || '#ef4444', nx.oppColor || '#ef4444', nx.oppShorts || nx.oppColor || '#ef4444', nx.oppSocks || nx.oppColor || '#ef4444');
+    }
+    if (cdEl && nx.date) {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const mDay = new Date(nx.date + 'T00:00:00');
+        const diff = Math.round((mDay - today) / (1000 * 60 * 60 * 24));
+        if (diff === 0) cdEl.innerHTML = '<i class="fas fa-fire mr-1"></i> ¡HOY!';
+        else if (diff === 1) cdEl.innerHTML = '<i class="fas fa-bolt mr-1"></i> MAÑANA';
+        else if (diff > 1) cdEl.innerHTML = `<i class="fas fa-clock mr-1"></i> EN ${diff} DÍAS`;
+        else cdEl.innerHTML = '<i class="fas fa-bolt mr-1"></i> PRÓXIMO';
+    }
+    const dateTxt = new Date(nx.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+    const timeTxt = window.formatMatchTime(nx.time);
+    const timeBadge = timeTxt ? `<span class="inline-flex items-center gap-1 bg-amber-400/20 text-amber-200 border border-amber-300/30 px-2.5 py-0.5 rounded-full text-xs font-black"><i class="far fa-clock"></i> ${timeTxt}</span>` : '';
+    let loc = '';
+    if (nx.location) loc = nx.location.startsWith('http')
+        ? `<a href="${nx.location}" target="_blank" class="inline-flex items-center justify-center gap-1.5 text-white hover:text-brand-100 text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-1 rounded-full transition"><i class="fas fa-map-marker-alt text-amber-300"></i> Abrir Mapa</a>`
+        : `<p class="text-brand-100/80 flex items-center justify-center gap-1 text-[11px] font-bold"><i class="fas fa-map-marker-alt text-amber-300"></i> ${nx.location}</p>`;
+
+    document.getElementById('next-match-date').innerHTML = `
+        <div class="flex flex-wrap items-center justify-center gap-2">
+            <span class="text-white font-bold text-sm capitalize">${dateTxt}</span>
+            ${timeBadge}
+        </div>
+        ${loc ? `<div class="pt-1">${loc}</div>` : ''}`;
+    document.getElementById('next-match-type').innerHTML = `<i class="fas fa-trophy mr-1"></i> ${nx.tournament || 'Amistoso'}`;
+    btn.classList.remove('hidden'); btn.onclick = () => window.editMatch(nx.id);
+} else {
+    document.getElementById('next-match-vs').textContent = "Sin rival";
+    if (oppVis) oppVis.innerHTML = '<div class="w-11 h-11 rounded-full bg-white/15 border border-white/25 flex items-center justify-center text-white/60 font-black text-base"><i class="fas fa-calendar-times"></i></div>';
+    if (cdEl) cdEl.innerHTML = '<i class="fas fa-bolt mr-1"></i> Próximo';
+    document.getElementById('next-match-date').innerHTML = '<p class="text-brand-100/80 text-xs font-medium">Programa un encuentro en Partidos</p>';
+    document.getElementById('next-match-type').innerHTML = `-`;
+    btn.classList.add('hidden');
+}
 const fin = list.filter(m => ['finished', 'forfait', 'archived'].includes(m.status)).slice(0, 3); const rD = document.getElementById('latest-results');
 if(rD) {
 rD.innerHTML = '';
