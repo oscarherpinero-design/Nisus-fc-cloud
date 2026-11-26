@@ -2175,11 +2175,6 @@ document.addEventListener('mouseup', window.dragEnd);
 const p = document.getElementById('tactical-pitch');
 if(p) { p.addEventListener('touchmove', window.dragMove, {passive: false}); p.addEventListener('touchend', window.dragEnd); }
 };
-if (document.readyState === 'loading') {
-document.addEventListener('DOMContentLoaded', window.initApp);
-} else 
-window.paymentReports = window.paymentReports || [];
-
 window.paymentReports = window.paymentReports || [];
 window.PAGO_MOVIL_INFO = {
     banco: 'Banesco (0134)',
@@ -2679,6 +2674,8 @@ window.renderPlayerComparator = function() {
         });
     }
 };
-{    
-window.initApp();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initApp);
+} else {
+    window.initApp();
 }
