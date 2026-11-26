@@ -322,10 +322,62 @@ const badgesEl = document.getElementById('pp-badges'); badgesEl.innerHTML = '';
 if(p.number) badgesEl.innerHTML += `<span class="bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-black shadow-sm">#${p.number}</span>`;
 if(p.availableF11) badgesEl.innerHTML += `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F11</span>`;
 if(p.availableF7) badgesEl.innerHTML += `<span class="bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded-lg text-[10px] font-black uppercase">F7</span>`;
-window.renderProfileRendimiento(p); window.renderProfileClinica(p); window.renderProfileFinanzas(p); window.renderProfileFicha(p);
+window.renderProfileAchievements(p); window.renderProfileRendimiento(p); window.renderProfileClinica(p); window.renderProfileFinanzas(p); window.renderProfileFicha(p);
 window.switchProfileTab('rendimiento'); window.showSection('playerProfile');
 };
 window.closePlayerProfile = function() { document.getElementById('playerProfile').classList.add('hidden'); window.showSection('players'); };
+window.renderProfileAchievements = function(p) {
+    const el = document.getElementById('pp-achievements');
+    if (!el) return;
+
+    const badges = [];
+    const debtTotal = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id).total : 0;
+
+    if (!p.isStaff) {
+        const games = window.getPlayerStat(p, 'games');
+        const goals = window.getPlayerStat(p, 'goals');
+        const assists = window.getPlayerStat(p, 'assists');
+        const mvps = window.getPlayerStat(p, 'mvps');
+        const yellows = window.getPlayerStat(p, 'yellows');
+        const reds = window.getPlayerStat(p, 'reds');
+        const cleanSheets = window.getPlayerStat(p, 'cleanSheets');
+        const totalTr = (window.trainings || []).length;
+        const att = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
+        const attPct = totalTr > 0 ? Math.round((att / totalTr) * 100) : 0;
+
+        if (goals >= 3) badges.push({ icon: '🔥', title: 'Goleador', sub: `${goals} goles`, cls: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800/50' });
+        if (assists >= 3) badges.push({ icon: '🎯', title: 'Arquitecto', sub: `${assists} asist.`, cls: 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/50' });
+        if (cleanSheets >= 2) badges.push({ icon: '🧤', title: 'Muro', sub: `${cleanSheets} vallas en 0`, cls: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/50' });
+        if (mvps >= 1) badges.push({ icon: '⭐', title: 'Estrella', sub: `${mvps} MVP`, cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/50' });
+        if (totalTr >= 3 && attPct >= 75) badges.push({ icon: '🫁', title: 'Pulmón', sub: `${attPct}% asist.`, cls: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/50' });
+        if (games >= 3 && yellows === 0 && reds === 0) badges.push({ icon: '🤝', title: 'Fair Play', sub: '0 tarjetas', cls: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' });
+    }
+
+    if (debtTotal <= 0.01) {
+        badges.push({ icon: '✅', title: 'Solvente', sub: 'Al día', cls: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/50' });
+    }
+
+    if (badges.length === 0) {
+        el.classList.add('hidden');
+        el.innerHTML = '';
+        return;
+    }
+
+    el.classList.remove('hidden');
+    el.innerHTML = `
+        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><i class="fas fa-award text-amber-500 mr-1"></i> Insignias Desbloqueadas</p>
+        <div class="flex flex-wrap gap-2">
+            ${badges.map(b => `
+                <div class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${b.cls} shadow-sm">
+                    <span class="text-base leading-none">${b.icon}</span>
+                    <div>
+                        <p class="text-xs font-black leading-none">${b.title}</p>
+                        <p class="text-[9px] font-bold opacity-75 mt-0.5">${b.sub}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
+};
 window.renderProfileRendimiento = function(p) {
 const games = window.getPlayerStat(p, 'games', true);
 const goals = window.getPlayerStat(p, 'goals', true);
