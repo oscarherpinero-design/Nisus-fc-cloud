@@ -345,9 +345,33 @@ window.renderProfileAchievements = function(p) {
         const att = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
         const attPct = totalTr > 0 ? Math.round((att / totalTr) * 100) : 0;
 
+        const posRaw = p.positions || p.position || [];
+        const pos = Array.isArray(posRaw) ? posRaw : (typeof posRaw === 'string' ? posRaw.split(',') : [posRaw]);
+        const isDefender = pos.some(x => ['Defensa Central', 'Lateral Derecho', 'Lateral Izquierdo', 'Carrilero'].includes(x));
+        const isDefensiveUnit = isDefender || pos.includes('Mediocentro Defensivo');
+
+        let captainCount = 0;
+        let defCleanSheets = 0;
+        (window.matches || []).forEach(m => {
+            if (!m || !['finished', 'forfait', 'archived'].includes(m.status)) return;
+            if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return;
+            if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
+
+            if (m.captain === p.id) captainCount++;
+
+            const lArr = Array.isArray(m.lineup) ? m.lineup : [];
+            const eArr = Array.isArray(m.events) ? m.events : [];
+            const played = lArr.some(l => l && l.playerId === p.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === p.id);
+            if (played && (m.goalsThem == 0 || m.goalsThem === '0')) defCleanSheets++;
+        });
+
+        if (captainCount >= 1) badges.push({ icon: '🎖️', title: 'Capitán', sub: `${captainCount} ${captainCount === 1 ? 'partido' : 'partidos'}`, cls: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700/60' });
         if (goals >= 3) badges.push({ icon: '🔥', title: 'Goleador', sub: `${goals} goles`, cls: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800/50' });
         if (assists >= 3) badges.push({ icon: '🎯', title: 'Arquitecto', sub: `${assists} asist.`, cls: 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/50' });
         if (cleanSheets >= 2) badges.push({ icon: '🧤', title: 'Muro', sub: `${cleanSheets} vallas en 0`, cls: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/50' });
+        if (isDefensiveUnit && !pos.includes('Portero') && defCleanSheets >= 2) badges.push({ icon: '🛡️', title: 'Muralla', sub: `${defCleanSheets} vallas en 0`, cls: 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/50' });
+        if (isDefender && goals >= 1) badges.push({ icon: '⚡', title: 'Defensa con Gol', sub: `${goals} ${goals === 1 ? 'gol' : 'goles'}`, cls: 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800/50' });
+        if (isDefender && assists >= 2) badges.push({ icon: '🚀', title: 'Proyección', sub: `${assists} asist.`, cls: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/50' });
         if (mvps >= 1) badges.push({ icon: '⭐', title: 'Estrella', sub: `${mvps} MVP`, cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/50' });
         if (totalTr >= 3 && attPct >= 75) badges.push({ icon: '🫁', title: 'Pulmón', sub: `${attPct}% asist.`, cls: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/50' });
         if (games >= 3 && yellows === 0 && reds === 0) badges.push({ icon: '🤝', title: 'Fair Play', sub: '0 tarjetas', cls: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' });
