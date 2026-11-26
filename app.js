@@ -812,17 +812,20 @@ window.syncPlayersDebtFields = async function() {
     }
 };
 window.getMorosityStatus = function(playerId) {
-const dData = window.getPlayerDebts(playerId);
-if (dData.total <= 0.01) return { status: 'aldia', label: 'Al Día', color: 'green' };
-let hasVencida = false; const today = new Date();
-dData.debts.forEach(d => {
-if (d.date && typeof d.date === 'string') {
-const parts = d.date.split('-');
-if (parts.length === 3) { const dDate = new Date(parts[0], parts[1] - 1, 25); if (today > dDate) hasVencida = true; }
-}
-});
-if (hasVencida || today.getDate() > 25) return { status: 'mora', label: 'En Mora', color: 'red' };
-return { status: 'plazo', label: 'En Plazo', color: 'yellow' };
+    const dData = window.getPlayerDebts(playerId);
+    if (dData.total <= 0.01) return { status: 'aldia', label: 'Al Día', color: 'green' };
+    const todayStr = new Date().toISOString().split('T')[0];
+    let hasVencida = false;
+    dData.debts.forEach(d => {
+        if (d.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(d.dueDate)) {
+            if (todayStr > d.dueDate) hasVencida = true;
+        } else if (d.typeKey === 'mensualidad' && d.date && typeof d.date === 'string') {
+            const parts = d.date.split('-');
+            if (parts.length === 3 && todayStr > `${parts[0]}-${parts[1]}-25`) hasVencida = true;
+        }
+    });
+    if (hasVencida) return { status: 'mora', label: 'En Mora', color: 'red' };
+    return { status: 'plazo', label: 'En Plazo', color: 'yellow' };
 };
 window.newTransaction = function(type) {
 document.getElementById('finances-form').reset(); document.getElementById('f-id').value = ''; document.getElementById('f-type').value = type; document.getElementById('fin-form-title').innerHTML = type === 'income' ? '<i class="fas fa-arrow-down text-green-500 mr-2"></i>Nuevo Ingreso' : '<i class="fas fa-arrow-up text-red-500 mr-2"></i>Nuevo Egreso';
