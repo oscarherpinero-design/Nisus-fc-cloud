@@ -402,7 +402,7 @@
                             <h3 class="font-black text-slate-800 dark:text-white flex items-center text-lg"><i class="fas fa-calendar-check text-brand-500 mr-2"></i>Cuotas Mensuales</h3>
                             <p class="text-xs text-slate-400 font-medium mt-1">Cobra la mensualidad a todo el plantel</p>
                         </div>
-                        <div class="flex flex-wrap items-center gap-3">
+                       <div class="flex flex-wrap items-center gap-3">
                             <div class="flex items-center gap-2">
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mes</label>
                                 <input type="month" id="dues-month" class="input-premium py-2 text-sm" onchange="window.renderMonthlyDues()">
@@ -411,7 +411,12 @@
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cuota $</label>
                                 <input type="number" step="0.01" min="0" id="dues-amount" placeholder="0.00" class="input-premium py-2 text-sm w-24" onchange="window.renderMonthlyDues()">
                             </div>
-                            <button onclick="window.chargeMonthlyDues()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"><i class="fas fa-bolt"></i> Generar a Seleccionados</button>                        
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Límite ($→€)</label>
+                                <input type="date" id="dues-due-date" class="input-premium py-2 text-xs w-36">
+                                <button type="button" onclick="window.updateMonthlyDuesDeadline()" class="admin-only bg-slate-200 dark:bg-slate-800 hover:bg-brand-100 dark:hover:bg-brand-900/40 text-slate-700 dark:text-slate-200 px-2.5 py-2 rounded-xl text-xs font-bold transition shadow-sm" title="Guardar fecha límite para las cuotas de este mes"><i class="fas fa-save"></i></button>
+                            </div>
+                            <button onclick="window.chargeMonthlyDues()" class="admin-only bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"><i class="fas fa-bolt"></i> Generar a Seleccionados</button>
                         </div>
                     </div>
                     <div id="monthly-dues-grid" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
@@ -632,7 +637,20 @@
                     </div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría *</label><select id="f-category" onchange="window.toggleMatchSelect()" required class="input-premium"></select></div>
                     <div id="f-match-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Partido asociado *</label><select id="f-match" onchange="window.calcArbitraje()" class="input-premium"><option value="">Selecciona...</option></select><div id="f-arbitraje-calc" class="mt-3 text-sm text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 hidden"></div></div>
-                    <div id="f-player-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jugador *</label><select id="f-player" onchange="window.populateSpecificDebts()" class="input-premium"><option value="">Selecciona...</option></select></div>
+                   <div id="f-player-container" class="hidden"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jugador *</label><select id="f-player" onchange="window.populateSpecificDebts()" class="input-premium"><option value="">Selecciona...</option></select></div>
+                    <div id="f-rate-config-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tasa de Cobro *</label>
+                            <select id="f-rate-mode" class="input-premium py-2 text-xs font-bold">
+                                <option value="eur">BCV Euro (€)</option>
+                                <option value="usd">BCV Dólar ($)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Fecha Límite (Opcional)</label>
+                            <input type="date" id="f-due-date" class="input-premium py-2 text-xs">
+                        </div>
+                    </div>
                     <div id="f-specific-debt-container" class="hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 text-brand-600 dark:text-brand-400">Vincular a deuda (Opcional)</label>
                         <select id="f-specific-debt" onchange="window.handleSpecificDebtSelect()" class="input-premium text-xs mb-1"><option value="">Abono general a cuenta</option></select>
@@ -911,7 +929,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Monto USD ($) *</label>
-                        <input type="number" step="0.01" min="0.01" id="rp-amount" required placeholder="0.00" class="public-filter input-premium py-2.5 font-black text-base">
+                        <input type="number" step="0.01" min="0.01" id="rp-amount" oninput="window.updateReportBsPreview()" required placeholder="0.00" class="public-filter input-premium py-2.5 font-black text-base">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Método de Pago *</label>
@@ -922,11 +940,19 @@
                     </div>
                 </div>
 
-                <!-- Datos de Pago Móvil (Solo al elegir Pago Móvil) -->
-                <div id="rp-pm-info" class="hidden bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800/40 rounded-2xl p-4 space-y-2">
-                    <div class="flex justify-between items-center">
+                <!-- Datos de Pago Móvil y Conversión BCV -->
+                <div id="rp-pm-info" class="hidden bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800/40 rounded-2xl p-4 space-y-3">
+                    <div id="rp-bs-box" class="bg-white dark:bg-slate-900/80 border border-sky-200 dark:border-sky-800/60 rounded-xl p-3 flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Monto a Transferir</p>
+                            <p id="rp-bs-amount" class="text-xl font-black text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5">Calculando Bs...</p>
+                            <p id="rp-bs-rate-info" class="text-[10px] font-bold text-sky-700 dark:text-sky-300 mt-0.5">Consultando tasa oficial BCV...</p>
+                        </div>
+                        <button type="button" onclick="window.copyReportBsAmount()" class="shrink-0 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg transition shadow-sm"><i class="fas fa-copy mr-1"></i>Copiar Bs</button>
+                    </div>
+                    <div class="flex justify-between items-center pt-1">
                         <span class="text-[10px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300"><i class="fas fa-mobile-alt mr-1"></i> Datos Pago Móvil NISUS FC</span>
-                        <button type="button" onclick="window.copyPagoMovilData()" class="text-[10px] font-bold bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-lg transition"><i class="fas fa-copy mr-1"></i>Copiar</button>
+                        <button type="button" onclick="window.copyPagoMovilData()" class="text-[10px] font-bold bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-lg transition"><i class="fas fa-copy mr-1"></i>Copiar Datos</button>
                     </div>
                     <div class="text-xs text-slate-700 dark:text-slate-200 space-y-1 font-medium">
                         <p><span class="text-slate-400">Banco:</span> <strong id="pm-bank">Banesco (0134)</strong></p>
@@ -941,13 +967,12 @@
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Comprobante (Imagen) *</label>
+                    <label id="rp-proof-label" class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Comprobante (Imagen) *</label>
                     <input type="file" id="rp-proof-file" accept="image/*" required onchange="window.handleProofImageChange(event)" class="public-filter input-premium py-2 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
                     <div id="rp-proof-preview-wrap" class="hidden mt-2.5 relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900/5 max-h-40 flex justify-center">
                         <img id="rp-proof-preview" src="" alt="Comprobante" class="max-h-40 object-contain">
                     </div>
                 </div>
-
                 <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-3">
                     <button type="button" onclick="document.getElementById('modal-report-payment').classList.add('hidden')" class="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-sm">Cancelar</button>
                     <button type="submit" id="btn-submit-report" class="flex-1 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition text-sm flex items-center justify-center gap-2"><i class="fas fa-check"></i> Enviar Pago</button>
