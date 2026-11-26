@@ -18,7 +18,18 @@ window.showSection = function(sectionId) {
 const sec = document.getElementById(sectionId); if(sec) { sec.classList.remove('hidden'); sec.classList.remove('section-fade-in'); void sec.offsetWidth; sec.classList.add('section-fade-in'); }
 ['dashboard', 'stats', 'players', 'matches', 'attendance', 'finances', 'inventory'].forEach(id => { const s = document.getElementById('nav-side-' + id); if(s) { s.classList.remove('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); s.classList.add('text-slate-600', 'dark:text-slate-300'); } });
 const aS = document.getElementById('nav-side-' + sectionId); if(aS) { aS.classList.add('bg-brand-50', 'dark:bg-brand-900/30', 'text-brand-700', 'dark:text-brand-300'); aS.classList.remove('text-slate-600', 'dark:text-slate-300'); }
-const m = document.getElementById('side-menu'); if(m && !m.classList.contains('-translate-x-full')) window.toggleMenu();
+['dashboard', 'players', 'matches', 'finances'].forEach(id => {
+    const b = document.getElementById('nav-bottom-' + id);
+    if (!b) return;
+    if (id === sectionId) {
+        b.classList.add('text-brand-600', 'dark:text-brand-400');
+        b.classList.remove('text-slate-400', 'dark:text-slate-500');
+    } else {
+        b.classList.remove('text-brand-600', 'dark:text-brand-400');
+        b.classList.add('text-slate-400', 'dark:text-slate-500');
+    }
+});
+    const m = document.getElementById('side-menu'); if(m && !m.classList.contains('-translate-x-full')) window.toggleMenu();
 if(sectionId === 'players') {
 if(typeof window.renderPlayers === 'function') window.renderPlayers();
 if(typeof window.renderBirthdaysAvailability === 'function') window.renderBirthdaysAvailability();
@@ -2708,11 +2719,12 @@ window.renderPendingPaymentReports = function() {
     const countEl = document.getElementById('pending-reports-count');
     const listEl = document.getElementById('pending-reports-list');
 
-    if (badge) {
-        badge.textContent = reports.length;
-        if (reports.length > 0) badge.classList.remove('hidden');
-        else badge.classList.add('hidden');
-    }
+    [badge, document.getElementById('nav-bottom-fin-badge')].forEach(el => {
+        if (!el) return;
+        el.textContent = reports.length;
+        if (reports.length > 0) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    });
     if (!panel || !listEl) return;
 
     if (reports.length === 0) {
