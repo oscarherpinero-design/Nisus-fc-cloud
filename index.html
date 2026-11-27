@@ -65,6 +65,46 @@
   <meta property="og:image" content="https://bolt.new/static/og_default.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
+    <style>
+        @keyframes nisusBottomSheetUp {
+            from { transform: translateY(100%); opacity: 0.7; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @media (max-width: 767px) {
+            [id*="modal"].fixed.inset-0 {
+                align-items: flex-end !important;
+                padding: 0 !important;
+            }
+            [id*="modal"].fixed.inset-0 > div {
+                position: relative;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-top-left-radius: 1.5rem !important;
+                border-top-right-radius: 1.5rem !important;
+                border-bottom-left-radius: 0 !important;
+                border-bottom-right-radius: 0 !important;
+                max-height: 90dvh !important;
+                overflow-x: hidden;
+                overflow-y: auto;
+                padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+                animation: nisusBottomSheetUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            [id*="modal"].fixed.inset-0 > div::before {
+                content: "";
+                position: absolute;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 4px;
+                border-radius: 9999px;
+                background: rgba(148, 163, 184, 0.45);
+                z-index: 30;
+                pointer-events: none;
+            }
+        }
+    </style>
 </head>
 <body class="bg-slate-100 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-300">
 
