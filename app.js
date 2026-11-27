@@ -613,33 +613,141 @@ window.renderProfileFinanzas = function(p) {
     }
 };
 window.renderProfileFicha = function(p) {
-const c = document.getElementById('pp-card-container');
-const n = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'N/A';
-const a = p.alias ? `<p class="text-sm font-medium italic text-slate-400 mt-1 mb-2">"${p.alias}"</p>` : `<div class="mb-2"></div>`;
-const pos = p.isStaff ? 'CT' : String(Array.isArray(p.positions) && p.positions.length > 0 ? p.positions[0] : (p.position || 'N/A')).substring(0,3).toUpperCase();
-let fL = window.currentFilter==='all'?'GLOBAL':window.currentFilter.toUpperCase(), sL = window.currentSeason==='all'?'HISTÓRICO':`T. ${window.currentSeason}`;
-let age='--', ft=p.foot?p.foot.toUpperCase():'N/E';
-if(p.birthdate && p.birthdate.includes('-')) { const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1]-1, p.birthdate.split('-')[2]), td = new Date(); let ca = td.getFullYear()-bd.getFullYear(); const m = td.getMonth()-bd.getMonth(); if(m<0||(m===0&&td.getDate()<bd.getDate())) ca--; age = ca+' AÑOS'; }
-let fontSize = "1.75rem"; if(n.length > 18) fontSize = "1.25rem"; else if(n.length > 14) fontSize = "1.5rem";
-c.innerHTML = `
-<div id="pp-card-export-node" class="player-card-export">
-<div class="absolute top-5 left-5 text-center"><p class="text-3xl font-black text-yellow-400 leading-none drop-shadow-md">${p.number||'--'}</p><p class="text-[10px] font-black uppercase tracking-widest mt-1 text-slate-300">${pos}</p></div>
-<div class="absolute top-5 right-5 opacity-40"><img src="escudo.png" class="w-10 h-10 object-contain drop-shadow" onerror="this.style.display='none'"></div>
-<div class="w-28 h-28 rounded-[2rem] border-4 border-slate-600 bg-slate-800 flex items-center justify-center mt-6 mb-4 overflow-hidden shadow-2xl">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:`<span class="text-4xl font-black">${n.charAt(0)}</span>`}</div>
-<h2 class="font-black uppercase tracking-wide text-center w-full px-4 leading-tight drop-shadow-md" style="font-size:${fontSize}">${n}</h2>
-${a}
-<div class="flex justify-center gap-3 mt-2 text-[8px] font-black tracking-widest text-slate-400 uppercase"><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">EDAD: ${age}</span><span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700 shadow-inner">PIE: ${ft}</span></div>
-<div class="w-full border-t border-slate-700 mt-5 pt-3"><p class="text-[8px] text-brand-400 uppercase tracking-widest font-black text-center w-full">ESTADÍSTICAS ${fL} - ${sL}</p></div>
-<div class="flex justify-around w-full mt-4 text-center"><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Partidos</p><p class="text-2xl font-black">${window.getPlayerStat(p,'games')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Goles</p><p class="text-2xl font-black">${window.getPlayerStat(p,'goals')}</p></div><div><p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Asist.</p><p class="text-2xl font-black">${window.getPlayerStat(p,'assists')}</p></div></div>
-<div class="absolute bottom-3 text-[7px] text-slate-600 font-black tracking-widest uppercase">NISUS FC PREMIUM</div>
-</div>`;
-document.getElementById('btn-pp-download-card').onclick = function() {
-const node = document.getElementById('pp-card-export-node'); const btn = this; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-html2canvas(node, { backgroundColor:null, scale:3, useCORS:true, allowTaint:true }).then(cv => {
-const a = document.createElement('a'); a.download=`Ficha_${n.replace(/\s+/g,'_')}.png`; a.href=cv.toDataURL('image/png'); a.click();
-btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!'; setTimeout(()=>btn.innerHTML='<i class="fas fa-download"></i> Descargar Ficha',2000);
-}).catch(e=>{ window.showToast("Error",true); btn.innerHTML='<i class="fas fa-download"></i> Descargar Ficha'; });
-};
+    const c = document.getElementById('pp-card-container');
+    if (!c) return;
+    const n = (typeof p.name === 'string' && p.name.trim() !== '') ? p.name.trim() : 'N/A';
+    const aliasHtml = p.alias ? `<p class="text-xs font-semibold italic text-sky-300/90 mt-1">"${p.alias}"</p>` : '';
+    const posRaw = Array.isArray(p.positions) && p.positions.length > 0 ? p.positions : (typeof p.positions === 'string' ? p.positions.split(',') : (p.position ? [p.position] : []));
+    const mainPos = p.isStaff ? 'CUERPO TÉCNICO' : String(posRaw[0] || 'JUGADOR').toUpperCase();
+    const shortPos = p.isStaff ? 'CT' : mainPos.substring(0, 3);
+    const fL = window.currentFilter === 'all' ? 'GLOBAL' : window.currentFilter.toUpperCase();
+    const sL = window.currentSeason === 'all' ? 'HISTÓRICO' : `T. ${window.currentSeason}`;
+
+    let age = '--', ft = p.foot ? p.foot.toUpperCase() : 'N/E';
+    if (p.birthdate && p.birthdate.includes('-')) {
+        const bd = new Date(p.birthdate.split('-')[0], p.birthdate.split('-')[1] - 1, p.birthdate.split('-')[2]), td = new Date();
+        let ca = td.getFullYear() - bd.getFullYear();
+        const m = td.getMonth() - bd.getMonth();
+        if (m < 0 || (m === 0 && td.getDate() < bd.getDate())) ca--;
+        age = ca + ' AÑOS';
+    }
+
+    const games = window.getPlayerStat(p, 'games');
+    const goals = window.getPlayerStat(p, 'goals');
+    const assists = window.getPlayerStat(p, 'assists');
+    const mvps = window.getPlayerStat(p, 'mvps');
+    const yellows = window.getPlayerStat(p, 'yellows');
+    const reds = window.getPlayerStat(p, 'reds');
+    const cleanSheets = window.getPlayerStat(p, 'cleanSheets');
+    const totalTr = (window.trainings || []).length;
+    const att = (window.trainings || []).filter(t => t?.attendees && t.attendees.includes(p.id)).length;
+    const attPct = totalTr > 0 ? Math.round((att / totalTr) * 100) : 0;
+
+    // Insignias desbloqueadas para mostrar en la ficha
+    const badges = [];
+    const debtTotal = typeof window.getPlayerDebts === 'function' ? window.getPlayerDebts(p.id).total : 0;
+    if (!p.isStaff) {
+        const isDef = posRaw.some(x => ['Defensa Central', 'Lateral Derecho', 'Lateral Izquierdo', 'Carrilero'].includes(x));
+        const isDefUnit = isDef || posRaw.includes('Mediocentro Defensivo');
+        let captainCount = 0, defCS = 0;
+        (window.matches || []).forEach(m => {
+            if (!m || !['finished', 'forfait', 'archived'].includes(m.status)) return;
+            if (window.currentSeason !== 'all' && m.season !== window.currentSeason) return;
+            if (window.currentFilter !== 'all' && m.modality !== window.currentFilter) return;
+            if (m.captain === p.id) captainCount++;
+            const lArr = Array.isArray(m.lineup) ? m.lineup : [], eArr = Array.isArray(m.events) ? m.events : [];
+            const played = lArr.some(l => l && l.playerId === p.id && l.x !== null) || eArr.some(e => e && e.type === 'sub' && e.playerId === p.id);
+            if (played && (m.goalsThem == 0 || m.goalsThem === '0')) defCS++;
+        });
+        if (captainCount >= 1) badges.push('🎖️ Capitán');
+        if (goals >= 3) badges.push('🔥 Goleador');
+        if (assists >= 3) badges.push('🎯 Arquitecto');
+        if (cleanSheets >= 2) badges.push('🧤 Muro');
+        if (isDefUnit && !posRaw.includes('Portero') && defCS >= 2) badges.push('🛡️ Muralla');
+        if (isDef && goals >= 1) badges.push('⚡ Def. con Gol');
+        if (isDef && assists >= 2) badges.push('🚀 Proyección');
+        if (mvps >= 1) badges.push('⭐ Estrella');
+        if (totalTr >= 3 && attPct >= 75) badges.push('🫁 Pulmón');
+        if (games >= 3 && yellows === 0 && reds === 0) badges.push('🤝 Fair Play');
+    }
+    if (debtTotal <= 0.01) badges.push('✅ Solvente');
+
+    const badgesHtml = badges.length > 0
+        ? `<div class="flex flex-wrap justify-center gap-1.5 mt-3 px-2 relative z-10">${badges.slice(0, 4).map(b => `<span class="px-2 py-0.5 rounded-full text-[9px] font-black tracking-wide text-white" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18);">${b}</span>`).join('')}</div>`
+        : '';
+
+    const fontSize = n.length > 18 ? '1.2rem' : (n.length > 14 ? '1.4rem' : '1.65rem');
+    const watermark = p.isStaff ? 'CT' : (p.number ? `#${p.number}` : 'FC');
+    const fourthStat = posRaw.includes('Portero')
+        ? { lbl: 'Vallas 0', val: cleanSheets, col: 'text-teal-300' }
+        : { lbl: 'MVPs', val: mvps, col: 'text-amber-300' };
+
+    const statsBlock = p.isStaff
+        ? `<div class="grid grid-cols-3 gap-2 w-full mt-4 relative z-10">
+            <div class="rounded-xl p-2.5 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);"><p class="text-[9px] text-slate-400 uppercase font-bold">Entrenos</p><p class="text-xl font-black text-white mt-0.5">${att}</p></div>
+            <div class="rounded-xl p-2.5 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);"><p class="text-[9px] text-slate-400 uppercase font-bold">🟨</p><p class="text-xl font-black text-amber-300 mt-0.5">${yellows}</p></div>
+            <div class="rounded-xl p-2.5 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);"><p class="text-[9px] text-slate-400 uppercase font-bold">🟥</p><p class="text-xl font-black text-rose-400 mt-0.5">${reds}</p></div>
+           </div>`
+        : `<div class="grid grid-cols-4 gap-2 w-full mt-4 relative z-10">
+            <div class="rounded-xl p-2 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);"><p class="text-[8px] text-slate-400 uppercase font-bold">PJ</p><p class="text-xl font-black text-white mt-0.5">${games}</p></div>
+            <div class="rounded-xl p-2 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);"><p class="text-[8px] text-slate-400 uppercase font-bold">Goles</p><p class="text-xl font-black text-emerald-400 mt-0.5">${goals}</p></div>
+            <div class="rounded-xl p-2 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);"><p class="text-[8px] text-slate-400 uppercase font-bold">Asist.</p><p class="text-xl font-black text-sky-400 mt-0.5">${assists}</p></div>
+            <div class="rounded-xl p-2 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);"><p class="text-[8px] text-slate-400 uppercase font-bold">${fourthStat.lbl}</p><p class="text-xl font-black ${fourthStat.col} mt-0.5">${fourthStat.val}</p></div>
+           </div>`;
+
+    c.innerHTML = `
+    <div id="pp-card-export-node" class="player-card-export" style="height:auto; min-height:510px; padding:24px 20px 44px; background:linear-gradient(155deg, #020617 0%, #082f49 52%, #0f172a 100%); border:2px solid rgba(56,189,248,0.35); position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-40px; right:-40px; width:170px; height:170px; border-radius:9999px; background:radial-gradient(circle, rgba(14,165,233,0.35) 0%, transparent 70%); pointer-events:none;"></div>
+        <div style="position:absolute; bottom:-50px; left:-40px; width:190px; height:190px; border-radius:9999px; background:radial-gradient(circle, rgba(250,204,21,0.18) 0%, transparent 70%); pointer-events:none;"></div>
+        <span style="position:absolute; right:-6px; top:70px; font-size:7.5rem; font-weight:900; font-style:italic; line-height:1; color:rgba(255,255,255,0.045); pointer-events:none; user-select:none;">${watermark}</span>
+
+        <div class="flex justify-between items-start w-full relative z-10">
+            <div class="text-left">
+                <p class="text-4xl font-black text-amber-400 leading-none" style="text-shadow:0 3px 12px rgba(250,204,21,0.35);">${p.isStaff ? 'CT' : (p.number || '--')}</p>
+                <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest text-sky-200" style="background:rgba(14,165,233,0.25); border:1px solid rgba(56,189,248,0.35);">${shortPos}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="text-right">
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white">NISUS FC</p>
+                    <p class="text-[7px] font-bold uppercase tracking-widest text-sky-300/80">${fL} · ${sL}</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white p-1 shadow-md flex items-center justify-center overflow-hidden">
+                    <img src="escudo.png" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+
+        <div class="w-28 h-28 rounded-[1.75rem] mt-4 mb-3 overflow-hidden shadow-2xl flex items-center justify-center relative z-10" style="border:3px solid rgba(56,189,248,0.75); background:#0f172a; box-shadow:0 12px 28px rgba(0,0,0,0.45);">
+            ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<span class="text-4xl font-black text-sky-300">${n.charAt(0)}</span>`}
+        </div>
+
+        <h2 class="font-black uppercase tracking-wide text-center w-full px-2 leading-tight text-white relative z-10" style="font-size:${fontSize}; text-shadow:0 2px 8px rgba(0,0,0,0.4);">${n}</h2>
+        ${aliasHtml}
+        <p class="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-300/80 mt-1 relative z-10">${mainPos}</p>
+
+        <div class="flex justify-center gap-2 mt-3 text-[8px] font-black tracking-widest text-slate-300 uppercase relative z-10">
+            <span class="px-2.5 py-1 rounded-lg" style="background:rgba(15,23,42,0.8); border:1px solid rgba(148,163,184,0.25);">EDAD: ${age}</span>
+            <span class="px-2.5 py-1 rounded-lg" style="background:rgba(15,23,42,0.8); border:1px solid rgba(148,163,184,0.25);">PIE: ${ft}</span>
+            ${!p.isStaff ? `<span class="px-2.5 py-1 rounded-lg" style="background:rgba(15,23,42,0.8); border:1px solid rgba(148,163,184,0.25);">ENT: ${attPct}%</span>` : ''}
+        </div>
+
+        ${badgesHtml}
+        ${statsBlock}
+
+        <div style="position:absolute; bottom:12px; left:0; right:0; text-align:center;">
+            <span class="text-[7px] font-black tracking-[0.35em] uppercase text-slate-400/70">NISUS FC · FICHA OFICIAL</span>
+        </div>
+    </div>`;
+
+    document.getElementById('btn-pp-download-card').onclick = function() {
+        const node = document.getElementById('pp-card-export-node'); const btn = this;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+        html2canvas(node, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true }).then(cv => {
+            const a = document.createElement('a'); a.download = `Ficha_${n.replace(/\s+/g, '_')}.png`; a.href = cv.toDataURL('image/png'); a.click();
+            btn.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
+            setTimeout(() => btn.innerHTML = '<i class="fas fa-download"></i> Descargar Ficha', 2000);
+        }).catch(() => { window.showToast("Error", true); btn.innerHTML = '<i class="fas fa-download"></i> Descargar Ficha'; });
+    };
 };
 window.switchMatchTab = function(tabName) {
 const btnPizarra = document.getElementById('tab-btn-pizarra'), btnEventos = document.getElementById('tab-btn-eventos'), contentPizarra = document.getElementById('tab-content-pizarra'), contentEventos = document.getElementById('tab-content-eventos');
@@ -2129,38 +2237,69 @@ window.exportMatchResult = function(id) {
 
     const us = m.status === 'forfait' ? 3 : (parseInt(m.goalsUs) || 0);
     const them = m.status === 'forfait' ? 0 : (parseInt(m.goalsThem) || 0);
+    const isWin = us > them, isDraw = us === them;
+
+    const outcomeLabel = m.status === 'forfait' ? 'VICTORIA POR FORFAIT' : (isWin ? 'VICTORIA' : (isDraw ? 'EMPATE' : 'RESULTADO FINAL'));
+    const accentColor = m.status === 'forfait' ? '#a855f7' : (isWin ? '#10b981' : (isDraw ? '#f59e0b' : '#f43f5e'));
+    const scoreGlow = isWin ? 'text-emerald-400' : (isDraw ? 'text-amber-300' : 'text-white');
+
     const dStr = m.date ? new Date(m.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase() : '';
-    const scorers = (m.events || []).filter(e => ['goals', 'penalty', 'freekick'].includes(e.type)).map(e => {
+    const tStr = typeof window.formatMatchTime === 'function' ? window.formatMatchTime(m.time) : (m.time || '');
+    const metaLine = [dStr, tStr, `FÚTBOL ${m.modality === 'f7' ? '7' : '11'}`].filter(Boolean).join(' · ');
+
+    const scorersArr = (m.events || []).filter(e => ['goals', 'penalty', 'freekick'].includes(e.type)).map(e => {
         const p = (window.players || []).find(x => x.id === e.playerId);
-        return `⚽ ${p ? (p.showAlias && p.alias ? p.alias : p.name.split(' ')[0]) : 'Gol'}${e.minute ? ` (${e.minute}')` : ''}`;
-    }).join(' · ');
+        const pName = p ? (p.showAlias && p.alias ? p.alias : (p.name || '').split(' ')[0]) : 'Gol';
+        const tag = e.type === 'penalty' ? ' (P)' : (e.type === 'freekick' ? ' (TL)' : '');
+        return `⚽ ${pName}${tag}${e.minute ? ` ${e.minute}'` : ''}`;
+    });
+
+    const mvpObj = (m.status === 'finished' && m.mvp) ? (window.players || []).find(x => x.id === m.mvp) : null;
+    const mvpName = mvpObj ? (mvpObj.showAlias && mvpObj.alias ? mvpObj.alias : mvpObj.name) : '';
+    const oppColor = m.oppColor || '#ef4444';
 
     container.innerHTML = `
-        <div id="match-result-node" class="match-result-export">
-            <p class="text-[10px] font-black uppercase tracking-[0.25em] text-brand-200 mb-1">${m.tournament || 'PARTIDO OFICIAL'}</p>
-            <p class="text-[9px] font-bold text-white/60 uppercase tracking-widest mb-6">${dStr} · FÚTBOL ${m.modality === 'f7' ? '7' : '11'}</p>
-            <div class="flex items-center justify-between w-full px-2 mb-6">
-                <div class="flex flex-col items-center w-1/3">
-                    <div class="w-16 h-16 rounded-full bg-white p-1 shadow-lg mb-2 flex items-center justify-center overflow-hidden">
+        <div id="match-result-node" class="match-result-export" style="height:auto; min-height:440px; padding:26px 22px 46px; background:linear-gradient(155deg, #020617 0%, #082f49 55%, #0f172a 100%); border:2px solid rgba(56,189,248,0.35); position:relative; overflow:hidden;">
+            <div style="position:absolute; top:0; left:0; right:0; height:5px; background:${accentColor};"></div>
+            <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:240px; height:150px; border-radius:9999px; background:radial-gradient(circle, rgba(14,165,233,0.3) 0%, transparent 70%); pointer-events:none;"></div>
+
+            <span class="relative z-10 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.22em] text-white mb-2" style="background:${accentColor}; box-shadow:0 4px 12px rgba(0,0,0,0.3);">${outcomeLabel}</span>
+            <p class="relative z-10 text-xs font-black uppercase tracking-[0.18em] text-sky-200 text-center">${m.tournament || 'PARTIDO OFICIAL'}${m.matchday ? ` · J${m.matchday}` : ''}</p>
+            <p class="relative z-10 text-[9px] font-bold text-slate-300/75 uppercase tracking-widest mt-1 mb-6 text-center">${metaLine}</p>
+
+            <div class="relative z-10 flex items-center justify-between w-full px-3 py-5 rounded-2xl mb-5" style="background:rgba(15,23,42,0.65); border:1px solid rgba(255,255,255,0.12);">
+                <div class="flex flex-col items-center w-[34%]">
+                    <div class="w-16 h-16 rounded-full bg-white p-1.5 shadow-xl mb-2 flex items-center justify-center overflow-hidden">
                         <img src="escudo.png" class="w-full h-full object-cover" onerror="this.style.display='none'">
                     </div>
-                    <span class="font-black text-xs uppercase tracking-wider text-center">NISUS FC</span>
+                    <span class="font-black text-[11px] uppercase tracking-wider text-white text-center leading-tight">NISUS FC</span>
                 </div>
-                <div class="flex items-center gap-3 w-1/3 justify-center">
-                    <span class="text-5xl font-black">${us}</span>
-                    <span class="text-2xl font-bold text-white/40">-</span>
-                    <span class="text-5xl font-black">${them}</span>
+                <div class="flex items-center justify-center gap-2.5 w-[32%]">
+                    <span class="text-5xl font-black leading-none ${scoreGlow}" style="text-shadow:0 4px 14px rgba(0,0,0,0.45);">${us}</span>
+                    <span class="text-2xl font-black text-white/30">-</span>
+                    <span class="text-5xl font-black leading-none text-white" style="text-shadow:0 4px 14px rgba(0,0,0,0.45);">${them}</span>
                 </div>
-                <div class="flex flex-col items-center w-1/3">
-                    <div class="w-16 h-16 rounded-full bg-white/15 border-2 border-white/30 shadow-lg mb-2 flex items-center justify-center text-2xl font-black">
+                <div class="flex flex-col items-center w-[34%]">
+                    <div class="w-16 h-16 rounded-full shadow-xl mb-2 flex items-center justify-center text-2xl font-black text-white" style="background:${oppColor}; border:3px solid rgba(255,255,255,0.35); text-shadow:0 2px 6px rgba(0,0,0,0.45);">
                         ${(m.opponent || 'R').charAt(0).toUpperCase()}
                     </div>
-                    <span class="font-black text-xs uppercase tracking-wider text-center truncate w-full">${m.opponent || 'Rival'}</span>
+                    <span class="font-black text-[11px] uppercase tracking-wider text-white text-center leading-tight truncate w-full">${m.opponent || 'Rival'}</span>
                 </div>
             </div>
-            ${m.status === 'forfait' ? `<p class="text-[10px] font-black uppercase tracking-widest bg-white/15 px-3 py-1 rounded-full">Victoria por Forfait</p>` : ''}
-            ${scorers ? `<p class="text-[10px] font-bold text-brand-100 text-center leading-relaxed px-4">${scorers}</p>` : ''}
-            <p class="absolute bottom-4 text-[8px] font-black tracking-[0.3em] text-white/40 uppercase">RESULTADO FINAL · NISUS FC</p>
+
+            ${scorersArr.length > 0 && m.status !== 'forfait' ? `
+                <div class="relative z-10 w-full rounded-xl px-3.5 py-2.5 mb-3 text-center" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);">
+                    <p class="text-[8px] font-black uppercase tracking-[0.25em] text-sky-300/80 mb-1">GOLEADORES</p>
+                    <p class="text-[11px] font-bold text-white leading-relaxed">${scorersArr.join(' · ')}</p>
+                </div>` : ''}
+
+            ${mvpName ? `
+                <div class="relative z-10 inline-flex items-center gap-2 px-4 py-1.5 rounded-full mt-1" style="background:rgba(250,204,21,0.16); border:1px solid rgba(250,204,21,0.45);">
+                    <span class="text-xs">⭐</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-amber-300">MVP: ${mvpName}</span>
+                </div>` : ''}
+
+            <p style="position:absolute; bottom:14px; left:0; right:0; text-align:center;" class="text-[8px] font-black tracking-[0.3em] text-slate-400/70 uppercase">NISUS FC · RESULTADO OFICIAL</p>
         </div>`;
 
     modal.classList.remove('hidden');
